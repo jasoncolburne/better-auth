@@ -23,7 +23,7 @@ infrastructure. For an even more robust (decentralized) solution, consider KERI 
 Infrastructure), from which concepts in this document have been taken.
 
 Server generated messages are also signed, and valid keys are simply specified at a well known
-location.
+location. `publicKeyDigest` serves as a lookup key.
 
 # Risks that worry the authentication protocol designer
 
@@ -263,7 +263,7 @@ private material is made exceedingly difficult. One key is labelled `current` an
 ```
 
 The signature above (`current` authentication) is generated on the compact json payload
-`authenticationNextPublicKeyDigest` may be ommitted if rotation is not planned (not recommended).
+`authentication.publicKeys.nextDigest` may be ommitted if rotation is not planned (not recommended).
 
 Server responds with the account id that has been assigned.
 
@@ -280,8 +280,8 @@ Server responds with the account id that has been assigned.
 ```
 
 *Notes*:
-- `registrationToken` should be unique.
-- `registrationToken` should expire after a resonable amount of time, depending on your user
+- `registration.token` should be unique.
+- `registration.token` should expire after a resonable amount of time, depending on your user
 experience requirements. Choose a larger size for the token if your expiration will be far in the
 future.
 - This example uses a secp256r1 key, which is a good choice here as it is supported by cryptographic
@@ -350,8 +350,8 @@ account id that has been assigned.
 ```
 
 *Notes*:
-- `registrationToken` should be a unique 256 bit value.
-- `registrationToken` should expire after a resonable amount of time, depending on your user
+- `registration.token` should be a unique 256 bit value.
+- `registration.token` should expire after a resonable amount of time, depending on your user
 experience. One day to one week is a good range.
 - This example derives an ed25519 key, which is a good choice for passphrase authentication as it
 is easier to support in a browser than some other signature schemes.
@@ -401,7 +401,6 @@ returns an acknowledgement.
     "signature": "0IBcQqawkcFHuUgogsnh8tyKqBWnDLY6tbvLVAfw5aE9VxSEx0CQ_A5ILLgnlDX8vrl3X35xi6-p-ytUK5GVLie5"
 }
 ```
-
 
 ## Authentication
 
@@ -476,14 +475,14 @@ for use during the refresh protocol. It returns a session id to the client.
 ```
 
 *Notes*:
-- `challengeNonce` should expire soon after creation - as short a time as one minute.
-- `challengeNonce` should have at least as many bits of security as your signing algorithm (128 bits
+- `authentication.nonce` should expire soon after creation - as short a time as one minute.
+- `authentication.nonce` should have at least as many bits of security as your signing algorithm (128 bits
 here).
-- `refreshSessionId` should expire after a reasonable amount of time given the security profile of
+- `refresh.sessionId` should expire after a reasonable amount of time given the security profile of
 the keys used. Twelve hours is a good starting point.
 - As mentioned previously, `secp256r1` is likely a better choice than `ed25519` for random seed
 authentication.
-- `refreshNextNonceDigest` provides a commitment to a forward secret that will be revealed as an
+- `refresh.nonces.nextDigest` provides a commitment to a forward secret that will be revealed as an
 evolving chain throughout the refresh session.
 
 ### Passphrase-based
@@ -558,11 +557,11 @@ client.
 ```
 
 *Notes*:
-- `challengeNonce` should expire soon after creation - as short a time as one minute.
-- `refreshSessionId` should expire after a reasonable amount of time given the security profile of
+- `passphraseAuthentication.nonce` should expire soon after creation - as short a time as one minute.
+- `refresh.sessionId` should expire after a reasonable amount of time given the security profile of
 the keys used. Twelve hours is a good starting point.
-- `authenticationPublicKey` is supplied, since only the digest of the key is stored.
-- `refreshNextNonceDigest` provides a commitment to a forward secret that will be revealed as an
+- `passphraseAuthentication.publicKey` is supplied, since only the digest of the key is stored.
+- `refresh.nonces.nextDigest` provides a commitment to a forward secret that will be revealed as an
 evolving chain throughout the refresh session.
 
 ## Refresh
