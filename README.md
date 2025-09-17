@@ -87,6 +87,7 @@ submitted and receives a response.
 
 Mitigations:
 - Authentication: Challenge nonce.
+- Rotation: Forward secret key chain.
 - Refresh: Forward secret nonce chain.
 - Access: Unique nonce + timestamp.
 
