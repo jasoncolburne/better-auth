@@ -1,5 +1,7 @@
 # better-auth
 
+(this may still need a bit of work/review)
+
 # Why
 
 The typical authentication and authorization protocols implemented in software today are rarely
