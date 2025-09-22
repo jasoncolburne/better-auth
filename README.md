@@ -25,7 +25,7 @@ infrastructure. For an even more robust (decentralized) solution, consider KERI 
 Infrastructure), from which concepts in this document have been taken.
 
 Server generated messages are also signed, and valid keys are simply specified at a well known
-location. `publicKeyDigest` serves as a lookup key.
+location. `responseKeyDigest` serves as a lookup key.
 
 # Risks that worry the authentication protocol designer
 
@@ -224,61 +224,70 @@ Random seed authentication relies on entropy generated on a device to establish 
 Random seed authentication with rotation is recoverable because there is already a forward secret
 commitment to the next signing key. 
 
-#### Registration material (Auth-OOB->Client)
+#### Creation container (Auth-OOB->Client)
 
 Auth service delivers registration material out of band.
 
 ```json
 {
-    "payload": {
-        "registration": {
-            "token": "EOomXwkCWQXvmAHc96c8e1_PF4BGsvWvsMHU6XsP3Zmj"
-        },
-        "publicKeyDigest": "EPqXgqZ_AiTVBfY2l_-vW016GroHLhLkeYrNc4HQB7WO"
+  "payload": {
+    "access": {
+      "responseKeyDigest": "EKMVkRIDGAeqrWaPWq74PTRcEUfjWfjo2kwLawSfAMjF",
+      "nonce": "0AAOkha7B8VlRMt2aqvLGl9B"
     },
-    "signature": "0ICXhZ4M_41TLsp6iMoRyOuWFil9UL7SYY5AcZjx993uNGM1jUXGAxaFg730FJ8sfe0glEPRiTR3ihF2cxjz_61z"
+    "response": {
+      "registration": {
+        "token": "EBkilHXVOQ0zmYYqKN_6oRi0OmWBXnUdfG0UMDWc0UAf"
+      }
+    }
+  },
+  "signature": "0IC3124neVw0c0e6hSe136tiGXJmC3O9mUqWpg_VTl4SULA2RWKgTPxmLURMC7yeRZqMqxeWfhtdChQaTUeZrP_Y"
 }
 ```
 
-#### `RegisterAuthenticationKey()` (Client->Auth->Client)
+#### `CreateAccount()` (Client->Auth->Client)
 
 Client generates two assymetic key pairs, preferably in secure hardware where exfiltration of
 private material is made exceedingly difficult. One key is labelled `current` and the other `next`.
 
 ```json
 {
-    "payload": {
-        "registration": {
-            "token": "EOomXwkCWQXvmAHc96c8e1_PF4BGsvWvsMHU6XsP3Zmj"
-        },
-        "identification": {
-            "deviceId": "EAWkUfWVAMzIDy4aHjWwBwaQrmScYMpFobT93Ct6RVv_"
-        },
-        "authentication": {
-            "publicKeys": {
-                "current": "1AAIAl-5-nkK7Jp4d1svQnxCEnpuCtwny5Eri4D2n_edfNZf",
-                "nextDigest": "ECGWcxYw1bNzyEbuvsnVBnZTTyDDWfwfL_pcyNLawM8O"
-            }
-        }
+  "payload": {
+    "registration": {
+      "token": "EBkilHXVOQ0zmYYqKN_6oRi0OmWBXnUdfG0UMDWc0UAf"
     },
-    "signature": "0IAIuRf6J9w677nb8NV4OXlXcq9xGFUakaRPLiY4Hmlhmn87GfiNZGO_thFVfzJVRLe6D04DFZj3MdzhTwb463lD"
+    "identification": {
+      "deviceId": "EAIyck1GCdreB_25IhJVloWHs_ov9DDqclCjanugNW5-"
+    },
+    "authentication": {
+      "publicKeys": {
+        "current": "1AAIAjlxLtdaoTNHwSZof7eLp64xsguAHzAoXaAIIqa6rjp9",
+        "nextDigest": "EHM0ZhBfFL1QqxnsgD6tLOdB5s2g1jLD0qucP1IhHVTJ"
+      }
+    }
+  },
+  "signature": "0IA_65kbtjUsjFCe7hFbGyLi4SvaXvDx5SXxqEd8jQuq6-dv3p4XildQ6u9b0ecZiUfRXZyqnjXL5RPWApPmYZ33"
 }
 ```
 
-The signature above (`current` authentication) is generated on the compact json payload
-`authentication.publicKeys.nextDigest` may be ommitted if rotation is not planned (not recommended).
+The signature above (`current` authentication) is generated on the compact json payload.
 
 Server responds with the account id that has been assigned.
 
 ```json
 {
-    "payload": {
-        "identification": {
-            "accountId": "ENBRKI-MIlE-m8h5SY-kLOzmzGhCvovugIvRyXYbrXC3"
-        },
-        "publicKeyDigest": "EPqXgqZ_AiTVBfY2l_-vW016GroHLhLkeYrNc4HQB7WO"
+  "payload": {
+    "access": {
+      "responseKeyDigest": "EKMVkRIDGAeqrWaPWq74PTRcEUfjWfjo2kwLawSfAMjF",
+      "nonce": "0AA3RJRs3SqWuLnL0VejsudK"
     },
-    "signature": "0ICXhZ4M_41TLsp6iMoRyOuWFil9UL7SYY5AcZjx993uNGM1jUXGAxaFg730FJ8sfe0glEPRiTR3ihF2cxjz_61z"
+    "response": {
+      "identification": {
+        "accountId": "EBJ7ATsAVObGQ9m5IIpPiQNgAbESN_JC1WUErNsU66tA"
+      }
+    }
+  },
+  "signature": "0ICkPi_2h4KG-JzWOfUiN3MnwtwMY5Qb_AjcgXKcgOBAn9HBpwFCfpv5AqWDUBZjr9aLMyRwc6_JErV-OjX9m3W7"
 }
 ```
 
@@ -287,82 +296,6 @@ Server responds with the account id that has been assigned.
 - `registration.token` should expire after a resonable amount of time, depending on your user
 experience requirements. Choose a larger size for the token if your expiration will be far in the
 future.
-- This example uses a secp256r1 key, which is a good choice here as it is supported by cryptographic
-hardware found on common mobile devices.
-
-### Passphrase-based
-
-Passphrase-based authentication relies on keys derived deterministically from passphrases.
-
-#### Registration material (Auth-OOB->Client)
-
-Auth service delivers registration material out of band.
-
-```json
-{
-    "payload": {
-        "registration": {
-            "token": "EOomXwkCWQXvmAHc96c8e1_PF4BGsvWvsMHU6XsP3Zmj"
-        },
-        "passphraseAuthentication": {
-            "parameters": "$argon2id$v=19$m=262144,t=3,p=4$",
-            "salt": "0AEbin7spiwkRaXks8K5AA9x"
-        },
-        "publicKeyDigest": "EPqXgqZ_AiTVBfY2l_-vW016GroHLhLkeYrNc4HQB7WO"
-    },
-    "signature": "0IBKAxkerhXG0hER9Oll5DmyoT-LFkzTST9dfBieHngP7HYtc6fgzYncdaSXLfCM4eTu20QNHmLCqrw7Rb_jzpHX"
-}
-```
-
-#### `RegisterAuthenticationPassphraseKey()` (Client->Auth->Client)
-
-Client uses Argon2id to derive a key pair (authentication) from a user-supplied passphrase. The
-client can choose to ignore derivation parameters and salt if it is managing them itself. This
-design permits stateless/multi-device authentication, which is useful for bootstrapping a new
-device.
-
-```json
-{
-    "payload": {
-        "registration": {
-            "token": "EOomXwkCWQXvmAHc96c8e1_PF4BGsvWvsMHU6XsP3Zmj"
-        },
-        "passphraseAuthentication": {
-            "publicKey": "BOFIM_iwIwrZO3mPxjOqkwTvRfmvNjBQQqrGxk_ncS61"
-        }
-    },
-    "signature": "0BAsKeUTSuvSUJdBsofjGaEmAFtvbaX0YJgyNZS7MCWAkzWA99wIkjgB41FQrcrCd1LgxIULtk7rz2vKDeYkBEIy"
-}
-```
-
-The signature above is generated with the (authentication) private key.
-
-Server verifies, persists a **digest** of the authentication public key, and responds with the
-account id that has been assigned.
-
-```json
-{
-    "payload": {
-        "identification": {
-            "accountId": "ENBRKI-MIlE-m8h5SY-kLOzmzGhCvovugIvRyXYbrXC3"
-        },
-        "publicKeyDigest": "EPqXgqZ_AiTVBfY2l_-vW016GroHLhLkeYrNc4HQB7WO"
-    },
-    "signature": "0IAsstrWmV_cpbtS0niO7-xUWrR_YtXrqjAQlkhPv4X66qOohd_FfdKC58WggJil1RvTsv9z4F0S-VWkoogzrML7"
-}
-```
-
-*Notes*:
-- `registration.token` should be a unique 256 bit value.
-- `registration.token` should expire after a resonable amount of time, depending on your user
-experience. One day to one week is a good range.
-- This example derives an ed25519 key, which is a good choice for passphrase authentication as it
-is easier to support in a browser than some other signature schemes.
-- This example uses reasonable derivation parameters for most devices, but one can adjust to suit
-one's use case.
-- The salt should be an account-wise unique, random, 128 bit value.
-- The server persists a digest and not the raw key to further mitigate attacks on the datastore to
-reverse passphrases, should the datastore be compromised.
 
 ## Rotation
 
@@ -376,19 +309,19 @@ The client composes a payload consisting of the newly revealed/current authentic
 
 ```json
 {
-    "payload": {
-        "identification": {
-            "accountId": "ENBRKI-MIlE-m8h5SY-kLOzmzGhCvovugIvRyXYbrXC3",
-            "deviceId": "EAWkUfWVAMzIDy4aHjWwBwaQrmScYMpFobT93Ct6RVv_"
-        },
-        "authentication": {
-            "publicKeys": {
-                "current": "1AAIA7CUSQ_Cvk3XE1ITDNQXS1qpdqEKwCk4q5Q4YP7GtuIq",
-                "nextDigest": "EEool9L2Vj-c30J8b0v-yThCVpxIJ5dAXPQSnge3IzvG"
-            }
-        }
+  "payload": {
+    "identification": {
+      "accountId": "EBJ7ATsAVObGQ9m5IIpPiQNgAbESN_JC1WUErNsU66tA",
+      "deviceId": "EAIyck1GCdreB_25IhJVloWHs_ov9DDqclCjanugNW5-"
     },
-    "signature": "0IAZBlyJEQu-gmS05iYOfUhrDU3NV5Q5E_9PsYF0s5y-QHc5t4j0Rvh-0ljHVcGrt3VL3gB6qodEHDmiZNOhOg2Q"
+    "authentication": {
+      "publicKeys": {
+        "current": "1AAIA51XIkJiZIUhqXkK_aPZckKIolykA0tnIiiBmz4DN1CZ",
+        "nextDigest": "EG3izUx0KwpbRPeAgQP2NQ_qwZVQpA8F_KoccQgSYqIN"
+      }
+    }
+  },
+  "signature": "0IBnehTenLbownl_6hRwuHc9j3yoy9mXENvyh1okdxo1aIwFFJulE9oZjMTJRUuwlsbwCdDyMPOHqQl0eWE98h2o"
 }
 ```
 
@@ -397,11 +330,14 @@ returns an acknowledgement.
 
 ```json
 {
-    "payload": {
-        "success": true,
-        "publicKeyDigest": "EPqXgqZ_AiTVBfY2l_-vW016GroHLhLkeYrNc4HQB7WO"
+  "payload": {
+    "access": {
+      "responseKeyDigest": "EKMVkRIDGAeqrWaPWq74PTRcEUfjWfjo2kwLawSfAMjF",
+      "nonce": "0AAW9n_-dR43-3rrL3seymq2"
     },
-    "signature": "0IBcQqawkcFHuUgogsnh8tyKqBWnDLY6tbvLVAfw5aE9VxSEx0CQ_A5ILLgnlDX8vrl3X35xi6-p-ytUK5GVLie5"
+    "response": {}
+  },
+  "signature": "0ICqOpjTmUmIAfpuleFGD-WBX_dgD3tx6JLzH56x5O5VVOiyeOHZdiKTCZFGQRSEy42RvsTc1NzY1-3jwEy3gG6x"
 }
 ```
 
@@ -415,9 +351,11 @@ Client identifies account and requests a challenge nonce from auth service.
 
 ```json
 {
+  "payload": {
     "identification": {
-        "accountId": "ENBRKI-MIlE-m8h5SY-kLOzmzGhCvovugIvRyXYbrXC3"
+      "accountId": "EBJ7ATsAVObGQ9m5IIpPiQNgAbESN_JC1WUErNsU66tA"
     }
+  }
 }
 ```
 
@@ -426,13 +364,18 @@ client.
 
 ```json
 {
-    "payload": {
-        "authentication": {
-            "nonce": "0ADSOF85vtKb4QQTIy319M4j"
-        },
-        "publicKeyDigest": "EPqXgqZ_AiTVBfY2l_-vW016GroHLhLkeYrNc4HQB7WO"
+  "payload": {
+    "access": {
+      "responseKeyDigest": "EKMVkRIDGAeqrWaPWq74PTRcEUfjWfjo2kwLawSfAMjF",
+      "nonce": "0ACRqsjH4S7sdXVGbefedRKH"
     },
-    "signature": "0IAUi8wD3zLlDzqyG3uB9-jsIpzOXGKqrVSO8UcGpNx8d9E_VZzaM4oovT6Mjqs_edso78MnXpzjTItwdva6zwTZ"
+    "response": {
+      "authentication": {
+        "nonce": "0AB7XWhxRM5GguoIRCRWeFme"
+      }
+    }
+  },
+  "signature": "0IAV8eGsdLV3dWfZ6Hu6GVylxxPwx1gbceXqLraWXXQdtLsIe0CO8Mfs2OMrv-O_krybRGKZh23MWFkbrgI41Q-v"
 }
 ```
 
@@ -444,21 +387,21 @@ signed (`current` authentication) payload to auth service.
 
 ```json
 {
-    "payload": {
-        "identification": {
-            "deviceId": "EAWkUfWVAMzIDy4aHjWwBwaQrmScYMpFobT93Ct6RVv_"
-        },
-        "authentication": {
-            "nonce": "0ADSOF85vtKb4QQTIy319M4j"
-        },
-        "refresh": {
-            "publicKey": "1AAIArseHqu34sgRTFelYKd342JUZ1TeJnNMk2xE9NjvtXrD",
-            "nonces": {
-                "nextDigest": "EC1Hc4KgIsAm7Azif1lxv0HoxhKL_T0UPtQ8ZgeEu1wF"
-            }
-        }
+  "payload": {
+    "identification": {
+      "deviceId": "EAIyck1GCdreB_25IhJVloWHs_ov9DDqclCjanugNW5-"
     },
-    "signature": "0IAbiRvVF7Zb7-FVL29VuOE9kR2KezCjCreaYqMjc2okbd7ZPsVTpHbpZVdXeyIjM0KM-f9iykvMyIg3jYkBjobU"
+    "authentication": {
+      "nonce": "0AB7XWhxRM5GguoIRCRWeFme"
+    },
+    "access": {
+      "publicKeys": {
+        "current": "1AAIA-K8gdmEHhsx1bl0vVfp_eDPG06ax_-nkjokfnAowJNk",
+        "nextDigest": "EDSnwtLkPpNFugLD4w7aTPCjqxThr28o3-XOm847yZl7"
+      }
+    }
+  },
+  "signature": "0IBVL0g3HTOp4Jj1lY-WAjFNpqa9eenzRrzPAXtIzqwKpcaNT4E3ViMXyYmkk6LTEdaYtT1i3ouv_qMzJxTH9Dmx"
 }
 ```
 
@@ -467,13 +410,18 @@ for use during the refresh protocol. It returns a session id to the client.
 
 ```json
 {
-    "payload": {
-        "refresh": {
-            "sessionId": "EMP0iq5tvNJlIOQoRla5Qa_s7P4X9pzY-50smblRfrw9"
-        },
-        "publicKeyDigest": "EPqXgqZ_AiTVBfY2l_-vW016GroHLhLkeYrNc4HQB7WO"
+  "payload": {
+    "access": {
+      "responseKeyDigest": "EKMVkRIDGAeqrWaPWq74PTRcEUfjWfjo2kwLawSfAMjF",
+      "nonce": "0ABsoh19OkxRGNg-XUTcrGvn"
     },
-    "signature": "0IDLl5gh1G7KYsRK0LAVx4CMqAMeK_q_nUzHnYOxxj7aXidXQPoC1gt5dm3yDvEmqHiFG-keLLmyDwfHEGitl41Q"
+    "response": {
+      "access": {
+        "token": "0ID-GmoX9a5O33LnDrZf2RzT53vf4UlRHmqzqII0fWdKcp1rePGiyslGCI0cBINLEF8yOIWE8RmN_1qWvC2381WCH4sIAAAAAAACA23O0W6CMBQG4Hfp9VhKQVHuqjCHGsSJbnFZCEjFChTWlgExvPvqbt25PPm__5wbiE-nqmHSS4EN3NnSwqHAh02y2E7LkefVAd36GU7cnR8t5_r73uW-2I_HEoMnUDdJQU8r0iuqY-xhbTXJ0tJ9vYhOTwr4czjXEXGCBRzHXaSx_FrlZ4ardunnijPSSYdmRMj7aWfHWrnOg9p_abK1Y7ZWHAbz63cXXjiaVIb2sSknptUfC0tZKkRDUnyXCKKRBqcaQqFu2nBqI_15ZFjwb44qS7qa8v4hicyHJCdnTsTFfQBGCNF_1bGUnCaNJALYN1ATXqrHaMXErH-rCnJfxmlJGbA_VXmcKtJyKgn4GobhF9_IpQp8AQAA"
+      }
+    }
+  },
+  "signature": "0IBnttfERYPXHENGEl0Itvr89rbZ-15UPoiV7h1KWgEv4_28Y0Fe3rG6MCYYkwzrxUiTKxTj9aGjcVgnywr7pveB"
 }
 ```
 
@@ -483,87 +431,6 @@ for use during the refresh protocol. It returns a session id to the client.
 here).
 - `refresh.sessionId` should expire after a reasonable amount of time given the security profile of
 the keys used. Twelve hours is a good starting point.
-- As mentioned previously, `secp256r1` is likely a better choice than `ed25519` for random seed
-authentication.
-- `refresh.nonces.nextDigest` provides a commitment to a forward secret that will be revealed as an
-evolving chain throughout the refresh session.
-
-### Passphrase-based
-
-#### `BeginPassphraseAuthentication()` (Client->Auth->Client)
-
-Client identifies account and requests a challenge nonce from auth service.
-
-```json
-{
-    "identification": {
-        "accountId": "ENBRKI-MIlE-m8h5SY-kLOzmzGhCvovugIvRyXYbrXC3"
-    }
-}
-```
-
-Auth generates a random nonce and persists it for verification later, returning the nonce to the
-client - along with passphrase-based key derivation parameters.
-
-```json
-{
-    "payload": {
-        "passphraseAuthentication": {
-            "nonce": "0ADSOF85vtKb4QQTIy319M4j",
-            "parameters": "$argon2id$v=19$m=262144,t=3,p=4$",
-            "salt": "0AEbin7spiwkRaXks8K5AA9x"
-        },
-        "publicKeyDigest": "EPqXgqZ_AiTVBfY2l_-vW016GroHLhLkeYrNc4HQB7WO"
-    },
-    "signature": "0IDk7TGXAnU_6aqhZPO7yOROlDLhwzElJXvm2d0qJS-qFCRdwDnstxy6ttJyogxKz4IQxUaZaweQc9wvHbbWdJWG"
-}
-```
-
-#### `CompletePassphraseAuthentication()` (Client->Auth->Client)
-
-Client creates a payload consisting of a new, random public key (refresh) and the challenge nonce.
-Client returns the signed (`current` authentication) payload to auth service.
-
-```json
-{
-    "payload": {
-        "passphraseAuthentication": {
-            "nonce": "0ADSOF85vtKb4QQTIy319M4j",
-            "publicKey": "BOFIM_iwIwrZO3mPxjOqkwTvRfmvNjBQQqrGxk_ncS61"
-        },
-        "refresh": {
-            "publicKey": "1AAIArseHqu34sgRTFelYKd342JUZ1TeJnNMk2xE9NjvtXrD",
-            "nonces": {
-                "nextDigest": "EC1Hc4KgIsAm7Azif1lxv0HoxhKL_T0UPtQ8ZgeEu1wF"
-            }
-        }
-    },
-    "signature": "0BD1WQsuqNXG4wBTalLpwLYxdz3xgtjF05aBcg3ZoFzaDsfqPpobEE2s9fJjHIRMAhhGCpCRsfpC4i1jjNdkrROK"
-}
-```
-
-Auth service verifies signature and nonce and, if correct, compares the public key (authentication)
-digest to that which it stored during registration. If that matches, auth stores the key (refresh)
-for use during the refresh protocol, binding it to that session. It returns a session id to the
-client.
-
-```json
-{
-    "payload": {
-        "refresh": {
-            "sessionId": "EMP0iq5tvNJlIOQoRla5Qa_s7P4X9pzY-50smblRfrw9"
-        },
-        "publicKeyDigest": "EPqXgqZ_AiTVBfY2l_-vW016GroHLhLkeYrNc4HQB7WO"
-    },
-    "signature": "0IBnIffOKisy1nd63tMdupzmpcpRQJjER7plDCgcxPrRPPjggi6JDIRIB7zzFg--rlNBqdBg0dcBtQtFhRwcaMxD"
-}
-```
-
-*Notes*:
-- `passphraseAuthentication.nonce` should expire soon after creation - as short a time as one minute.
-- `refresh.sessionId` should expire after a reasonable amount of time given the security profile of
-the keys used. Twelve hours is a good starting point.
-- `passphraseAuthentication.publicKey` is supplied, since only the digest of the key is stored.
 - `refresh.nonces.nextDigest` provides a commitment to a forward secret that will be revealed as an
 evolving chain throughout the refresh session.
 
@@ -579,19 +446,16 @@ This payload is signed (refresh).
 
 ```json
 {
-    "payload": {
-        "refresh": {
-            "sessionId": "EMP0iq5tvNJlIOQoRla5Qa_s7P4X9pzY-50smblRfrw9",
-            "nonces": {
-                "current": "0AhfUcHYwHdfn69sF9HqdGg-",
-                "nextDigest": "EJ6cZ-LKxUNyuS6mZKyydY6JOBhpHaFnf34AYtudnMRV",
-            }
-        },
-        "access": {
-            "publicKey": "1AAIA7UjnxSVGI1gabpe9W6fU7yK7VUL5u3TFu7nI2D03DPH"
-        }
-    },
-    "signature": "0IB8dO5R5L5Y27HQGtzxhi1SyXX_mjRR-SLP35KkzywiMygFOHDJf27DMh8O1UOIwpGwHWqhejE-wGj1oE7JHPAQ"
+  "payload": {
+    "access": {
+      "token": "0ID-GmoX9a5O33LnDrZf2RzT53vf4UlRHmqzqII0fWdKcp1rePGiyslGCI0cBINLEF8yOIWE8RmN_1qWvC2381WCH4sIAAAAAAACA23O0W6CMBQG4Hfp9VhKQVHuqjCHGsSJbnFZCEjFChTWlgExvPvqbt25PPm__5wbiE-nqmHSS4EN3NnSwqHAh02y2E7LkefVAd36GU7cnR8t5_r73uW-2I_HEoMnUDdJQU8r0iuqY-xhbTXJ0tJ9vYhOTwr4czjXEXGCBRzHXaSx_FrlZ4ardunnijPSSYdmRMj7aWfHWrnOg9p_abK1Y7ZWHAbz63cXXjiaVIb2sSknptUfC0tZKkRDUnyXCKKRBqcaQqFu2nBqI_15ZFjwb44qS7qa8v4hicyHJCdnTsTFfQBGCNF_1bGUnCaNJALYN1ATXqrHaMXErH-rCnJfxmlJGbA_VXmcKtJyKgn4GobhF9_IpQp8AQAA",
+      "publicKeys": {
+        "current": "1AAIA2IO919-lnyF-lYSkhw76irIQ7D_ZFwLAVzkWMIv90Nd",
+        "nextDigest": "EA-17Qz3InFohMXpu5egG2ZNK9U1bknMVWoJobXMnqhg"
+      }
+    }
+  },
+  "signature": "0ICG5B3-EZjBmzs5NeP8_YMgT6pIDe4Fm-wnPVQq4VJ8KHn-C4suhwyoY-YIAE728ld5ZUC-cAXOwX4GeG7pADwb"
 }
 ```
 
@@ -601,24 +465,18 @@ resource access
 
 ```json
 {
-    "payload": {
-        "access": {
-            "token": {
-                "identification": {
-                    "accountId": "ENBRKI-MIlE-m8h5SY-kLOzmzGhCvovugIvRyXYbrXC3"
-                },
-                "publicKey": "1AAIA7UjnxSVGI1gabpe9W6fU7yK7VUL5u3TFu7nI2D03DPH",
-                "issuedAt": "2025-09-15T09:10:00Z",
-                "expiry": "2025-09-15T09:25:00Z",
-                "attributes": {
-                    "label": "value"
-                }
-            },
-            "signature": "0ICqCbTD10ciOuNZGzjxySGs46xhJF39MLGHx09UEFljxvArv7YoDss3OhUYj7T4l0oR9yElrk0eSlqSiXwG6KZ7"
-        },
-        "publicKeyDigest": "EPqXgqZ_AiTVBfY2l_-vW016GroHLhLkeYrNc4HQB7WO"
+  "payload": {
+    "access": {
+      "responseKeyDigest": "EKMVkRIDGAeqrWaPWq74PTRcEUfjWfjo2kwLawSfAMjF",
+      "nonce": "0AC3igP_bzlacowas1QcrDm2"
     },
-    "signature": "0ICRa_DmuiriwY3e-_rURIgLVrXbytXNS7wzh4aLT-ViouI4OLAhBglwnifxJCR0KMqIDj53suTomaa8OszhtBtM"
+    "response": {
+      "access": {
+        "token": "0IBFd_Wo_Td26csEWisAP1pZxEKLRZOaQVGr_VXJG4cpAH-KBMqyiVBb7MLexte9IROQPfi0d2JCWpsKRWjvH39PH4sIAAAAAAACA2WPXW-CMBSG_0uvx0ILSMpdnWiqA8f8HMtiQDpoxMLaMkXjfx8sWXbhuTx5nvec9wqS_b5qhKYZ8IA_nLpkqch6nk4ifHQorV94FOYk9RfhbvoENytfhmo1GGgCHkDdpCXfz1jbqZAQShCdY4iNUrRjo3xbHIqTO-CSRu5oF49Pz2R9OWwC-o3NMOt0wc56xHOmdH-aGNCNLhYV46oItnXjsHyC4nCGVzA9iGC9qaZVug3EV5F3LleqYRnpTWQixzCxgdAS2p6JPQQfHdsyfyfuWHauuWzvSGTfkZJ9SqYK_06wlib6i7bcfyHRWvK00UwB7wpqJo_dY7wSati-ViXrl0l25AJ471140rc-Sa4Z-Ljdbj8_ocnsfAEAAA"
+      }
+    }
+  },
+  "signature": "0IC_UDHYYEf31exfUl945ZgDjmCBsAdDX-ChMU6WBL9wyEHGDq2V88bS7B5XU4Y2sN7TTWHUB6_NzVNuos_y25o2"
 }
 ```
 
@@ -633,29 +491,19 @@ A convenient way to package this is to prepend the signature to a gzipped, url-s
 base64 encoding of the accessToken.
 
 ```shell
-echo '{
-            "identification": {
-                "accountId": "ENBRKI-MIlE-m8h5SY-kLOzmzGhCvovugIvRyXYbrXC3"
-            },
-            "publicKey": "1AAIA7UjnxSVGI1gabpe9W6fU7yK7VUL5u3TFu7nI2D03DPH",
-            "issuedAt": "2025-09-15T09:10:00Z",
-            "expiry": "2025-09-15T09:25:00Z",
-            "attributes": {
-                "label": "value"
-            }
-        }' | jq -c -M | gzip | base64 | tr '+' '-' | tr '/' '_'
+echo '{"accountId":"EBJ7ATsAVObGQ9m5IIpPiQNgAbESN_JC1WUErNsU66tA","publicKey":"1AAIA2IO919-lnyF-lYSkhw76irIQ7D_ZFwLAVzkWMIv90Nd","nextDigest":"EA-17Qz3InFohMXpu5egG2ZNK9U1bknMVWoJobXMnqhg","issuedAt":"2025-09-22T14:09:21.543000000Z","expiry":"2025-09-22T14:24:21.543000000Z","refreshExpiry":"2025-09-23T02:09:21.537000000Z","attributes":{"permissionsByRole":{"admin":["read","write"]}}}' | jq -c -M | gzip -9 | base64 | tr '+' '-' | tr '/' '_' | tr -d '='
 ```
 
-produces:
+produces something like:
 
 ```
-H4sIAMHLyGgAA2WPQW-CMBhA7_sZ39kmBVIZ3BCdNjhdVJzu1kLVai0EWiIa_ruYeNv5vXd4D5C50EYeZMaMLDSED2BZVlhtaA4hTBajVULRN1UTdP08kfUeXebL-_U-PcVN0dgjbVbtbs-rXexBN4DSciWzRLR960QRjfz0rG_r7ZQ6R8ZLEfwOD6nfJv42nRPrbb6sr6k7xt74ZwYDkHVtRR6ZvnaxSxAOkEM2OAgdHGL81xviVsqq_cdd8ubMmEpya0T9WlGMC9XLDVNWQNd9PAE1tAWU8AAAAA
+H4sIAAAAAAACA2WPXW-CMBSG_0uvx0ILSMpdnWiqA8f8HMtiQDpoxMLaMkXjfx8sWXbhuTx5nvec9wqS_b5qhKYZ8IA_nLpkqch6nk4ifHQorV94FOYk9RfhbvoENytfhmo1GGgCHkDdpCXfz1jbqZAQShCdY4iNUrRjo3xbHIqTO-CSRu5oF49Pz2R9OWwC-o3NMOt0wc56xHOmdH-aGNCNLhYV46oItnXjsHyC4nCGVzA9iGC9qaZVug3EV5F3LleqYRnpTWQixzCxgdAS2p6JPQQfHdsyfyfuWHauuWzvSGTfkZJ9SqYK_06wlib6i7bcfyHRWvK00UwB7wpqJo_dY7wSati-ViXrl0l25AJ471140rc-Sa4Z-Ljdbj8_ocnsfAEAAA
 ```
 
 Prepending the signature, we get:
 
 ```
-0ICqCbTD10ciOuNZGzjxySGs46xhJF39MLGHx09UEFljxvArv7YoDss3OhUYj7T4l0oR9yElrk0eSlqSiXwG6KZ7H4sIAMHLyGgAA2WPQW-CMBhA7_sZ39kmBVIZ3BCdNjhdVJzu1kLVai0EWiIa_ruYeNv5vXd4D5C50EYeZMaMLDSED2BZVlhtaA4hTBajVULRN1UTdP08kfUeXebL-_U-PcVN0dgjbVbtbs-rXexBN4DSciWzRLR960QRjfz0rG_r7ZQ6R8ZLEfwOD6nfJv42nRPrbb6sr6k7xt74ZwYDkHVtRR6ZvnaxSxAOkEM2OAgdHGL81xviVsqq_cdd8ubMmEpya0T9WlGMC9XLDVNWQNd9PAE1tAWU8AAAAA
+0IBFd_Wo_Td26csEWisAP1pZxEKLRZOaQVGr_VXJG4cpAH-KBMqyiVBb7MLexte9IROQPfi0d2JCWpsKRWjvH39PH4sIAAAAAAACA2WPXW-CMBSG_0uvx0ILSMpdnWiqA8f8HMtiQDpoxMLaMkXjfx8sWXbhuTx5nvec9wqS_b5qhKYZ8IA_nLpkqch6nk4ifHQorV94FOYk9RfhbvoENytfhmo1GGgCHkDdpCXfz1jbqZAQShCdY4iNUrRjo3xbHIqTO-CSRu5oF49Pz2R9OWwC-o3NMOt0wc56xHOmdH-aGNCNLhYV46oItnXjsHyC4nCGVzA9iGC9qaZVug3EV5F3LleqYRnpTWQixzCxgdAS2p6JPQQfHdsyfyfuWHauuWzvSGTfkZJ9SqYK_06wlib6i7bcfyHRWvK00UwB7wpqJo_dY7wSati-ViXrl0l25AJ471140rc-Sa4Z-Ljdbj8_ocnsfAEAAA
 ```
 
 ## Access
@@ -668,17 +516,18 @@ signature.
 
 ```json
 {
-    "token": "0ICqCbTD10ciOuNZGzjxySGs46xhJF39MLGHx09UEFljxvArv7YoDss3OhUYj7T4l0oR9yElrk0eSlqSiXwG6KZ7H4sIAMHLyGgAA2WPQW-CMBhA7_sZ39kmBVIZ3BCdNjhdVJzu1kLVai0EWiIa_ruYeNv5vXd4D5C50EYeZMaMLDSED2BZVlhtaA4hTBajVULRN1UTdP08kfUeXebL-_U-PcVN0dgjbVbtbs-rXexBN4DSciWzRLR960QRjfz0rG_r7ZQ6R8ZLEfwOD6nfJv42nRPrbb6sr6k7xt74ZwYDkHVtRR6ZvnaxSxAOkEM2OAgdHGL81xviVsqq_cdd8ubMmEpya0T9WlGMC9XLDVNWQNd9PAE1tAWU8AAAAA",
-    "payload": {
-        "access": {
-            "timestamp": "2025-09-15T09:13:22Z",
-            "nonce": "0APUZ10BG425SyJMGEvNzZcl"
-        },
-        "request": {
-            "foo": "bar"
-        }
+  "payload": {
+    "token": "0IBFd_Wo_Td26csEWisAP1pZxEKLRZOaQVGr_VXJG4cpAH-KBMqyiVBb7MLexte9IROQPfi0d2JCWpsKRWjvH39PH4sIAAAAAAACA2WPXW-CMBSG_0uvx0ILSMpdnWiqA8f8HMtiQDpoxMLaMkXjfx8sWXbhuTx5nvec9wqS_b5qhKYZ8IA_nLpkqch6nk4ifHQorV94FOYk9RfhbvoENytfhmo1GGgCHkDdpCXfz1jbqZAQShCdY4iNUrRjo3xbHIqTO-CSRu5oF49Pz2R9OWwC-o3NMOt0wc56xHOmdH-aGNCNLhYV46oItnXjsHyC4nCGVzA9iGC9qaZVug3EV5F3LleqYRnpTWQixzCxgdAS2p6JPQQfHdsyfyfuWHauuWzvSGTfkZJ9SqYK_06wlib6i7bcfyHRWvK00UwB7wpqJo_dY7wSati-ViXrl0l25AJ471140rc-Sa4Z-Ljdbj8_ocnsfAEAAA",
+    "access": {
+      "timestamp": "2025-09-22T14:09:21.544000000Z",
+      "nonce": "0ADopcW54nmDODrOs1FDqMBY"
     },
-    "signature": "0IDRXueppRC38Nkd7i1mMpXBUvvX6aLHHVWST6gynlQEqwZ316e5JOpWbWwbk3FYxteDHErlJOYWaxa1L9AHoby8"
+    "request": {
+      "foo": "foo-y",
+      "bar": "bar-y"
+    }
+  },
+  "signature": "0IDLtryo3YWJlupBUtPSjHKGNHpzLt1uS3sX8u8-i-fqr4OSZFZlqpPNeSVoiHXnpUe2sNq9Cq9a8vgZTQLjwifp"
 }
 ```
 
@@ -690,3 +539,21 @@ seconds or less is recommended) and verifies the nonce hasn't been used recently
 storing the nonce for future checks. At this point application level checks are made to ensure the
 resource is permitted to be accessed using attributes in the token. If all the preceding checks
 pass, access is granted.
+
+Here is a response, inclusive of the challence nonce in the request.
+
+```json
+{
+  "payload": {
+    "access": {
+      "responseKeyDigest": "1AAIAqYzzZkbO8y-qWeYvn_UHyEPKLo9AsVWudjhYh17hEmA",
+      "nonce": "0ADopcW54nmDODrOs1FDqMBY"
+    },
+    "response": {
+      "wasFoo": "foo-y",
+      "wasBar": "bar-y"
+    }
+  },
+  "signature": "0ICjXUFRyT2l8KT3lYZuWHhq5m2lLt-CMantMbPnon2mDuH_8izuBAqRIIBaiXRBNCZyWJJZufV-4GfI31YiEOfe"
+}
+```
