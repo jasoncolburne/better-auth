@@ -491,7 +491,7 @@ A convenient way to package this is to prepend the signature to a gzipped, url-s
 base64 encoding of the accessToken.
 
 ```shell
-echo '{"accountId":"EBJ7ATsAVObGQ9m5IIpPiQNgAbESN_JC1WUErNsU66tA","publicKey":"1AAIA2IO919-lnyF-lYSkhw76irIQ7D_ZFwLAVzkWMIv90Nd","nextDigest":"EA-17Qz3InFohMXpu5egG2ZNK9U1bknMVWoJobXMnqhg","issuedAt":"2025-09-22T14:09:21.543000000Z","expiry":"2025-09-22T14:24:21.543000000Z","refreshExpiry":"2025-09-23T02:09:21.537000000Z","attributes":{"permissionsByRole":{"admin":["read","write"]}}}' | jq -c -M | gzip -9 | base64 | tr '+' '-' | tr '/' '_' | tr -d '='
+echo -n '{"accountId":"EBJ7ATsAVObGQ9m5IIpPiQNgAbESN_JC1WUErNsU66tA","publicKey":"1AAIA2IO919-lnyF-lYSkhw76irIQ7D_ZFwLAVzkWMIv90Nd","nextDigest":"EA-17Qz3InFohMXpu5egG2ZNK9U1bknMVWoJobXMnqhg","issuedAt":"2025-09-22T14:09:21.543000000Z","expiry":"2025-09-22T14:24:21.543000000Z","refreshExpiry":"2025-09-23T02:09:21.537000000Z","attributes":{"permissionsByRole":{"admin":["read","write"]}}}' | jq -c -M | gzip -9 | base64 | tr '+' '-' | tr '/' '_' | tr -d '='
 ```
 
 produces something like:
