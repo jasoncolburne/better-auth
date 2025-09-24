@@ -1,296 +1,376 @@
 # better-auth
 
-#### Creation container (Auth-OOB->Client)
+Examples given are encoded using CESR (Composable Event Streaming Representation) and ideas
+surrounding forward secrecy came from KERI (Key Event Receipt Infrastructure)
 
-Auth service delivers registration material out of band.
+## Protocols
+
+### Creation
+
+generate a creation container on the server and deliver to client out of band
 
 ```json
 {
   "payload": {
     "access": {
-      "responseKeyDigest": "EKMVkRIDGAeqrWaPWq74PTRcEUfjWfjo2kwLawSfAMjF",
-      "nonce": "0AAOkha7B8VlRMt2aqvLGl9B"
+      "responseKeyDigest": "ELB2mEllbn4s7uAga99YwAj7LDJg2ZCvKI4I5AbO_Ke7",
+      "nonce": "0ACFepu8-IoVESKYgCOluWnh"
     },
     "response": {
-      "registration": {
-        "token": "EBkilHXVOQ0zmYYqKN_6oRi0OmWBXnUdfG0UMDWc0UAf"
+      "creation": {
+        "token": "EAanWA8ZCrd3oxxC3-tHEvd1Lzd3_5cAeFYo7DFIwAtN"
       }
     }
   },
-  "signature": "0IC3124neVw0c0e6hSe136tiGXJmC3O9mUqWpg_VTl4SULA2RWKgTPxmLURMC7yeRZqMqxeWfhtdChQaTUeZrP_Y"
+  "signature": "0IAEGEkq0owXWua-N4D3qsEyaL0AZsMxoKdttxWCuAHcGwbTRQFwsS26I6nPkyAizNHcV-3snbPdLWWXqYAJp6QN"
 }
 ```
 
-#### `CreateAccount()` (Client->Auth->Client)
-
-Creates an account and links a device to that account
-
-request:
+request
 
 ```json
 {
   "payload": {
-    "registration": {
-      "token": "EBkilHXVOQ0zmYYqKN_6oRi0OmWBXnUdfG0UMDWc0UAf"
-    },
-    "identification": {
-      "deviceId": "EAIyck1GCdreB_25IhJVloWHs_ov9DDqclCjanugNW5-"
+    "access": {
+      "nonce": "0ABFDSiFYgq_0bgFKiyGnzEk"
     },
     "authentication": {
       "publicKeys": {
-        "current": "1AAIAjlxLtdaoTNHwSZof7eLp64xsguAHzAoXaAIIqa6rjp9",
-        "nextDigest": "EHM0ZhBfFL1QqxnsgD6tLOdB5s2g1jLD0qucP1IhHVTJ"
+        "current": "1AAIArTmLGOJL1wUiiAeQ04RbaA-j5JkMCTS2osuX9fV3bhm",
+        "nextDigest": "EB4-xkPuExSfl5Ab7a0GHRwR_yQSgsBusVrO9Wjdql2A"
       }
+    },
+    "creation": {
+      "token": "EAanWA8ZCrd3oxxC3-tHEvd1Lzd3_5cAeFYo7DFIwAtN",
+      "recoveryKeyDigest": "EFlIf6lafTjKIgxYYhAzcSD7KVIaCJ-D4NqIIjAsUEi1"
+    },
+    "identification": {
+      "deviceId": "EFwbPxaFzhbgCLOjaQucojOnPjk3flP0GuDznsQJ__8z"
     }
   },
-  "signature": "0IA_65kbtjUsjFCe7hFbGyLi4SvaXvDx5SXxqEd8jQuq6-dv3p4XildQ6u9b0ecZiUfRXZyqnjXL5RPWApPmYZ33"
+  "signature": "0IBxAkixdyWSUSmXGftDP_zaW_u1IN5NtzcsI3T2Cjas7WMENGhO4-jWL4sRjxO8LHWf3myYrH1YzdWcpGcDNhI3"
 }
 ```
 
-response:
+response
 
 ```json
 {
   "payload": {
     "access": {
-      "responseKeyDigest": "EKMVkRIDGAeqrWaPWq74PTRcEUfjWfjo2kwLawSfAMjF",
-      "nonce": "0AA3RJRs3SqWuLnL0VejsudK"
+      "responseKeyDigest": "ELB2mEllbn4s7uAga99YwAj7LDJg2ZCvKI4I5AbO_Ke7",
+      "nonce": "0ABFDSiFYgq_0bgFKiyGnzEk"
     },
     "response": {
       "identification": {
-        "accountId": "EBJ7ATsAVObGQ9m5IIpPiQNgAbESN_JC1WUErNsU66tA"
+        "accountId": "EPDNrcAWe_HRr2pxuKJ2Op7pldgUDJlMP1p5zIopOzx6"
       }
     }
   },
-  "signature": "0ICkPi_2h4KG-JzWOfUiN3MnwtwMY5Qb_AjcgXKcgOBAn9HBpwFCfpv5AqWDUBZjr9aLMyRwc6_JErV-OjX9m3W7"
+  "signature": "0IDx75_rDTLKp7N22P93Z-dK7BmdQGg3C7Al2jHINjndC-smhO5CXUyIn3ML90pEzcXyNmfMmLK7amdXv_CA8JxL"
 }
 ```
 
-## Rotation
+### Recovery
 
-### `RotateAuthenticationKey` (Client->Auth->Client)
-
-Rotation of an authentication key
-
-request:
-
-```json
-{
-  "payload": {
-    "identification": {
-      "accountId": "EBJ7ATsAVObGQ9m5IIpPiQNgAbESN_JC1WUErNsU66tA",
-      "deviceId": "EAIyck1GCdreB_25IhJVloWHs_ov9DDqclCjanugNW5-"
-    },
-    "authentication": {
-      "publicKeys": {
-        "current": "1AAIA51XIkJiZIUhqXkK_aPZckKIolykA0tnIiiBmz4DN1CZ",
-        "nextDigest": "EG3izUx0KwpbRPeAgQP2NQ_qwZVQpA8F_KoccQgSYqIN"
-      }
-    }
-  },
-  "signature": "0IBnehTenLbownl_6hRwuHc9j3yoy9mXENvyh1okdxo1aIwFFJulE9oZjMTJRUuwlsbwCdDyMPOHqQl0eWE98h2o"
-}
-```
-
-response:
+request
 
 ```json
 {
   "payload": {
     "access": {
-      "responseKeyDigest": "EKMVkRIDGAeqrWaPWq74PTRcEUfjWfjo2kwLawSfAMjF",
-      "nonce": "0AAW9n_-dR43-3rrL3seymq2"
+      "nonce": "0AB_qAmgtw_SpmdXZ-QkzCUq"
     },
-    "response": {}
+    "authentication": {
+      "publicKeys": {
+        "current": "1AAIAoywu2E0nEAdBDkfY8yl_f6lbwejxa0ER_oKUwzJ1Uz2",
+        "nextDigest": "EH14y1jznBIdOk8gvOf58eeanBWXZH6P4oYCKU17AzlU"
+      }
+    },
+    "identification": {
+      "accountId": "EPDNrcAWe_HRr2pxuKJ2Op7pldgUDJlMP1p5zIopOzx6",
+      "deviceId": "EEAZBH6rkbARwgy9T3GfZc2XhsxUC3ltbyZtFByEWlkp"
+    },
+    "recovery": {
+      "publicKey": "1AAIAt3IQWfobitJRF_3WomDuRwoH7ndGkRvkE7qFRO7yIgp"
+    }
   },
-  "signature": "0ICqOpjTmUmIAfpuleFGD-WBX_dgD3tx6JLzH56x5O5VVOiyeOHZdiKTCZFGQRSEy42RvsTc1NzY1-3jwEy3gG6x"
+  "signature": "0IBnudHkc8_3VpqOaLcpJf8__Ioywi8jazcndj5f9T5irJnVu5XAb6cM3YOAHXhLOLCYaGVdeDFvHYH1hcsqwUm2"
 }
 ```
 
-## Authentication
+response
 
-### `BeginAuthentication()` (Client->Auth->Client)
+```json
+{
+  "payload": {
+    "access": {
+      "responseKeyDigest": "ELB2mEllbn4s7uAga99YwAj7LDJg2ZCvKI4I5AbO_Ke7",
+      "nonce": "0AB_qAmgtw_SpmdXZ-QkzCUq"
+    },
+    "response": {}
+  },
+  "signature": "0IAwB0q1RRWaByyY2_0kbvxHslWLWOlQrll5L70n0vpMxXuFJLiycs1JCpKwsbghggwbJDWqCU-2oNpOouPe36_I"
+}
+```
 
-A challenge from the server.
+### Linking
 
-request:
+this is a link container, it is generated by the new device
 
 ```json
 {
   "payload": {
     "identification": {
-      "accountId": "EBJ7ATsAVObGQ9m5IIpPiQNgAbESN_JC1WUErNsU66tA"
+      "accountId": "EPDNrcAWe_HRr2pxuKJ2Op7pldgUDJlMP1p5zIopOzx6",
+      "deviceId": "EA6zEIgBjUxcCLs3cTmbtaSrYONBaxOE32tb6R7qehFx"
+    },
+    "publicKeys": {
+      "current": "1AAIArB9u6gWx3Z0P5Vbe0aaUkZQnjEQBBtDpKxIz7nP0DK0",
+      "nextDigest": "EAOyvIuMWvAeCTUA1AGJEtHugAE8FzwZCqjYC17YkTqN"
+    }
+  },
+  "signature": "0IDwsC3pvwvurRzixLyclWq-A60f8JQgNHmiS8lS32VH6bSX1hTVh56a8GUCiR8Dp8HizhAYB8AyrTiJXpQrtNDe"
+}
+
+the container is embedded in the existing device:
+
+request
+
+{
+  "payload": {
+    "access": {
+      "nonce": "0ACoZY_yInf7yc7n4xBO_UAo"
+    },
+    "identification": {
+      "accountId": "EPDNrcAWe_HRr2pxuKJ2Op7pldgUDJlMP1p5zIopOzx6",
+      "deviceId": "EFwbPxaFzhbgCLOjaQucojOnPjk3flP0GuDznsQJ__8z"
+    },
+    "link": {
+      "signature": "0IDwsC3pvwvurRzixLyclWq-A60f8JQgNHmiS8lS32VH6bSX1hTVh56a8GUCiR8Dp8HizhAYB8AyrTiJXpQrtNDe",
+      "payload": {
+        "identification": {
+          "accountId": "EPDNrcAWe_HRr2pxuKJ2Op7pldgUDJlMP1p5zIopOzx6",
+          "deviceId": "EA6zEIgBjUxcCLs3cTmbtaSrYONBaxOE32tb6R7qehFx"
+        },
+        "publicKeys": {
+          "current": "1AAIArB9u6gWx3Z0P5Vbe0aaUkZQnjEQBBtDpKxIz7nP0DK0",
+          "nextDigest": "EAOyvIuMWvAeCTUA1AGJEtHugAE8FzwZCqjYC17YkTqN"
+        }
+      }
+    }
+  },
+  "signature": "0IDom3xtL7-XjJl2K8RdEa4H5q2kXEr5ch2nFfCtpCxzJvwSgueeycQL2Xw3ZCAA6JnxZeemO3WJR9xYd7aXToKW"
+}
+```
+
+response
+
+```json
+{
+  "payload": {
+    "access": {
+      "responseKeyDigest": "ELB2mEllbn4s7uAga99YwAj7LDJg2ZCvKI4I5AbO_Ke7",
+      "nonce": "0ACoZY_yInf7yc7n4xBO_UAo"
+    },
+    "response": {}
+  },
+  "signature": "0ICthdy7VhUmYuigB4x7Fv5N_s_5bHdBrQZwFk-Glke2xOF3iSa0KKxn_PLX5HkwCOsyUF5P04RDhl5-7vt5ogYB"
+}
+```
+
+### Rotation
+
+request
+
+```json
+{
+  "payload": {
+    "access": {
+      "nonce": "0AADpywt409lm3Lqf3Or1QO2"
+    },
+    "identification": {
+      "accountId": "EPDNrcAWe_HRr2pxuKJ2Op7pldgUDJlMP1p5zIopOzx6",
+      "deviceId": "EFwbPxaFzhbgCLOjaQucojOnPjk3flP0GuDznsQJ__8z"
+    },
+    "authentication": {
+      "publicKeys": {
+        "current": "1AAIAgOrCpm9x_X09GOUtt2N0fM4cUZpWey2LIbxGt2QZ3NW",
+        "nextDigest": "EDusjB6wOeEj_F19OkRikjpdD_wBK9YtWqqWahwoKwU7"
+      }
+    }
+  },
+  "signature": "0ICbUi38fsiwjgBgNu-rD2IkrTPsMHywAD1YRnS6Co6g8gAEFIglNEvv9lgXw8_t6w91fYKFY9VUqsLamoV5dmci"
+}
+```
+
+response
+
+```json
+{
+  "payload": {
+    "access": {
+      "responseKeyDigest": "ELB2mEllbn4s7uAga99YwAj7LDJg2ZCvKI4I5AbO_Ke7",
+      "nonce": "0AADpywt409lm3Lqf3Or1QO2"
+    },
+    "response": {}
+  },
+  "signature": "0ICaUD9iD5MN8TmoMpSQ8VwmA0qlaAdnwrhOKQQ847US60UnRPq9SXGRHbSs2Dn41GVSnHyQ3vYRm9giIbH_sKEt"
+}
+```
+
+### Authentication
+
+request (request for challenge)
+
+```json
+{
+  "payload": {
+    "access": {
+      "nonce": "0AAg_1LWQAyrGB__yKEPQfyd"
+    },
+    "identification": {
+      "accountId": "EPDNrcAWe_HRr2pxuKJ2Op7pldgUDJlMP1p5zIopOzx6"
     }
   }
 }
 ```
 
-response:
+response (challenge)
 
 ```json
 {
   "payload": {
     "access": {
-      "responseKeyDigest": "EKMVkRIDGAeqrWaPWq74PTRcEUfjWfjo2kwLawSfAMjF",
-      "nonce": "0ACRqsjH4S7sdXVGbefedRKH"
+      "responseKeyDigest": "ELB2mEllbn4s7uAga99YwAj7LDJg2ZCvKI4I5AbO_Ke7",
+      "nonce": "0AAg_1LWQAyrGB__yKEPQfyd"
     },
     "response": {
       "authentication": {
-        "nonce": "0AB7XWhxRM5GguoIRCRWeFme"
+        "nonce": "0ABOWgH1hwvu0FGJI8J1Rj_j"
       }
     }
   },
-  "signature": "0IAV8eGsdLV3dWfZ6Hu6GVylxxPwx1gbceXqLraWXXQdtLsIe0CO8Mfs2OMrv-O_krybRGKZh23MWFkbrgI41Q-v"
+  "signature": "0IBA0mMcASSn9LF04CsZ312So-Ktmw22e14OFQfTl0vKDfZuLEMDrHrvslf4aIpHEuue2t5qx6P2Z7N1wGgDmIyT"
 }
 ```
 
-### `CompleteAuthentication()` (Client->Auth->Client)
-
-A signed response to the server's challenge.
-
-request:
+request (response to challenge)
 
 ```json
 {
   "payload": {
-    "identification": {
-      "deviceId": "EAIyck1GCdreB_25IhJVloWHs_ov9DDqclCjanugNW5-"
+    "access": {
+      "nonce": "0AClPn-p9h41yjs5KS9Wbrcx",
+      "publicKeys": {
+        "current": "1AAIAwgalkNxZ43X59j-6h6RtcN9JJsUSp2GYQgKf5-BREOJ",
+        "nextDigest": "ELdvr-Vdu5oLLaPRyJ3jv61icpK6ffllSBd_qY2pTrRm"
+      }
     },
     "authentication": {
-      "nonce": "0AB7XWhxRM5GguoIRCRWeFme"
+      "nonce": "0ABOWgH1hwvu0FGJI8J1Rj_j"
     },
-    "access": {
-      "publicKeys": {
-        "current": "1AAIA-K8gdmEHhsx1bl0vVfp_eDPG06ax_-nkjokfnAowJNk",
-        "nextDigest": "EDSnwtLkPpNFugLD4w7aTPCjqxThr28o3-XOm847yZl7"
-      }
+    "identification": {
+      "deviceId": "EFwbPxaFzhbgCLOjaQucojOnPjk3flP0GuDznsQJ__8z"
     }
   },
-  "signature": "0IBVL0g3HTOp4Jj1lY-WAjFNpqa9eenzRrzPAXtIzqwKpcaNT4E3ViMXyYmkk6LTEdaYtT1i3ouv_qMzJxTH9Dmx"
+  "signature": "0IAKuhVuy5M6hHNoj4o7VLdqZOSduJzgVixsFgbHJ-vi0Ic0NxwW_VH9eogkZrKDI8uPfz5Im9Go8ZXUreuXuM7g"
 }
-```
 
-response:
+response (grant)
 
-```json
 {
   "payload": {
     "access": {
-      "responseKeyDigest": "EKMVkRIDGAeqrWaPWq74PTRcEUfjWfjo2kwLawSfAMjF",
-      "nonce": "0ABsoh19OkxRGNg-XUTcrGvn"
+      "responseKeyDigest": "ELB2mEllbn4s7uAga99YwAj7LDJg2ZCvKI4I5AbO_Ke7",
+      "nonce": "0AClPn-p9h41yjs5KS9Wbrcx"
     },
     "response": {
       "access": {
-        "token": "0ID-GmoX9a5O33LnDrZf2RzT53vf4UlRHmqzqII0fWdKcp1rePGiyslGCI0cBINLEF8yOIWE8RmN_1qWvC2381WCH4sIAAAAAAACA23O0W6CMBQG4Hfp9VhKQVHuqjCHGsSJbnFZCEjFChTWlgExvPvqbt25PPm__5wbiE-nqmHSS4EN3NnSwqHAh02y2E7LkefVAd36GU7cnR8t5_r73uW-2I_HEoMnUDdJQU8r0iuqY-xhbTXJ0tJ9vYhOTwr4czjXEXGCBRzHXaSx_FrlZ4ardunnijPSSYdmRMj7aWfHWrnOg9p_abK1Y7ZWHAbz63cXXjiaVIb2sSknptUfC0tZKkRDUnyXCKKRBqcaQqFu2nBqI_15ZFjwb44qS7qa8v4hicyHJCdnTsTFfQBGCNF_1bGUnCaNJALYN1ATXqrHaMXErH-rCnJfxmlJGbA_VXmcKtJyKgn4GobhF9_IpQp8AQAA"
+        "token": "0ID4fxJEiPALq1xIaV1uWofloqY9prNgUSImTTd6tjwQ7CJrym9zZqkhR3uX1FlL_uHGdEycRlQB_dW-q4qppgfQH4sIAAAAAAACA23OXW-CMBQG4P_S67FAgRq4w2g2wYHDj02XxSAtWFega4uCxv--uls9lyfv855zAVmeN22tJhj4YDwbxSIPPsj2NRWQd20UwoQPOMPlchSyt5nF3fOk4cm5Q-AJ8HbHaB6RXlMrCCbBqczYT9xtHPvT9Q4G2qNU5bEXhnI55_Bl_V5GhWsM03ESal6TTo1oSaS6nZ7iozBWuHWb6TSbpX1oH47IojmPUFEwNh_i7e8a8oVIK22plC3BwU1CE7qG6RnQWZiWD5HvDJ5d5Jj_s9FZ0nEq-rukY90lBSkEkfvxA2DZj6ozpQTdtYpI4F8AJ6LSj9GmlsM-bRi5LTNc0Rr4X7o8w5qcBFUEfF-v1z8CFFnGfAEAAA"
       }
     }
   },
-  "signature": "0IBnttfERYPXHENGEl0Itvr89rbZ-15UPoiV7h1KWgEv4_28Y0Fe3rG6MCYYkwzrxUiTKxTj9aGjcVgnywr7pveB"
+  "signature": "0IDE0_gyOP8oelwBRYq3Ju516h1MUk3giUSC1qe2KpQt3eygl5e05Xc9S2yk3pFIb_Ow91hlA98kMzjSlTu8fvfB"
 }
 ```
 
-## Refresh
+### Refresh
 
-### `RefreshAccessToken()` (Client->Auth->Client)
+this rotates the access key
 
-This performs a forward secret rotation of the access key
-
-request:
+request
 
 ```json
 {
   "payload": {
     "access": {
-      "token": "0ID-GmoX9a5O33LnDrZf2RzT53vf4UlRHmqzqII0fWdKcp1rePGiyslGCI0cBINLEF8yOIWE8RmN_1qWvC2381WCH4sIAAAAAAACA23O0W6CMBQG4Hfp9VhKQVHuqjCHGsSJbnFZCEjFChTWlgExvPvqbt25PPm__5wbiE-nqmHSS4EN3NnSwqHAh02y2E7LkefVAd36GU7cnR8t5_r73uW-2I_HEoMnUDdJQU8r0iuqY-xhbTXJ0tJ9vYhOTwr4czjXEXGCBRzHXaSx_FrlZ4ardunnijPSSYdmRMj7aWfHWrnOg9p_abK1Y7ZWHAbz63cXXjiaVIb2sSknptUfC0tZKkRDUnyXCKKRBqcaQqFu2nBqI_15ZFjwb44qS7qa8v4hicyHJCdnTsTFfQBGCNF_1bGUnCaNJALYN1ATXqrHaMXErH-rCnJfxmlJGbA_VXmcKtJyKgn4GobhF9_IpQp8AQAA",
+      "nonce": "0ABoSrSA9849rvUndbZlQZN6",
       "publicKeys": {
-        "current": "1AAIA2IO919-lnyF-lYSkhw76irIQ7D_ZFwLAVzkWMIv90Nd",
-        "nextDigest": "EA-17Qz3InFohMXpu5egG2ZNK9U1bknMVWoJobXMnqhg"
-      }
+        "current": "1AAIAn5FoxgMv6ehzqTH6PqsPNNzizuF39s8CPtJpKwQep7-",
+        "nextDigest": "EF5b9I4cPJ9s-1oP54xYfb4fCIeJkR1TeMV2y-Q4LQdu"
+      },
+      "token": "0ID4fxJEiPALq1xIaV1uWofloqY9prNgUSImTTd6tjwQ7CJrym9zZqkhR3uX1FlL_uHGdEycRlQB_dW-q4qppgfQH4sIAAAAAAACA23OXW-CMBQG4P_S67FAgRq4w2g2wYHDj02XxSAtWFega4uCxv--uls9lyfv855zAVmeN22tJhj4YDwbxSIPPsj2NRWQd20UwoQPOMPlchSyt5nF3fOk4cm5Q-AJ8HbHaB6RXlMrCCbBqczYT9xtHPvT9Q4G2qNU5bEXhnI55_Bl_V5GhWsM03ESal6TTo1oSaS6nZ7iozBWuHWb6TSbpX1oH47IojmPUFEwNh_i7e8a8oVIK22plC3BwU1CE7qG6RnQWZiWD5HvDJ5d5Jj_s9FZ0nEq-rukY90lBSkEkfvxA2DZj6ozpQTdtYpI4F8AJ6LSj9GmlsM-bRi5LTNc0Rr4X7o8w5qcBFUEfF-v1z8CFFnGfAEAAA"
     }
   },
-  "signature": "0ICG5B3-EZjBmzs5NeP8_YMgT6pIDe4Fm-wnPVQq4VJ8KHn-C4suhwyoY-YIAE728ld5ZUC-cAXOwX4GeG7pADwb"
+  "signature": "0ICmJA9wwYP-Nds1e6KVL71tLj1fuTfe4bCeLO2zoXOfALLU4EQW7p-YtS8SBLa_b6eUPVr6ECJzn9QqH2bRJe7Y"
 }
 ```
 
-response:
+response (new token)
 
 ```json
 {
   "payload": {
     "access": {
-      "responseKeyDigest": "EKMVkRIDGAeqrWaPWq74PTRcEUfjWfjo2kwLawSfAMjF",
-      "nonce": "0AC3igP_bzlacowas1QcrDm2"
+      "responseKeyDigest": "ELB2mEllbn4s7uAga99YwAj7LDJg2ZCvKI4I5AbO_Ke7",
+      "nonce": "0ABoSrSA9849rvUndbZlQZN6"
     },
     "response": {
       "access": {
-        "token": "0IBFd_Wo_Td26csEWisAP1pZxEKLRZOaQVGr_VXJG4cpAH-KBMqyiVBb7MLexte9IROQPfi0d2JCWpsKRWjvH39PH4sIAAAAAAACA2WPXW-CMBSG_0uvx0ILSMpdnWiqA8f8HMtiQDpoxMLaMkXjfx8sWXbhuTx5nvec9wqS_b5qhKYZ8IA_nLpkqch6nk4ifHQorV94FOYk9RfhbvoENytfhmo1GGgCHkDdpCXfz1jbqZAQShCdY4iNUrRjo3xbHIqTO-CSRu5oF49Pz2R9OWwC-o3NMOt0wc56xHOmdH-aGNCNLhYV46oItnXjsHyC4nCGVzA9iGC9qaZVug3EV5F3LleqYRnpTWQixzCxgdAS2p6JPQQfHdsyfyfuWHauuWzvSGTfkZJ9SqYK_06wlib6i7bcfyHRWvK00UwB7wpqJo_dY7wSati-ViXrl0l25AJ471140rc-Sa4Z-Ljdbj8_ocnsfAEAAA"
+        "token": "0IAJOs71kH2IAWzZsa1JUADRTtGlv5lZ6hCpLTD4AnhQssYCyS4aHaBdv3ojuGxB25HY_dtTNbW5v3PFGsy5FDIbH4sIAAAAAAACA23O207CQBAG4HfZa2u6y7bY3lUOoUVgIahRY0wPA2ws7bIHaUt4dxcv9ALncvJ__8wJpXlem0rHBQrRiA3nMo-e4WOykkQ0ZpqQheiLstg-DpNyxrDwurgWi67x0Q0SJit5PoXWUhxFcVR547rZzr582HWH9cRnB8Xm8453ZtwL1N2A6URMj0sQfcfyCho95FtQ-nJ67GVBTHOWBMrBNfNo87LJ6GYQQ_K5wmuYPZHWWdKHZWGs5UoZKKKLJC7xHDdwCF27OCR-SPu3nh-4P_Nqs9AILturJMVXSQkbCWo3-gfg3m81_QOp1pJnRoNC4QkJkHv7GK8rdd-u6hIuy7TY8wqFb7Y8LSw5Sq4BvZ_P5294eKQtfAEAAA"
       }
     }
   },
-  "signature": "0IC_UDHYYEf31exfUl945ZgDjmCBsAdDX-ChMU6WBL9wyEHGDq2V88bS7B5XU4Y2sN7TTWHUB6_NzVNuos_y25o2"
+  "signature": "0ICGaOht4XmI6vHZJ7vN9AhbQHhkV138LDAdAbgt6A32fdxrkbSplgfkl5MvCBQb0tMCfgFW_3si5QhgU9YoSRvg"
 }
 ```
 
-#### Token Encoding
+### Access
 
-A convenient way to package this is to prepend the signature to a gzipped, url-safe and unpadded
-base64 encoding of the accessToken.
-
-```shell
-echo -n '{"accountId":"EBJ7ATsAVObGQ9m5IIpPiQNgAbESN_JC1WUErNsU66tA","publicKey":"1AAIA2IO919-lnyF-lYSkhw76irIQ7D_ZFwLAVzkWMIv90Nd","nextDigest":"EA-17Qz3InFohMXpu5egG2ZNK9U1bknMVWoJobXMnqhg","issuedAt":"2025-09-22T14:09:21.543000000Z","expiry":"2025-09-22T14:24:21.543000000Z","refreshExpiry":"2025-09-23T02:09:21.537000000Z","attributes":{"permissionsByRole":{"admin":["read","write"]}}}' | jq -c -M | gzip -9 | base64 | tr '+' '-' | tr '/' '_' | tr -d '='
-```
-
-produces something like:
-
-```
-H4sIAAAAAAACA2WPXW-CMBSG_0uvx0ILSMpdnWiqA8f8HMtiQDpoxMLaMkXjfx8sWXbhuTx5nvec9wqS_b5qhKYZ8IA_nLpkqch6nk4ifHQorV94FOYk9RfhbvoENytfhmo1GGgCHkDdpCXfz1jbqZAQShCdY4iNUrRjo3xbHIqTO-CSRu5oF49Pz2R9OWwC-o3NMOt0wc56xHOmdH-aGNCNLhYV46oItnXjsHyC4nCGVzA9iGC9qaZVug3EV5F3LleqYRnpTWQixzCxgdAS2p6JPQQfHdsyfyfuWHauuWzvSGTfkZJ9SqYK_06wlib6i7bcfyHRWvK00UwB7wpqJo_dY7wSati-ViXrl0l25AJ471140rc-Sa4Z-Ljdbj8_ocnsfAEAAA
-```
-
-Prepending the signature, we get:
-
-```
-0IBFd_Wo_Td26csEWisAP1pZxEKLRZOaQVGr_VXJG4cpAH-KBMqyiVBb7MLexte9IROQPfi0d2JCWpsKRWjvH39PH4sIAAAAAAACA2WPXW-CMBSG_0uvx0ILSMpdnWiqA8f8HMtiQDpoxMLaMkXjfx8sWXbhuTx5nvec9wqS_b5qhKYZ8IA_nLpkqch6nk4ifHQorV94FOYk9RfhbvoENytfhmo1GGgCHkDdpCXfz1jbqZAQShCdY4iNUrRjo3xbHIqTO-CSRu5oF49Pz2R9OWwC-o3NMOt0wc56xHOmdH-aGNCNLhYV46oItnXjsHyC4nCGVzA9iGC9qaZVug3EV5F3LleqYRnpTWQixzCxgdAS2p6JPQQfHdsyfyfuWHauuWzvSGTfkZJ9SqYK_06wlib6i7bcfyHRWvK00UwB7wpqJo_dY7wSati-ViXrl0l25AJ471140rc-Sa4Z-Ljdbj8_ocnsfAEAAA
-```
-
-## Access
-
-(Client->Resource)
-
-when accessing a resource, a valid access token is presented as below
-
-request:
+request
 
 ```json
 {
   "payload": {
-    "token": "0IBFd_Wo_Td26csEWisAP1pZxEKLRZOaQVGr_VXJG4cpAH-KBMqyiVBb7MLexte9IROQPfi0d2JCWpsKRWjvH39PH4sIAAAAAAACA2WPXW-CMBSG_0uvx0ILSMpdnWiqA8f8HMtiQDpoxMLaMkXjfx8sWXbhuTx5nvec9wqS_b5qhKYZ8IA_nLpkqch6nk4ifHQorV94FOYk9RfhbvoENytfhmo1GGgCHkDdpCXfz1jbqZAQShCdY4iNUrRjo3xbHIqTO-CSRu5oF49Pz2R9OWwC-o3NMOt0wc56xHOmdH-aGNCNLhYV46oItnXjsHyC4nCGVzA9iGC9qaZVug3EV5F3LleqYRnpTWQixzCxgdAS2p6JPQQfHdsyfyfuWHauuWzvSGTfkZJ9SqYK_06wlib6i7bcfyHRWvK00UwB7wpqJo_dY7wSati-ViXrl0l25AJ471140rc-Sa4Z-Ljdbj8_ocnsfAEAAA",
+    "token": "0IAJOs71kH2IAWzZsa1JUADRTtGlv5lZ6hCpLTD4AnhQssYCyS4aHaBdv3ojuGxB25HY_dtTNbW5v3PFGsy5FDIbH4sIAAAAAAACA23O207CQBAG4HfZa2u6y7bY3lUOoUVgIahRY0wPA2ws7bIHaUt4dxcv9ALncvJ__8wJpXlem0rHBQrRiA3nMo-e4WOykkQ0ZpqQheiLstg-DpNyxrDwurgWi67x0Q0SJit5PoXWUhxFcVR547rZzr582HWH9cRnB8Xm8453ZtwL1N2A6URMj0sQfcfyCho95FtQ-nJ67GVBTHOWBMrBNfNo87LJ6GYQQ_K5wmuYPZHWWdKHZWGs5UoZKKKLJC7xHDdwCF27OCR-SPu3nh-4P_Nqs9AILturJMVXSQkbCWo3-gfg3m81_QOp1pJnRoNC4QkJkHv7GK8rdd-u6hIuy7TY8wqFb7Y8LSw5Sq4BvZ_P5294eKQtfAEAAA",
     "access": {
-      "timestamp": "2025-09-22T14:09:21.544000000Z",
-      "nonce": "0ADopcW54nmDODrOs1FDqMBY"
+      "timestamp": "2025-09-24T01:26:47.570000000Z",
+      "nonce": "0ADobgjsxFItSI18kccfpcoX"
     },
     "request": {
-      "foo": "foo-y",
-      "bar": "bar-y"
+      "foo": "bar",
+      "bar": "foo"
     }
   },
-  "signature": "0IDLtryo3YWJlupBUtPSjHKGNHpzLt1uS3sX8u8-i-fqr4OSZFZlqpPNeSVoiHXnpUe2sNq9Cq9a8vgZTQLjwifp"
+  "signature": "0IAVbRXovMnC1KQnT6ML_zbhs67RupiwrEKPTqFsiyjpAzyKHvd-JRq6gItf_4Z3Z8JdsCmXYYyfUQMYrbh3FnC5"
 }
 ```
 
-response:
+response
 
 ```json
 {
   "payload": {
     "access": {
-      "responseKeyDigest": "1AAIAqYzzZkbO8y-qWeYvn_UHyEPKLo9AsVWudjhYh17hEmA",
-      "nonce": "0ADopcW54nmDODrOs1FDqMBY"
+      "responseKeyDigest": "1AAIA9UFbK7u22xJB61JKE2SXdqEbAGkONb9mGCmf3DXEzCh",
+      "nonce": "0ADobgjsxFItSI18kccfpcoX"
     },
     "response": {
-      "wasFoo": "foo-y",
-      "wasBar": "bar-y"
+      "wasFoo": "bar",
+      "wasBar": "foo"
     }
   },
-  "signature": "0ICjXUFRyT2l8KT3lYZuWHhq5m2lLt-CMantMbPnon2mDuH_8izuBAqRIIBaiXRBNCZyWJJZufV-4GfI31YiEOfe"
+  "signature": "0ICsgjF3WVVRx-BQh5iQbgLSKhSgJXaATklTTiIgvpRtrQSUTU_Ki1iWTsO9-S7KV2ib7-KRROnkxet80b3TRSCo"
 }
 ```
