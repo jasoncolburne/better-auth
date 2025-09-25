@@ -358,7 +358,7 @@ response
 
 ### AccessToken encoding
 
-If we re-pad a token with `=`, we can decode it in a shell:
+If we re-pad a token with `=`, we can decode it in a shell (the first 88 bytes is the signature):
 
 ```sh
 TOKEN="0IBtdsv8LEQ0oKAA52h8jEwHOUctJ8JFq7ZoQ3MPyXynhUmcJUEKzI5h38W7kGSWJlGmJypNDsNCxMXMoHmzOnF4H4sIAAAAAAACA23PW0-DMBQH8O_SZzGFdeXyBgq7D-euzJiFwdmo24C0ZYLLvrudiTFRz-PJ_3cuF8RSyCWTDXKQP-6yfrXaF4-jid0tN4soPPbSxA9zMg2tk7AWH0FTJ6zcmRW6Q2W1PbJkADequ27PzfHaM_uDJNA1Og1bNBb8AKNhr6XPaeHWyyALR33rAJrNFOeFjCUr8m4sstvyYdTJCDHms6dJMgvom1wc9uOVT7W5X0fLjldvJg-eGXlnSJRmQlSQulJJAxttDdua0Z5h4hDLIfQeWwR_1VploS4Zb34l2w5u_Uly2HEQmf8P0On3aNP-AbGUnG0rCQI5F1QCP6nD1FPCa56LI9yacXpiOXJe1PA4VeSdMwno9Xq9fgKhoI45fQEAAA=="
