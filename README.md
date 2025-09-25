@@ -11,7 +11,8 @@ which is a great place to learn more about how this works.
 ### Creation
 
 generate an identity (identifier) on the client, this could be backed by something like KERI
-but that isn't necessary.
+but that isn't necessary. it's important to verify the format of your identifier before
+registering it in your backend, since the client has control of creation.
 
 request
 
