@@ -14,18 +14,14 @@ which is a great place to learn more about how this works.
 
 ### Creation
 
-To start, we need a recovery public key as an input. Then, we generate two more keypairs. One to
-reveal immediately and use for authentication, and the other to reveal in the future when rotating.
-We create hashes of the recovery and future keys, and then we derive two identifiers by hashing
-these results:
+To start, we need a recovery public key as an input. Then, we use a client interface to generate
+two more keypairs and an identity. One key pair to reveal immediately and use for authentication,
+and the other to reveal in the future when rotating. The identity derivation is up to the
+implementer, but could conceivably go as far as a DKMS like KERI. The verification of this identity
+is performed in another server side interface, before returning a response.
 
-```typescript
-recoveryHash = sum(recoveryKey)
-rotationHash = sum(rotationKey)
-
-identity = sum(publicKey + rotationHash + recoveryHash)
-device = sum(publicKey)
-```
+`device` is simply a digest of the `publicKey`, and the protocol handles this transformation and
+verification.
 
 `request`
 
@@ -50,7 +46,7 @@ device = sum(publicKey)
 ```
 
 The server interfaces should check for uniqueness of `identity` and ensure it does not exist, which
-is important because the client controls creation. Using the previous methods, `device` and
+is important because the client controls creation. Using the established methods, `device` and
 `identity` should be verified. The `recoveryHash` should next be registered in storage with a
 lookup key of `identity`. Finally the `publicKey` and `rotationHash` should be stored against a key
 that looks like `(identity, device)`. This ordering ensures an account is never available for
