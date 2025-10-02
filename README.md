@@ -88,7 +88,7 @@ authentication until a `recoveryHash` has been established.
 We registered a `recoveryHash` on account creation. Here, we pass the `recoveryKey` to the server
 and sign with it, sending details to establish a new device against an existing identity in the
 backend. It also revokes access to all existing devices. We establish a new recovery key when we use
-the first.
+the existing one.
 
 `request`
 
