@@ -87,7 +87,8 @@ authentication until a `recoveryHash` has been established.
 
 We registered a `recoveryHash` on account creation. Here, we pass the `recoveryKey` to the server
 and sign with it, sending details to establish a new device against an existing identity in the
-backend. It also revokes access to all existing devices.
+backend. It also revokes access to all existing devices. We establish a new recovery key when we use
+the first.
 
 `request`
 
@@ -95,19 +96,20 @@ backend. It also revokes access to all existing devices.
 {
   "payload": {
     "access": {
-      "nonce": "0ABFEh80uf_23rODfhws6qz5"
+      "nonce": "0ADjrHcwerMcdbYPJJP62WXL"
     },
     "request": {
       "authentication": {
-        "device": "EJIjNWIWPfFyYsLb_1MRYJPdunzxfMAG0nILCt36zsuC",
-        "identity": "EKkkW3sMlGK7G019Jccyi0643DdzMpCVGpRlpgD-yudm",
-        "publicKey": "1AAIAiJXOoHWiCOR_-GlRvD5OfqcjAx4XMauqHOv-qT_hM8U",
-        "recoveryKey": "1AAIArX5i0oLT9Hhf3_lq3fjKBdI7vIiEfgDQq-JxmzmgZBG",
-        "rotationHash": "EEVoPHGQEeAuNIm2b_BHE6WJjVQlcAX3wd2oTvOsBfnL"
+        "device": "EJtf5PUAn_wKhDamJ9OEDxTqe_pLmSIddHganf6QTDAw",
+        "identity": "EPsriX39yi4lN6C546gGwiJlVeCywCMoe-HCph_4GJ6b",
+        "publicKey": "1AAIAqHSAc8Tb_8SyixUWI1cEwW4xH4ndb9m_qNHVX4Cj_7w",
+        "recoveryHash": "EHRTVnQ0yygrCD-3IQSJAnDgRQToop_VM2ek6fOyCiho",
+        "recoveryKey": "1AAIA8fJAMQdUqHHpaQ3xWdLIoe1e7fOtgfGS4jvW-w5KES4",
+        "rotationHash": "EGOC9ZxnBIoOHHM453ZHIyyxaCJForR2ZN44bl8AQUYD"
       }
     }
   },
-  "signature": "0ICgM9Yzl6iR41_4sOhZQ09sNmUpotBJamm1ExntlJ4Wa3EpEajhIejUBWQqlajswSLS9LrWWMLUKv2fMZFBB1YT"
+  "signature": "0ICVrvXMfnyNS95OxntsFz7Kh9ZP1kmMVVyZL-e-LPrFdvOM7Hg7_BENRbEXJSWg4Mwi75HLExqCLt2vRmM-_-US"
 }
 ```
 
@@ -122,12 +124,12 @@ well, the backend registers `publicKey` and `rotationHash` against a key that lo
 {
   "payload": {
     "access": {
-      "nonce": "0ABFEh80uf_23rODfhws6qz5",
-      "responseKeyHash": "EETTskmmiH8eKZ7atQ46-4FS3c4nBqyqul4AHxLChEps"
+      "nonce": "0ADjrHcwerMcdbYPJJP62WXL",
+      "responseKeyHash": "EIETXX_jRHwSq2XLYMOIZsiBXW5OCzRW0BVs22wATOIg"
     },
     "response": {}
   },
-  "signature": "0ICtw8vzJTF8Ol4SV-n4VZSJHGzb8h4AAkmrqriHGfu-TVW8eEoyYWyYnqmOsoH8x9C6pG6dgQhHghnQpjKWlLW8"
+  "signature": "0IAlLzIi2WVsKlg4tm1wwasc4ja6D-0lbJ0XHjxr3Y2AmHHmkFNYVRx9iLpw_scwwA4fN70LqZkEGmImSKEkZ7Qj"
 }
 ```
 
