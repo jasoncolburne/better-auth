@@ -142,13 +142,13 @@ device to an existing identity.
 {
   "payload": {
     "authentication": {
-      "device": "EHBBIJ01EzuCb8Fq5nXhAjo-Mkp1dJiPuic1OXnx4u70",
-      "identity": "EMJ_h26qC9xIm1FZixOKWw_bWj8KE1FQtqnt5jFuTb8D",
-      "publicKey": "1AAIAz4wDcKvmtZuM6NyqUqEUJwG9P_k-oQNQzbP9u6ewwSi",
-      "rotationHash": "EAsfoRby_S5tExjh3pfl9WYr2AdgqOUs0YLybabK0R5U"
+      "device": "EJVONI0W_hanelZcHPVAaHUDK7QudJ1tJ5fUB2u3OXHs",
+      "identity": "EJ2TUUoI9iR0LAET2Q7PU2Xsx7eGLhyOzBbkJuohbc5F",
+      "publicKey": "1AAIA3O40fpa9I1EcZtgMnBzBF1rRxIHm-8yvJorUJcw5xvu",
+      "rotationHash": "EGXYU1ktvnULIFWrZjxxtFd3WOg49Fhob-Hz29nYaGR3"
     }
   },
-  "signature": "0IAu-AOVhjxGEozZSoCItmzAnPYRiGEGM85lsMLZ0CUtzvcMW0LJ2TvSp_bkCpkBRJIj_dOIU_ElngqM2BG5tIT0"
+  "signature": "0ICxc-i-i5-eS8imWLM8TiFnZFoDrtlCOvo8yICorYOKHJSjjt7sO8-knNXTcvaD_6qsyF9VNUjmBmHP_j8jxxqr"
 }
 ```
 
@@ -161,29 +161,29 @@ performed by the existing device.
 {
   "payload": {
     "access": {
-      "nonce": "0AB1jFOtD-G-GqulVkvif82T"
+      "nonce": "0AAIxCZAMFWEwxXt6po73uqq"
     },
     "request": {
       "authentication": {
-        "device": "EC8F59H0hihbdRL__ZFerLFhCzpki3HG6jPDGFjRk7cQ",
-        "identity": "EMJ_h26qC9xIm1FZixOKWw_bWj8KE1FQtqnt5jFuTb8D",
-        "publicKey": "1AAIAlIzS3kDK-Vk5Xuo58cmy5VnLQPJyvlp1nO1x0Gf2pNw",
-        "rotationHash": "EHFKKIsVJAeDtDyRYV0HzjbtZ-wgt91T1GdWn3kxnVdJ"
+        "device": "EC8qbX_6aWdOAEmlSu3NjWFM4qOTGmQl6BAz58ciu9_L",
+        "identity": "EJ2TUUoI9iR0LAET2Q7PU2Xsx7eGLhyOzBbkJuohbc5F",
+        "publicKey": "1AAIA-C3Kj0sOdEV6b23D-l77hGl_eSnhw_sHIG3CkN2f-we",
+        "rotationHash": "EPspdz0-QuUN8KMZ7OWFB_iblX66J8WCls49E3i4yT8-"
       },
       "link": {
         "payload": {
           "authentication": {
-            "device": "EHBBIJ01EzuCb8Fq5nXhAjo-Mkp1dJiPuic1OXnx4u70",
-            "identity": "EMJ_h26qC9xIm1FZixOKWw_bWj8KE1FQtqnt5jFuTb8D",
-            "publicKey": "1AAIAz4wDcKvmtZuM6NyqUqEUJwG9P_k-oQNQzbP9u6ewwSi",
-            "rotationHash": "EAsfoRby_S5tExjh3pfl9WYr2AdgqOUs0YLybabK0R5U"
+            "device": "EJVONI0W_hanelZcHPVAaHUDK7QudJ1tJ5fUB2u3OXHs",
+            "identity": "EJ2TUUoI9iR0LAET2Q7PU2Xsx7eGLhyOzBbkJuohbc5F",
+            "publicKey": "1AAIA3O40fpa9I1EcZtgMnBzBF1rRxIHm-8yvJorUJcw5xvu",
+            "rotationHash": "EGXYU1ktvnULIFWrZjxxtFd3WOg49Fhob-Hz29nYaGR3"
           }
         },
-        "signature": "0IAu-AOVhjxGEozZSoCItmzAnPYRiGEGM85lsMLZ0CUtzvcMW0LJ2TvSp_bkCpkBRJIj_dOIU_ElngqM2BG5tIT0"
+        "signature": "0ICxc-i-i5-eS8imWLM8TiFnZFoDrtlCOvo8yICorYOKHJSjjt7sO8-knNXTcvaD_6qsyF9VNUjmBmHP_j8jxxqr"
       }
     }
   },
-  "signature": "0ICgjdfAno52jJ78gnpN4SlQFI0yb39ZJEPzK5bppsrT-vsA-kggfG4G52VXKnfOfd3IMiUCv2mohgn5By6SfSSq"
+  "signature": "0ICZNnQmvrQw_WtwN4IUph9Nh8fnoQODW_5S36avMaBeg2_W9zu-8HKKEoAl1eQuDsqPsPLowfJ9csrXNbwcPS4Z"
 }
 ```
 
@@ -197,34 +197,38 @@ registered in storage.
 {
   "payload": {
     "access": {
-      "nonce": "0AB1jFOtD-G-GqulVkvif82T",
-      "responseKeyHash": "EDdIqq1nxR06zxHzRPxvXs9aUHI6uNrakQg5YTQC0GK8"
+      "nonce": "0AAIxCZAMFWEwxXt6po73uqq",
+      "responseKeyHash": "EBRjwZl9eIxcafuxSzAMDvKkoFp5JX5VYAfc4PuR32Ph"
     },
     "response": {}
   },
-  "signature": "0IAlHa3yyFmqQZxxIIT0g8vlBCz6HNekVeVHH8-KRb9astdlT3-si9Ee9Od4tzzmcqV0MN-2voYB7spodVwalyXN"
+  "signature": "0IDWE8V-go8N3AgqRL7FnAkQ0qQ4ME4KRVRGkgEmes_XKj9oCDP-91eLxWudS4DvXtyQpZl29J5N-uZFXnPvUy-4"
 }
 ```
 
 ### Unlinking
 
-Unlinking involves rotating a device key to null and then revoking that device.
+Unlinking involves a rotation followed by revoking access to the linked device.
 
 ```json
 {
   "payload": {
     "access": {
-      "nonce": "0ABxR1s23dsOUL4Uqu46G5TS"
+      "nonce": "0AB-xE0UITbeD9Sjg5SKDwjm"
     },
     "request": {
       "authentication": {
-        "device": "EC8F59H0hihbdRL__ZFerLFhCzpki3HG6jPDGFjRk7cQ",
-        "identity": "EMJ_h26qC9xIm1FZixOKWw_bWj8KE1FQtqnt5jFuTb8D",
-        "publicKey": "1AAIApXWWlxgK6D4bEliI1s-y6ST3ciF4zLjFGcDL8TfXc0M"
+        "device": "EJVONI0W_hanelZcHPVAaHUDK7QudJ1tJ5fUB2u3OXHs",
+        "identity": "EJ2TUUoI9iR0LAET2Q7PU2Xsx7eGLhyOzBbkJuohbc5F",
+        "publicKey": "1AAIAhjUBJOlpKAB8pWVjzQwc9SL01mmPBe9yjQC654uoobK",
+        "rotationHash": "EF107ZAMgWCHr4yLA3LRJF2hGxRVdo2HCYCtVf44EeGX"
+      },
+      "link": {
+        "device": "EC8qbX_6aWdOAEmlSu3NjWFM4qOTGmQl6BAz58ciu9_L"
       }
     }
   },
-  "signature": "0IB3vpZZva1o0L45olWEXCadjgxVa6IJLHfRQfbK7LQ4HM9MMHz1kuAAMSn8RKZIgrLW2Mtlxy1sE6DPAdPlP02b"
+  "signature": "0IDa5PWGtspEStA82Q_Q1hx1IEl8sdK1z_btjafugY4LDFC4rbuS35X-5PHgzIyJgrfZ8PbauNj2m8uI0VIrUw0y"
 }
 ```
 
@@ -232,12 +236,12 @@ Unlinking involves rotating a device key to null and then revoking that device.
 {
   "payload": {
     "access": {
-      "nonce": "0ABxR1s23dsOUL4Uqu46G5TS",
-      "responseKeyHash": "EDdIqq1nxR06zxHzRPxvXs9aUHI6uNrakQg5YTQC0GK8"
+      "nonce": "0AB-xE0UITbeD9Sjg5SKDwjm",
+      "responseKeyHash": "EBRjwZl9eIxcafuxSzAMDvKkoFp5JX5VYAfc4PuR32Ph"
     },
     "response": {}
   },
-  "signature": "0IAgLugfKmlNuvKMEIxl6YffHth4Fnx_U-y_fuv0OBxw8BnqxZi_2UM-jKJvxcRra1ZfPmflvslo-8ATYR5iSyN8"
+  "signature": "0IByNlTTv0Z2jEnyJsWzaLXPsLkJGjVlAFM96xeEESx2kC65HHzKsVDKdnZXb-VMb90IqPiHQdm3-XBjvyGsI3pe"
 }
 ```
 
