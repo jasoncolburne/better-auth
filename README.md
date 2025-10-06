@@ -52,19 +52,19 @@ and verification.
 {
   "payload": {
     "access": {
-      "nonce": "0AAX1217iPESswcOzc49ChCk"
+      "nonce": "0ADyoID0JGTkmPAr8bdJX0wO"
     },
     "request": {
       "authentication": {
-        "device": "EGl2IqkCnIAEotkH_NA-UsvUga5uDitIiDLx6y_GALhf",
-        "identity": "EKuTJxCHK8tjaOfC1aYrl0_m4VO2Yt0-k0SG3v4F0SDE",
-        "publicKey": "1AAIAoJRFSWyKMvc-lJGY24NTR255P8NcBaT29HDNKWDAmMA",
-        "recoveryHash": "EAM6B4QdeQvvO_hEn7iM6TRVTQ4DlgK23c4rsCS1ggo-",
-        "rotationHash": "ECx50wctdUhW6_4Sawswkk86BLTgtf-kW_eMW2Z4dot-"
+        "device": "EI5sUuSEtIA-lvdCpap385Yf3VVwG6w_yy6VmHnUdz8I",
+        "identity": "EKDKuNIZkiEyN36JmK2EMhhJeYHFrhwM9tNQuZSqHUR4",
+        "publicKey": "1AAIAnmcrnjZM2uvxituF8LssZF2nttkcoTyIDIrsGAM-jYe",
+        "recoveryHash": "EGEnd00iyo3HW-RR0OAXMusu7I53zeFktLsQoWXAfrsi",
+        "rotationHash": "EIpgscLt8wQo7SQitA5WIQFzRuA2YbpuVbMLjiDrfiaS"
       }
     }
   },
-  "signature": "0ICfxvqkEyB-lk4HvE6Eq2bltcgefa2IdHfqxEanpj6-CAjlFYzJMWOnvBAIMUFmGJZpUbYw5LdibZRn5zpX7nvQ"
+  "signature": "0IBzwWbw_jXGrDwDgI5-sa9Jz8VgOirrG1K4llYVv-0lQIIic8xfwSlL9L1g9XymlQKrfGplvMpnPfpz40SBKVcL"
 }
 ```
 
@@ -81,12 +81,12 @@ authentication until a `recoveryHash` has been established.
 {
   "payload": {
     "access": {
-      "nonce": "0AAX1217iPESswcOzc49ChCk",
-      "responseKeyHash": "EGUd_C9yOGHsjFmDRwURCW4Gm0fTcjMXrqqIXodmCNhK"
+      "nonce": "0ADyoID0JGTkmPAr8bdJX0wO",
+      "serverIdentity": "1AAIAprO_YBIX8sROcNRcgfeh1o4_rPKXWpEZ6bur7DZmaZd"
     },
     "response": {}
   },
-  "signature": "0ICpXDLNXQ6ELlgmHEqOLtEX3ZU2UrtFubsQIxB2v6SrrGdck5NWST8S4l0QU7yCki7BLoPy-O05STWasATimwup"
+  "signature": "0ICYe7MvimAaLjpa9iN3atkXCJzwB8pFnqAPjY7yRVyfhVDKTb7_TxMJp0UNYC_AnUmQIiClI6u0Ex0omyV4x7tc"
 }
 ```
 
@@ -103,20 +103,20 @@ the existing one.
 {
   "payload": {
     "access": {
-      "nonce": "0ADjrHcwerMcdbYPJJP62WXL"
+      "nonce": "0AC7j1R1HGsxjiI9S0oeOFSq"
     },
     "request": {
       "authentication": {
-        "device": "EJtf5PUAn_wKhDamJ9OEDxTqe_pLmSIddHganf6QTDAw",
-        "identity": "EPsriX39yi4lN6C546gGwiJlVeCywCMoe-HCph_4GJ6b",
-        "publicKey": "1AAIAqHSAc8Tb_8SyixUWI1cEwW4xH4ndb9m_qNHVX4Cj_7w",
-        "recoveryHash": "EHRTVnQ0yygrCD-3IQSJAnDgRQToop_VM2ek6fOyCiho",
-        "recoveryKey": "1AAIA8fJAMQdUqHHpaQ3xWdLIoe1e7fOtgfGS4jvW-w5KES4",
-        "rotationHash": "EGOC9ZxnBIoOHHM453ZHIyyxaCJForR2ZN44bl8AQUYD"
+        "device": "EIiBjCZDOMVrc-XB9gQtXLJcnSoRvyWyrlPIRAQjDt6K",
+        "identity": "EPBGecuC9E4Sh17Sn8IuVZsUoGspUah2NWtfaaD1P_Xv",
+        "publicKey": "1AAIAmQaZauLr6NdxzbFAxmsomrvgFYt68dnt6AIE9lRdTe9",
+        "recoveryHash": "EL0GW-YHY_pM6DaVP5jUjKzsEM3HZCXwx4vB0ol_4BGJ",
+        "recoveryKey": "1AAIAkzEn3pxPWgaA1UrzDsPrlLRCfaCR9nzHRwV7_OLrB0d",
+        "rotationHash": "EDHKRurV-9_irGnxSFhk7r0hEuL_sRLQG_EMvdxmudT-"
       }
     }
   },
-  "signature": "0ICVrvXMfnyNS95OxntsFz7Kh9ZP1kmMVVyZL-e-LPrFdvOM7Hg7_BENRbEXJSWg4Mwi75HLExqCLt2vRmM-_-US"
+  "signature": "0ICxB2mwgG9pJjJ8KIrZQf8lYfCK3rHhbdNMaumpdDvRU6ioBTwJti2Hz_ii8STwaVTwnwyTK9awW6A4AikuIh9p"
 }
 ```
 
@@ -131,12 +131,12 @@ well, the backend registers `publicKey` and `rotationHash` against a key that lo
 {
   "payload": {
     "access": {
-      "nonce": "0ADjrHcwerMcdbYPJJP62WXL",
-      "responseKeyHash": "EIETXX_jRHwSq2XLYMOIZsiBXW5OCzRW0BVs22wATOIg"
+      "nonce": "0AC7j1R1HGsxjiI9S0oeOFSq",
+      "serverIdentity": "1AAIA5EVvIM8vtsE46BYYmoOlzdJH9XHcbaRNc__bK4PN72I"
     },
     "response": {}
   },
-  "signature": "0IAlLzIi2WVsKlg4tm1wwasc4ja6D-0lbJ0XHjxr3Y2AmHHmkFNYVRx9iLpw_scwwA4fN70LqZkEGmImSKEkZ7Qj"
+  "signature": "0IC0I6P-2Su2lVdSS6eBdXIfZLEuU0vXFKsssC6lu-cL1D3F86fMDtIFKQhn8S6TEm3Iwhf_9lVPT7iPzGLXtnDs"
 }
 ```
 
@@ -149,13 +149,13 @@ device to an existing identity.
 {
   "payload": {
     "authentication": {
-      "device": "EJVONI0W_hanelZcHPVAaHUDK7QudJ1tJ5fUB2u3OXHs",
-      "identity": "EJ2TUUoI9iR0LAET2Q7PU2Xsx7eGLhyOzBbkJuohbc5F",
-      "publicKey": "1AAIA3O40fpa9I1EcZtgMnBzBF1rRxIHm-8yvJorUJcw5xvu",
-      "rotationHash": "EGXYU1ktvnULIFWrZjxxtFd3WOg49Fhob-Hz29nYaGR3"
+      "device": "EAnU5UddAhLQp6Cz5qKL0KyTmb_Ty1q8DA2CHiuR4wqi",
+      "identity": "EO29tLutDIEP7jboCH9Tg0QqkEJPiacTJT38BnuSga28",
+      "publicKey": "1AAIAk1pr5B1yg8kUxqIIsRATYJCNtpDMITarQ_BDALT-K9O",
+      "rotationHash": "EK1tTqJZrF4rdXdVRj0V18Dc23rexbvASb_ZrW5ZXFzw"
     }
   },
-  "signature": "0ICxc-i-i5-eS8imWLM8TiFnZFoDrtlCOvo8yICorYOKHJSjjt7sO8-knNXTcvaD_6qsyF9VNUjmBmHP_j8jxxqr"
+  "signature": "0IAXz2SYIL2IHKuC14Qq2m4GDx3nWEPsOxfB5xShtNAk5OP26TL4QfyVEPyyCguv25wiEt0Vu4u-rQqgdB17eFZ9"
 }
 ```
 
@@ -168,29 +168,29 @@ performed by the existing device.
 {
   "payload": {
     "access": {
-      "nonce": "0AAIxCZAMFWEwxXt6po73uqq"
+      "nonce": "0AC-WvWiOOdrIpFAmuNbQn26"
     },
     "request": {
       "authentication": {
-        "device": "EC8qbX_6aWdOAEmlSu3NjWFM4qOTGmQl6BAz58ciu9_L",
-        "identity": "EJ2TUUoI9iR0LAET2Q7PU2Xsx7eGLhyOzBbkJuohbc5F",
-        "publicKey": "1AAIA-C3Kj0sOdEV6b23D-l77hGl_eSnhw_sHIG3CkN2f-we",
-        "rotationHash": "EPspdz0-QuUN8KMZ7OWFB_iblX66J8WCls49E3i4yT8-"
+        "device": "EApcO0xWHcXgqxEEr8CZ4KqNZEfZ9tjWSFKc_jLRtFFz",
+        "identity": "EO29tLutDIEP7jboCH9Tg0QqkEJPiacTJT38BnuSga28",
+        "publicKey": "1AAIAxh1FWzu9P0c6Ol0F5plNr-vm4qoXf2xjXe-xGN-Vize",
+        "rotationHash": "EBNJUsIJS0pY3OKEMMWuPCpgq9fY3jVmPk3k5GzrreDs"
       },
       "link": {
         "payload": {
           "authentication": {
-            "device": "EJVONI0W_hanelZcHPVAaHUDK7QudJ1tJ5fUB2u3OXHs",
-            "identity": "EJ2TUUoI9iR0LAET2Q7PU2Xsx7eGLhyOzBbkJuohbc5F",
-            "publicKey": "1AAIA3O40fpa9I1EcZtgMnBzBF1rRxIHm-8yvJorUJcw5xvu",
-            "rotationHash": "EGXYU1ktvnULIFWrZjxxtFd3WOg49Fhob-Hz29nYaGR3"
+            "device": "EAnU5UddAhLQp6Cz5qKL0KyTmb_Ty1q8DA2CHiuR4wqi",
+            "identity": "EO29tLutDIEP7jboCH9Tg0QqkEJPiacTJT38BnuSga28",
+            "publicKey": "1AAIAk1pr5B1yg8kUxqIIsRATYJCNtpDMITarQ_BDALT-K9O",
+            "rotationHash": "EK1tTqJZrF4rdXdVRj0V18Dc23rexbvASb_ZrW5ZXFzw"
           }
         },
-        "signature": "0ICxc-i-i5-eS8imWLM8TiFnZFoDrtlCOvo8yICorYOKHJSjjt7sO8-knNXTcvaD_6qsyF9VNUjmBmHP_j8jxxqr"
+        "signature": "0IAXz2SYIL2IHKuC14Qq2m4GDx3nWEPsOxfB5xShtNAk5OP26TL4QfyVEPyyCguv25wiEt0Vu4u-rQqgdB17eFZ9"
       }
     }
   },
-  "signature": "0ICZNnQmvrQw_WtwN4IUph9Nh8fnoQODW_5S36avMaBeg2_W9zu-8HKKEoAl1eQuDsqPsPLowfJ9csrXNbwcPS4Z"
+  "signature": "0IAu2rKl-nryMYnJdgAoI6QKm2lZU0MneJ5m63pNtjMFCA9Wrmsz7HKVc-8phFl3eh8j84KO-vvyUJ4T_zCXVedJ"
 }
 ```
 
@@ -204,12 +204,12 @@ registered in storage.
 {
   "payload": {
     "access": {
-      "nonce": "0AAIxCZAMFWEwxXt6po73uqq",
-      "responseKeyHash": "EBRjwZl9eIxcafuxSzAMDvKkoFp5JX5VYAfc4PuR32Ph"
+      "nonce": "0AC-WvWiOOdrIpFAmuNbQn26",
+      "serverIdentity": "1AAIAwlf460cHiDH-062taexTb9uWP6v8iTNS3RzXqlCPd5R"
     },
     "response": {}
   },
-  "signature": "0IDWE8V-go8N3AgqRL7FnAkQ0qQ4ME4KRVRGkgEmes_XKj9oCDP-91eLxWudS4DvXtyQpZl29J5N-uZFXnPvUy-4"
+  "signature": "0IDKAqjIkr9wJ3pIRnH-yHhu3u6vP4lhND0lpbG-ZCWgOK8GLhF2_ToEo0l9nn9GvBANV_yL-oVZ8XTix3czO6w1"
 }
 ```
 
@@ -223,21 +223,21 @@ future rotation is not possible while simplifying backend logic.
 {
   "payload": {
     "access": {
-      "nonce": "0AB-xE0UITbeD9Sjg5SKDwjm"
+      "nonce": "0AAnekrxWocD6w1ybq3-bKw0"
     },
     "request": {
       "authentication": {
-        "device": "EJVONI0W_hanelZcHPVAaHUDK7QudJ1tJ5fUB2u3OXHs",
-        "identity": "EJ2TUUoI9iR0LAET2Q7PU2Xsx7eGLhyOzBbkJuohbc5F",
-        "publicKey": "1AAIAhjUBJOlpKAB8pWVjzQwc9SL01mmPBe9yjQC654uoobK",
-        "rotationHash": "EF107ZAMgWCHr4yLA3LRJF2hGxRVdo2HCYCtVf44EeGX"
+        "device": "EAnU5UddAhLQp6Cz5qKL0KyTmb_Ty1q8DA2CHiuR4wqi",
+        "identity": "EO29tLutDIEP7jboCH9Tg0QqkEJPiacTJT38BnuSga28",
+        "publicKey": "1AAIAo2paK_pIvZes630NdzpkHwNd5qpXP4x1KeE3oz8TNuV",
+        "rotationHash": "EJjTBlW1B229FwbKmC7HxPqTwvqOufz2FCMXVeZqAShU"
       },
       "link": {
-        "device": "EC8qbX_6aWdOAEmlSu3NjWFM4qOTGmQl6BAz58ciu9_L"
+        "device": "EApcO0xWHcXgqxEEr8CZ4KqNZEfZ9tjWSFKc_jLRtFFz"
       }
     }
   },
-  "signature": "0IDa5PWGtspEStA82Q_Q1hx1IEl8sdK1z_btjafugY4LDFC4rbuS35X-5PHgzIyJgrfZ8PbauNj2m8uI0VIrUw0y"
+  "signature": "0IA8D0uYS4WhsrMo4ReaxhYkZc8_G5LoqA2XGj0QGmNKYupeE0JugKOr0hRyVWXkHKh2ic9AwXB0b7wTcd5rC1nW"
 }
 ```
 
@@ -245,12 +245,12 @@ future rotation is not possible while simplifying backend logic.
 {
   "payload": {
     "access": {
-      "nonce": "0AB-xE0UITbeD9Sjg5SKDwjm",
-      "responseKeyHash": "EBRjwZl9eIxcafuxSzAMDvKkoFp5JX5VYAfc4PuR32Ph"
+      "nonce": "0AAnekrxWocD6w1ybq3-bKw0",
+      "serverIdentity": "1AAIAwlf460cHiDH-062taexTb9uWP6v8iTNS3RzXqlCPd5R"
     },
     "response": {}
   },
-  "signature": "0IByNlTTv0Z2jEnyJsWzaLXPsLkJGjVlAFM96xeEESx2kC65HHzKsVDKdnZXb-VMb90IqPiHQdm3-XBjvyGsI3pe"
+  "signature": "0ICGF9YpZoTQ3Qaf_TTI2dH-UFdOWtBafxa5L9wdMVuPIbxttWajFvUpe5vsv8V7HZbx3imCyUXhIJX-_hmdVsXj"
 }
 ```
 
@@ -266,18 +266,18 @@ key.
 {
   "payload": {
     "access": {
-      "nonce": "0AB5jri4Umnpo3cNkWYO0pj1"
+      "nonce": "0ADVHrvUuioET4V9zaiprKNk"
     },
     "request": {
       "authentication": {
-        "device": "EGl2IqkCnIAEotkH_NA-UsvUga5uDitIiDLx6y_GALhf",
-        "identity": "EKuTJxCHK8tjaOfC1aYrl0_m4VO2Yt0-k0SG3v4F0SDE",
-        "publicKey": "1AAIA4D1uEGo859PLefOcUFT36WFUemhe8bFy7J1PosGtz8m",
-        "rotationHash": "EEeFSjSV3Z98A_MbOCPdyUarTdPah_HUSTMwYdM4NWWf"
+        "device": "EI5sUuSEtIA-lvdCpap385Yf3VVwG6w_yy6VmHnUdz8I",
+        "identity": "EKDKuNIZkiEyN36JmK2EMhhJeYHFrhwM9tNQuZSqHUR4",
+        "publicKey": "1AAIAjBrnypKVC0h5lurmR4v1RtQQcuWjZZto_xVYE83aFRY",
+        "rotationHash": "EOExTztl_SegYveMWEEyYB636Rv4TtbWBauSIMK0JAFd"
       }
     }
   },
-  "signature": "0IDpbBUea8y5WmmmxauYWZl-9S1yjZFD-P-BT0V0izAugXLe5ZqEkPgR5GoxIyy_xKz131DS2j8R_qy-1g2rjhsm"
+  "signature": "0ICzbN464HAsGlLfiHa71zcGfRasianjU5Q_gZ1JBc74Zid2ERimg2tTiwi4V-7d3AEAnTTfOIEHc5kAk7nxK729"
 }
 ```
 
@@ -287,12 +287,12 @@ key.
 {
   "payload": {
     "access": {
-      "nonce": "0AB5jri4Umnpo3cNkWYO0pj1",
-      "responseKeyHash": "EGUd_C9yOGHsjFmDRwURCW4Gm0fTcjMXrqqIXodmCNhK"
+      "nonce": "0ADVHrvUuioET4V9zaiprKNk",
+      "serverIdentity": "1AAIAprO_YBIX8sROcNRcgfeh1o4_rPKXWpEZ6bur7DZmaZd"
     },
     "response": {}
   },
-  "signature": "0ICcvcZcwr8W9a3j-VhDVX4J9P32UbI4UknFZRnpCmNF0ancH6OB2GxRe3-2prvpUKLNYK3ddy9oKh6c0PV1nfb_"
+  "signature": "0IBpE-oqtSLhQrGq2Nk00zV1tW4DfhfDL0wb3dpMFXE7_CBD4Pev0T6yme8_nxMVCJDq83sx_2dAHjNVwUlStR75"
 }
 ```
 
@@ -306,11 +306,11 @@ Authentication is accomplished with a challenge/response performed in two phases
 {
   "payload": {
     "access": {
-      "nonce": "0AAy-cxcY7GRBmUqiLWFisyD"
+      "nonce": "0ADjyJKFR2aWYc0d8Qnh_Psj"
     },
     "request": {
       "authentication": {
-        "identity": "EKuTJxCHK8tjaOfC1aYrl0_m4VO2Yt0-k0SG3v4F0SDE"
+        "identity": "EKDKuNIZkiEyN36JmK2EMhhJeYHFrhwM9tNQuZSqHUR4"
       }
     }
   }
@@ -323,16 +323,16 @@ Authentication is accomplished with a challenge/response performed in two phases
 {
   "payload": {
     "access": {
-      "nonce": "0AAy-cxcY7GRBmUqiLWFisyD",
-      "responseKeyHash": "EGUd_C9yOGHsjFmDRwURCW4Gm0fTcjMXrqqIXodmCNhK"
+      "nonce": "0ADjyJKFR2aWYc0d8Qnh_Psj",
+      "serverIdentity": "1AAIAprO_YBIX8sROcNRcgfeh1o4_rPKXWpEZ6bur7DZmaZd"
     },
     "response": {
       "authentication": {
-        "nonce": "0ADJWfDSLX7U0KaASNoPBqAO"
+        "nonce": "0ABOm28GBp3ZpD-btVOLgTBT"
       }
     }
   },
-  "signature": "0IC-oLP5ozz8I9uKAyyTBy_nHN__Ee4D3vdKY6x41_f4-Gl8l29PEZfBTJ1dGqqSjs28K3K8J2YBop_99TPH2TFg"
+  "signature": "0ID3df8yGwii6NrPDL-kxbKj8X_57_YTR0BSd-y_IbI3BMpyPh8-uDHqdiYUs-XJWdPJwW4frKmoyClyG5aLLkDO"
 }
 ```
 
@@ -342,20 +342,20 @@ Authentication is accomplished with a challenge/response performed in two phases
 {
   "payload": {
     "access": {
-      "nonce": "0ABA1uX_o30qOv0LBwbmZYm5"
+      "nonce": "0ACrNG3omnUlVLJshJBuhZBv"
     },
     "request": {
       "access": {
-        "publicKey": "1AAIAjkNyw6v5yYc6oooT91Ng_aeyQmi2hJLYmYPMqXhfb5f",
-        "rotationHash": "ELVLMWKHyX--rf4rtjWxGHpeIEkHMzSMvNPI4eKw8C3V"
+        "publicKey": "1AAIApTn78LMHCc1SYkZ-DVg3BBQzo2FGnS_wZpTaJYqaIi9",
+        "rotationHash": "EP1SGXHX7or6VOTic6j5YJjycAgfoDqwVGvh3mMU0Eht"
       },
       "authentication": {
-        "device": "EGl2IqkCnIAEotkH_NA-UsvUga5uDitIiDLx6y_GALhf",
-        "nonce": "0ADJWfDSLX7U0KaASNoPBqAO"
+        "device": "EI5sUuSEtIA-lvdCpap385Yf3VVwG6w_yy6VmHnUdz8I",
+        "nonce": "0ABOm28GBp3ZpD-btVOLgTBT"
       }
     }
   },
-  "signature": "0ICJ3M2fAMrhK7Fl4WfmdJyNdcOmChml8LTT_Ak9lTR_W_uUNvbyFukhyCt98jm-vvfgSLcdHj1SmNsEH7ynhcEt"
+  "signature": "0IDvjdTjlHwwP6kKdTF6cbdAhr4T6L063S2wzH0X3wZ5jN9MAA3KbTum_QhqX3DLxvv488QVZ4H2BdbdCu3DWE92"
 }
 ```
 
@@ -365,16 +365,16 @@ Authentication is accomplished with a challenge/response performed in two phases
 {
   "payload": {
     "access": {
-      "nonce": "0ABA1uX_o30qOv0LBwbmZYm5",
-      "responseKeyHash": "EGUd_C9yOGHsjFmDRwURCW4Gm0fTcjMXrqqIXodmCNhK"
+      "nonce": "0ACrNG3omnUlVLJshJBuhZBv",
+      "serverIdentity": "1AAIAprO_YBIX8sROcNRcgfeh1o4_rPKXWpEZ6bur7DZmaZd"
     },
     "response": {
       "access": {
-        "token": "0IDM5Cl_aBgD3gHaDA1QnrKroy0NkCq3ha1vGYTMXLP05C4LjzXoK_DwfX8s6EiBIAUHsEyHTllxonvDyO2CjPCnH4sIAAAAAAACA22P3XKCMBBG3yXXpRMwscodtVQU8acyKu10nChLiYrQENDU4d0be0v3cuecb_e7IR7DWXKpkI1cvwrH14Hn9-SBzZKBySJxwtuMrGZWJLFxxMthpyavePniogdUVLsT3_twV03HGTmH41RdujVV0b6b53nYN6dfWwZqkXErHU-iLJoH35s02dFE6yKXTPL87LEyvR-frCbB2vfUxjBEQoQ8rK9Dr4CRe_SCn2VQT-cjAv6lN-istM3LsoLYkdq0sEUNExvYCs0nm2CbWI-E9vHfvGsWrgUXqkVS2iIFJALK1G0JnRDT_6KZlILvKgklsm-oAJHpx3Sp8lm95Se4L1mc8TOyP3Q4i7VyEVwC-mya5hf7PJzZfQEAAA"
+        "token": "0ID4ZzncOQr-859_kXMOseju3wZDxnl-dhXhrkuuwHSo-uDrYR216LYzbrcFXy0gtfnQlQyys8FFzVfiAzNwThSYH4sIAAAAAAACA22Py3KCMBSG3yXr2gmgUNmhoFzUVkEqdDoOQjRRuZgEKXV898Yu2oWe5Zn_-y8XwBA9I-pkqOCEt0AHkmE4Bg9NZaFo4YYQth5qpVvPHQWPOAqCYChhZxLCQ56u-XuzBU-A_NOWZ3r1zIkPxGpniurmnmxNMXZRZI8obqZ9PpvXsX-yl4uuIKt6cySph_6Cq6DQXiZTe5hKfnSIO2a4UwaD-Xcpj8aFv27iKkjc6JQ4pC9wWvKEk7KwE4Zv4W-SP17ZK62kavgakFTd9yJ336bGbluapyYcn7GST5fQwvxWm7EaZQYXpAzlXkeCHagGEtRhX4fScw8q8PdioUVfFaHtnVLu3ikp2lLEsPUAkOVH1gnnlGxqjhjQL6BCNBfFxCg2aBflEd2eSZaTAugfwjzJBNJQwhH4vF6vPzaAPGHBAQAA"
       }
     }
   },
-  "signature": "0IA73SUXvRZwDCmSW9juZ5IUMbCKJeC5z4pY-G_yLsOGxj87zUxd_JiYwkbpSPNUIgH7fwF5cd8tL3wUevXsDHa3"
+  "signature": "0IBRCeQL4hWBF876Zsgwb6kVS4abgRLL4r16oPez8ET4BcUMHICtfnSf05H3Ixgmq4ky7p-REAdBhzoVbKMEHUjM"
 }
 ```
 
@@ -388,17 +388,17 @@ This rotates the access key.
 {
   "payload": {
     "access": {
-      "nonce": "0ACrw-zc0zVZchNPs0AM11Xs"
+      "nonce": "0ACvlCJoxTBvpqvwcCdp8ajd"
     },
     "request": {
       "access": {
-        "publicKey": "1AAIAn7_UaaZ5JxUM0rSM4uA3Pg4ACk7_FCQGX5pGlq7tyyC",
-        "rotationHash": "EO-AQK8B3v9si4C_jpmmnjp1OpGDYwh9r14Y2m2LS1p1",
-        "token": "0IDM5Cl_aBgD3gHaDA1QnrKroy0NkCq3ha1vGYTMXLP05C4LjzXoK_DwfX8s6EiBIAUHsEyHTllxonvDyO2CjPCnH4sIAAAAAAACA22P3XKCMBBG3yXXpRMwscodtVQU8acyKu10nChLiYrQENDU4d0be0v3cuecb_e7IR7DWXKpkI1cvwrH14Hn9-SBzZKBySJxwtuMrGZWJLFxxMthpyavePniogdUVLsT3_twV03HGTmH41RdujVV0b6b53nYN6dfWwZqkXErHU-iLJoH35s02dFE6yKXTPL87LEyvR-frCbB2vfUxjBEQoQ8rK9Dr4CRe_SCn2VQT-cjAv6lN-istM3LsoLYkdq0sEUNExvYCs0nm2CbWI-E9vHfvGsWrgUXqkVS2iIFJALK1G0JnRDT_6KZlILvKgklsm-oAJHpx3Sp8lm95Se4L1mc8TOyP3Q4i7VyEVwC-mya5hf7PJzZfQEAAA"
+        "publicKey": "1AAIAlLq7bXwMPcxlhY-3pl2g5mgIWi3nJkzl4EUWd5ArrJs",
+        "rotationHash": "EJuJa6ToKacTKxp0rGwU1eD9q6q1iG3DfA19wiIkOXOv",
+        "token": "0ID4ZzncOQr-859_kXMOseju3wZDxnl-dhXhrkuuwHSo-uDrYR216LYzbrcFXy0gtfnQlQyys8FFzVfiAzNwThSYH4sIAAAAAAACA22Py3KCMBSG3yXr2gmgUNmhoFzUVkEqdDoOQjRRuZgEKXV898Yu2oWe5Zn_-y8XwBA9I-pkqOCEt0AHkmE4Bg9NZaFo4YYQth5qpVvPHQWPOAqCYChhZxLCQ56u-XuzBU-A_NOWZ3r1zIkPxGpniurmnmxNMXZRZI8obqZ9PpvXsX-yl4uuIKt6cySph_6Cq6DQXiZTe5hKfnSIO2a4UwaD-Xcpj8aFv27iKkjc6JQ4pC9wWvKEk7KwE4Zv4W-SP17ZK62kavgakFTd9yJ336bGbluapyYcn7GST5fQwvxWm7EaZQYXpAzlXkeCHagGEtRhX4fScw8q8PdioUVfFaHtnVLu3ikp2lLEsPUAkOVH1gnnlGxqjhjQL6BCNBfFxCg2aBflEd2eSZaTAugfwjzJBNJQwhH4vF6vPzaAPGHBAQAA"
       }
     }
   },
-  "signature": "0IAVTldM51oR7OmKfmiwKm5k8CEAjNuj-6tReEtBfmUY1BmMbg3vKiawW9_L3fZXoFXvD8T12HRvMQJkUv195Gss"
+  "signature": "0IAjUjjUU2N_JusMmeYoJo_GbDoYV_i5a6Uh8iahe8l-P4UpGPm26jKf8BLI_kODIBVeuSHLMR6wZOnW9al2YNH2"
 }
 ```
 
@@ -408,16 +408,16 @@ This rotates the access key.
 {
   "payload": {
     "access": {
-      "nonce": "0ACrw-zc0zVZchNPs0AM11Xs",
-      "responseKeyHash": "EGUd_C9yOGHsjFmDRwURCW4Gm0fTcjMXrqqIXodmCNhK"
+      "nonce": "0ACvlCJoxTBvpqvwcCdp8ajd",
+      "serverIdentity": "1AAIAprO_YBIX8sROcNRcgfeh1o4_rPKXWpEZ6bur7DZmaZd"
     },
     "response": {
       "access": {
-        "token": "0IAAHRJH12qyYZtBgszy_iU1EkqZ_HyGb5rNPn95AKKEM1v2i150naF_pgFRhis5Ni1LoaThdWY_vMvCmrvGPBj9H4sIAAAAAAACA2XPXW-CMBQG4P_S67G00A7lrqLiZIY5dBkuC6mjzipg1xaFGP_76pJlF57Lk_c5H2cgCl4bYToQgFHcLKZtOIl7ZseSTYhYpkqYV_g1cTMDnT1MI--IxzAdjsAdkM26FJ8xv1JE6SOt_XzJ2IpM2-UMqnSGG-o9f2Ea7v18HM6jNyKj8ts3XRdarg6GGXGoJ0xvr8sTh87j3sA79rXAYb6TVVXvJEpkNMxO275COHMr9ylFElkttG54QY2VLnSJg6AD3QXyAwwD7N7jBwx_a2WzvJVCdTdJQm6Sim8U19vRDfAWkPyNJv1_wIxRYt0YrkFwBpKryh5mn9KD7uVQ8muTFZWoQfBuh7PCkpMShoOPy-XyA46k7DB9AQAA"
+        "token": "0IBYq6FC9V5dvDL40wfKYIHlfl-58BV_fzdjTGy0Qj2Be1XtXDFxlDuB_2XiJ5x6coF-qrepOoiRftjSzUJUEq7vH4sIAAAAAAACA22PSXOCMBiG_0vOtZMQwcKNCirgUi2unY7DEiXDngSROv73Yg96sN_xm_d5lwvghJ0Is0KSCSoaoAGk65YuVgZe4N7Kp5Tv-73cruYWjgaCuK7bR5E1XsE4DfZiXR_AC6AP2nQMp5pau5iazRQrdupI5iSKbLIdDVhUT1QxnVe7z3K0XHRbsqj8hAYOuQcn47Lnb-rJR3BOom0HF4l0lNOjtaY4s-OfpGsu16GsM2bzFme58ATNs5HHo1u4Xdme4uaOF7jOuYBsWC8RMdRSKREdYuOgI7WmVjzbzE632pxXJNRFS0pQkjsIdqDiIqhBVYPoVYZv8O92rZacC8qaJ6XUfVIycmCER-Y_gCTdrfED8IRg1K8E4UC7gIKwtC3WjuLvzSJPyO3phSnNgPbVmnthi9SMCgK-r9frL58wu1PBAQAA"
       }
     }
   },
-  "signature": "0IDbizH83_Nl0ASD0oV25Y-mLn7aM_avT57_2KX31bzoS6m0NlKuf-s2xdfhI0LWH1ocTHmdtE7SqkrZKu4u--c1"
+  "signature": "0IAg1ACNCREVmX1dJsR6R1EWwuAIsRg8JV-aZ5JmWTO8tB0PlGBcEKmXoiecOexHR1MJbDaR6JJk0IFBo3hK_T_5"
 }
 ```
 
@@ -431,16 +431,16 @@ An access request is a resource request that is verified using the embedded toke
 {
   "payload": {
     "access": {
-      "nonce": "0ACBe98dynuT5bIedslFdGs4",
-      "timestamp": "2025-10-02T17:40:42.465000000Z",
-      "token": "0IAAHRJH12qyYZtBgszy_iU1EkqZ_HyGb5rNPn95AKKEM1v2i150naF_pgFRhis5Ni1LoaThdWY_vMvCmrvGPBj9H4sIAAAAAAACA2XPXW-CMBQG4P_S67G00A7lrqLiZIY5dBkuC6mjzipg1xaFGP_76pJlF57Lk_c5H2cgCl4bYToQgFHcLKZtOIl7ZseSTYhYpkqYV_g1cTMDnT1MI--IxzAdjsAdkM26FJ8xv1JE6SOt_XzJ2IpM2-UMqnSGG-o9f2Ea7v18HM6jNyKj8ts3XRdarg6GGXGoJ0xvr8sTh87j3sA79rXAYb6TVVXvJEpkNMxO275COHMr9ylFElkttG54QY2VLnSJg6AD3QXyAwwD7N7jBwx_a2WzvJVCdTdJQm6Sim8U19vRDfAWkPyNJv1_wIxRYt0YrkFwBpKryh5mn9KD7uVQ8muTFZWoQfBuh7PCkpMShoOPy-XyA46k7DB9AQAA"
+      "nonce": "0AA3FyR9qypa3rDumJLt2kp2",
+      "timestamp": "2025-10-06T10:09:01.512000000Z",
+      "token": "0ICKfeqFv29c7nCrZL6lNrskQhHhTTk-cQOjxSDo2Km1O8ATkfAZ5KsoNmFSFWhXmw69uu79hI0X2bmED5C_nai6H4sIAAAAAAACA22PW2-CMBiG_0uv59JynNw5BUGUTGQaXBYCUtMqJ9siMON_Hy7ZvHDf5Zf3eQ8XwDE7Y-akuBBUdMAAaDRyRmI9kX1ZXyeU8misl7N66cjEEjgIgjEiznwNj_kuEptmD54AvdOmO3Frz9keqdl5sjbLXclcEDLDoW0x0iyGwlvW29XJfveVnqzqJKM7F_8FM-ULe6hVV0u_suTA0pP2zT97bWBH-WAoH8PES6tkV8wP5x5npYgFLQs75uQW7mz4S-f4-7CJYn1-IEM1jNOprmiTwTTLWJme5pqE7YMdo1ttzmucjkRPSlBSBwgOoBYgaMChAdGzihD8uW2vxW1FWfeglJQHJcN7hjkx_wEk6dcayncgFoLRpBaYA-MCKszyvlg_ir92fpnh2zNOc1oA46M3j9MeaRgVGHxer9dv74pmosEBAAA"
     },
     "request": {
       "foo": "bar",
       "bar": "foo"
     }
   },
-  "signature": "0IDkakf3wvvoXFw6QZV1z6cQbqfrnT-XJ_ybyd4bk0FIoodqzkZjJFYSP5cDss50ZatTafYpsBe4twNaFjNTEP4f"
+  "signature": "0ICGSgVE4ULIdTsjH5cidQoXON1RW7gunNkjBH3mr8YSQDefRtBfatrAFI1ev18y2pnBJ9FF1Cx79Sf6IYk4F0iG"
 }
 ```
 
@@ -450,15 +450,15 @@ An access request is a resource request that is verified using the embedded toke
 {
   "payload": {
     "access": {
-      "nonce": "0ACBe98dynuT5bIedslFdGs4",
-      "responseKeyHash": "1AAIAmF5voh0rTbS8SYgg0lLT3wkhJ7DiBt7dfILrFEUERHE"
+      "nonce": "0AA3FyR9qypa3rDumJLt2kp2",
+      "serverIdentity": "1AAIAprO_YBIX8sROcNRcgfeh1o4_rPKXWpEZ6bur7DZmaZd"
     },
     "response": {
       "wasFoo": "bar",
       "wasBar": "foo"
     }
   },
-  "signature": "0ICnft5lNctwMau2ZxOOlLMEf9kcxBRb6Dl1bmWIpPfeQaEx7xTSnIIJihluV1-bWFYOc9LYjpUL14kCc18LttQB"
+  "signature": "0IAqyhDFHQaB-hJMK1ZtzrmvUv4G0hxFI6yl2OvloZ1Ua8SbXURpPbLxmnx1XtYiwip_0Sql_sQKDzv26AXR1Cmk"
 }
 ```
 
