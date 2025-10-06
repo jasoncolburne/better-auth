@@ -266,7 +266,7 @@ main() {
     local results_matrix=()
 
     echo "╔════════════════════════════════════════════════════════════════════╗"
-    echo "║         Better Auth Integration Test Suite                        ║"
+    echo "║         Better Auth Integration Test Suite                         ║"
     echo "╚════════════════════════════════════════════════════════════════════╝"
     echo ""
 
@@ -276,7 +276,7 @@ main() {
     for server in "${SERVERS[@]}"; do
         echo ""
         echo "╔════════════════════════════════════════════════════════════════════╗"
-        echo "║  Testing with $server server                                          "
+        echo "  Testing with $server server"
         echo "╚════════════════════════════════════════════════════════════════════╝"
 
         # Start the server
@@ -315,7 +315,7 @@ main() {
     # Print final summary
     echo ""
     echo "╔════════════════════════════════════════════════════════════════════╗"
-    echo "║                     Final Test Results Matrix                     ║"
+    echo "║                     Final Test Results Matrix                      ║"
     echo "╚════════════════════════════════════════════════════════════════════╝"
     echo ""
     printf "%-15s" "Server/Client"
