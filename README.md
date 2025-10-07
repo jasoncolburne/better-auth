@@ -35,6 +35,21 @@ Server implementations:
 
 ## Protocols
 
+In each protocol request or response payload one will find some data contexts:
+
+- `access`: This will contain information relevant to the request and response pair.
+- `request`: This is the request.
+- `response`: This is the response.
+
+The request and response contexts are broken down further into more contexts:
+
+- `access`: This will contain information that permits access by the current device.
+- `authentication`: This context will contain information that permits authentication of the current
+device.
+- `link` This contains information about another device. If necessary, this is broken into
+contexts as well (when creating a link, the link context contains a payload and signature from
+the device being linked).
+
 ### Creation
 
 To start, we need a recovery public key as an input. Then, we use a client interface to generate
