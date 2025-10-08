@@ -498,7 +498,7 @@ If we re-pad a token from the example implementation with `=`, we can decode it 
 first 88 bytes is the signature, in this case):
 
 ```sh
-TOKEN="0IB3n3ghRAiFF0wv_ehTJ_cLiFfu-L2w4bWwHZXAddJEL02Wym7caa9ff14wcKmUcU36fXXmj6D2K8Sx-iwC__rqH4sIAAAAAAACA2WP2W6CQBSG32Wua8M2qNyBUMQFN6zapjHgDDAiizODQI3vXmzSeuG5PPm_f7kChukFUwfhjBPeAA2Iuu7oMmtGPcmeiVaZGC6UChf2lLOzHW_2KN96Hkss1izJLIYX8ALIg7Z0ia9lO0_SziqWppxEOv5WeVYp5G3Y5KkUHo1SdAvTZeeWLMrgRA5j_B982qleHQ-qChnbep6-h0epXG2aKBjJg_mhpv11uNOThQnXUYvTnPuc5NnQZ_E93A28Ctnlpton5hR2AtuZKJHPzsgc9R3OhnigULW7WIWT5b02YyVGOm9JSZBgRxQ6guqJfU3uaaL6Kqiy8HsfrRbXBaHNkxLKT0qKQ4pZbD0BXU_o_llD5QH4nFMSlBwzoF1BgWnaFmtHMaNZ5id8f_ooJRnQPltzH7VIRQnH4Ot2u_0AA5V-98EBAAA="
+TOKEN="0IAGTf0y29Ra-8cjCnXS8NlImAi4_KZfaxgr_5iAux1CLoOZ7d5tvFktxb8Xc6pU2pYQkMw0V75fwP537N9dToIyH4sIAAAAAAACA22PXY-iMBSG_wvX203rUBHuOgIDasQ1jC5uNobaKkU-TFtAZ-J_nzoXu8nOnsuT93k_3i3FZc9lzHijhb5ZnoUIiUl_mNkp0isAWHpgCzKMWSaghJvE309VxifT6_no3Nh1G1jfLMZ7ceCGDYJhvIoDqXySVCAcPdfc2VFYlHG-TabDa0leu1NE56Byc8OJv6lB0taqqFx5jGadHfUiTU9OHYrFXp17FmKIdpfMZk80ileGvHS0Eoc5_1P4jVIM1qW92Qb-7keC6-HlxZH-Yjm-Coxilm1Q2-AV3dPO4LLVuRZtE-WqeISHIZDEGWe125Z-BnVHxc9NuQZk3c-XziyS5-2ybt6OpyJ51Faq44xoQ47gCAMEAZykaORh17PR9wnG8PN2RsuvFyFv_yifPGR_UUp-lFwVwRfATSH8n3WutRS001xZ3rt14bI2xcwo9XxbtxV_PHNWi8byfhnznBlkkEJz6_f9fv8A44o2TvkBAAA="
 echo -n ${TOKEN:88} | base64 -d | gunzip | jq .
 ```
 
@@ -506,13 +506,14 @@ produces
 
 ```json
 {
-  "serverIdentity": "1AAIA3syJ82GO1EukBN52pN584qIXKW_doXTTskEsyRiOh5v",
-  "identity": "EA2tU3Gokm-Sh2MtigAez6tnw4iFHyom2fjBu1NpDNsq",
-  "publicKey": "1AAIAlY6TxhCwwdBXxPmVfj2uSWygbJ3CPcxr9UfYAkQD5Ug",
-  "rotationHash": "ENbTwdGuWw_kDM5-bGIL4gasqdDJ9ItsHeC4r67QSfLR",
-  "issuedAt": "2025-10-06T19:38:16.063000000Z",
-  "expiry": "2025-10-06T19:53:16.063000000Z",
-  "refreshExpiry": "2025-10-07T07:38:16.054000000Z",
+  "serverIdentity": "1AAIAvcJ4T1tP--dTcdLAw6dYi0r0VOD_CsYe8Cxkf7ydxWE",
+  "device": "EEw6PIErsDAOl-F2Bme7Zb0hjIaWOCwUjAUugHbK-l9a",
+  "identity": "EOomshl9rfHJu4HviTTg7mFiL_skvdF501ZpY4d3bHIP",
+  "publicKey": "1AAIAzbb5-Rj4VWEDZQO5mwGG7rDLN6xi51IdYV1on5Pb_bu",
+  "rotationHash": "EFF-rA76Ym9ojDY0tubiXVjR-ARvKN7JHrkWNmnzfghO",
+  "issuedAt": "2025-10-08T12:59:41.855000000Z",
+  "expiry": "2025-10-08T13:14:41.855000000Z",
+  "refreshExpiry": "2025-10-09T00:59:41.855000000Z",
   "attributes": {
     "permissionsByRole": {
       "admin": [
