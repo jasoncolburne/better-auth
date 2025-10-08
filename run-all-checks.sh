@@ -43,7 +43,7 @@ main() {
     echo "╔════════════════════════════════════════════════════════════════════╗"
     echo "║  Step 1/4: Format Check                                            ║"
     echo "╚════════════════════════════════════════════════════════════════════╝"
-    if "$SCRIPT_DIR/run-format-check.sh"; then
+    if "$SCRIPT_DIR/run-format-checks.sh"; then
         print_success "Format check completed"
     else
         print_error "Format check failed"
@@ -55,7 +55,7 @@ main() {
     echo "╔════════════════════════════════════════════════════════════════════╗"
     echo "║  Step 2/4: Lint                                                     ║"
     echo "╚════════════════════════════════════════════════════════════════════╝"
-    if "$SCRIPT_DIR/run-lint.sh"; then
+    if "$SCRIPT_DIR/run-lints.sh"; then
         print_success "Lint completed"
     else
         print_error "Lint failed"
