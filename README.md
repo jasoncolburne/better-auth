@@ -52,6 +52,9 @@ the device being linked).
 
 There are 3 groups of protocols. `Account`, `Device` and `Session`.
 
+Additionally, there is an `Access` request protocol that supports arbitrary request/response
+payloads.
+
 ### Account
 
 #### CreateAccount
