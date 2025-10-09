@@ -17,9 +17,9 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPOS_DIR="$(dirname "$SCRIPT_DIR")"
 
 # Server implementations
-SERVERS=("go" "py" "rb")
+SERVERS=("go" "py" "rb" "rs")
 # Client implementations
-CLIENTS=("dart" "kt" "py" "swift" "ts")
+CLIENTS=("dart" "kt" "py" "rs" "swift" "ts")
 
 # Function to print colored output
 print_status() {
@@ -133,6 +133,26 @@ start_rb_server() {
     fi
 }
 
+# Function to start Rust server
+start_rs_server() {
+    local server_dir="$REPOS_DIR/better-auth-rs"
+    print_status "Starting Rust server from $server_dir"
+
+    cd "$server_dir"
+    cargo run --example server > /tmp/better-auth-rs.log 2>&1 &
+    local pid=$!
+    echo $pid > /tmp/better-auth-rs.pid
+
+    if wait_for_server; then
+        print_success "Rust server started (PID: $pid)"
+        return 0
+    else
+        print_error "Rust server failed to start"
+        cat /tmp/better-auth-rs.log
+        return 1
+    fi
+}
+
 # Function to stop server
 stop_server() {
     local server=$1
@@ -194,6 +214,21 @@ run_py_tests() {
         return 0
     else
         print_error "Python tests failed"
+        return 1
+    fi
+}
+
+# Function to run Rust tests
+run_rs_tests() {
+    local client_dir="$REPOS_DIR/better-auth-rs"
+    print_status "Running Rust integration tests from $client_dir"
+
+    cd "$client_dir"
+    if cargo test --test integration_test; then
+        print_success "Rust tests passed"
+        return 0
+    else
+        print_error "Rust tests failed"
         return 1
     fi
 }

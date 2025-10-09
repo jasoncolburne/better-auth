@@ -14,7 +14,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPOS_DIR="$(dirname "$SCRIPT_DIR")"
 
 # Repositories
-REPOS=("dart" "kt" "py" "rb" "swift" "ts")
+REPOS=("dart" "kt" "py" "rb" "rs" "swift" "ts")
 
 # Function to print colored output
 print_status() {
@@ -94,6 +94,21 @@ run_rb_lint() {
         return 0
     else
         print_error "Ruby lint failed"
+        return 1
+    fi
+}
+
+# Function to run Rust lint
+run_rs_lint() {
+    local repo_dir="$REPOS_DIR/better-auth-rs"
+    print_status "Running Rust lint from $repo_dir"
+
+    cd "$repo_dir"
+    if cargo clippy -- -Dwarnings; then
+        print_success "Rust lint passed"
+        return 0
+    else
+        print_error "Rust lint failed"
         return 1
     fi
 }

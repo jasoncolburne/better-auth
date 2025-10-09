@@ -14,7 +14,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPOS_DIR="$(dirname "$SCRIPT_DIR")"
 
 # Repositories (kt excluded - ktlintCheck in lint script handles both)
-REPOS=("dart" "go" "py" "swift" "ts")
+REPOS=("dart" "go" "py" "rs" "swift" "ts")
 
 # Function to print colored output
 print_status() {
@@ -81,6 +81,21 @@ run_py_format() {
         return 0
     else
         print_error "Python format check failed"
+        return 1
+    fi
+}
+
+# Function to run Rust format check
+run_rs_format() {
+    local repo_dir="$REPOS_DIR/better-auth-rs"
+    print_status "Running Rust format check from $repo_dir"
+
+    cd "$repo_dir"
+    if cargo fmt --check; then
+        print_success "Rust format check passed"
+        return 0
+    else
+        print_error "Rust format check failed"
         return 1
     fi
 }
