@@ -40,7 +40,7 @@ run_dart_lint() {
 
     cd "$repo_dir"
     dart pub get > /dev/null 2>&1
-    if dart analyze; then
+    if dart analyze --fatal-infos; then
         print_success "Dart lint passed"
         return 0
     else

@@ -17,7 +17,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPOS_DIR="$(dirname "$SCRIPT_DIR")"
 
 # Server implementations
-SERVERS=("go" "py" "rb" "rs")
+SERVERS=("go" "py" "rb" "rs" "ts")
 # Client implementations
 CLIENTS=("dart" "kt" "py" "rs" "swift" "ts")
 
@@ -149,6 +149,26 @@ start_rs_server() {
     else
         print_error "Rust server failed to start"
         cat /tmp/better-auth-rs.log
+        return 1
+    fi
+}
+
+# Function to start TypeScript server
+start_ts_server() {
+    local server_dir="$REPOS_DIR/better-auth-ts"
+    print_status "Starting TypeScript server from $server_dir"
+
+    cd "$server_dir"
+    npm run server > /tmp/better-auth-ts.log 2>&1 &
+    local pid=$!
+    echo $pid > /tmp/better-auth-ts.pid
+
+    if wait_for_server; then
+        print_success "TypeScript server started (PID: $pid)"
+        return 0
+    else
+        print_error "TypeScript server failed to start"
+        cat /tmp/better-auth-ts.log
         return 1
     fi
 }
