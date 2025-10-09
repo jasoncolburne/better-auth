@@ -14,7 +14,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPOS_DIR="$(dirname "$SCRIPT_DIR")"
 
 # Repositories with unit tests
-REPOS=("go" "py" "rb" "ts")
+REPOS=("go" "py" "rb" "rs" "ts")
 
 # Function to print colored output
 print_status() {
@@ -78,6 +78,21 @@ run_rb_unit_tests() {
         return 0
     else
         print_error "Ruby unit tests failed"
+        return 1
+    fi
+}
+
+# Function to run Rust unit tests
+run_rs_unit_tests() {
+    local repo_dir="$REPOS_DIR/better-auth-rs"
+    print_status "Running Rust unit tests from $repo_dir"
+
+    cd "$repo_dir"
+    if cargo test --test api_test --test token_test; then
+        print_success "Rust unit tests passed"
+        return 0
+    else
+        print_error "Rust unit tests failed"
         return 1
     fi
 }
