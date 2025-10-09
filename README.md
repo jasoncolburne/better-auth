@@ -23,15 +23,17 @@ me. I got them working and plan to come back for polish.
 Client implementations:
 - [typescript](https://github.com/jasoncolburne/better-auth-ts)
 - [dart (claude)](https://github.com/jasoncolburne/better-auth-dart)
-- [swift (claude)](https://github.com/jasoncolburne/better-auth-swift)
 - [kotlin (claude)](https://github.com/jasoncolburne/better-auth-kt)
 - [python (claude)](https://github.com/jasoncolburne/better-auth-py)
+- [rust (claude)](https://github.com/jasoncolburne/better-auth-rs)
+- [swift (claude)](https://github.com/jasoncolburne/better-auth-swift)
 
 Server implementations:
-- [golang](https://github.com/jasoncolburne/better-auth-go)
 - [typescript](https://github.com/jasoncolburne/better-auth-ts)
+- [golang](https://github.com/jasoncolburne/better-auth-go)
 - [python (claude)](https://github.com/jasoncolburne/better-auth-py)
 - [ruby (claude)](https://github.com/jasoncolburne/better-auth-rb)
+- [rust (claude)](https://github.com/jasoncolburne/better-auth-rs)
 
 ## Protocols
 
