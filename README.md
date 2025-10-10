@@ -114,7 +114,7 @@ authentication until a `recoveryHash` has been established.
 }
 ```
 
-### DeleteAccount
+#### DeleteAccount
 
 Delete account removes the record of the account on the server, and also removes associated devices.
 
