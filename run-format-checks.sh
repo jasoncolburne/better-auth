@@ -40,7 +40,7 @@ run_dart_format() {
 
     cd "$repo_dir"
     dart pub get > /dev/null 2>&1
-    if dart format --set-exit-if-changed .; then
+    if dart format -onone --set-exit-if-changed .; then
         print_success "Dart format check passed"
         return 0
     else
