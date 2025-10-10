@@ -114,6 +114,46 @@ authentication until a `recoveryHash` has been established.
 }
 ```
 
+#### DeleteAccount
+
+Delete account removes the record of the account on the server, and also removes associated devices.
+
+`request`
+
+```json
+{
+  "payload": {
+    "access": {
+      "nonce": "0AA29lw2GfElc_vN2nZBY-KO"
+    },
+    "request": {
+      "authentication": {
+        "device": "EHjNZBQHfL46WumdUPr1MMSSdX2f1s8FRHy_wvax1p0X",
+        "identity": "EFPS0fUY7gHy-R4N9yfzfdqZKQnSOl15hutYJVuVqUzn",
+        "publicKey": "1AAIA1WNz7MEhI1G1cEkG5cWbtIqCub6v0ip06ZLflKpcto5",
+        "rotationHash": "EDj7jwdHxVDMSg2JcPTZzg_f_tNWbvH9uDcZhYwXacM2"
+      }
+    }
+  },
+  "signature": "0IAx6sp9SPN4IRPm-oEmRewPN6XAeDP0gYk0WkvPXmdfB2xDwtKvSaAuaiXBawLJ1QjPWzUf-zs0AUGWeGgrbYUH"
+}
+```
+
+`response`
+
+```json
+{
+  "payload": {
+    "access": {
+      "nonce": "0AA29lw2GfElc_vN2nZBY-KO",
+      "serverIdentity": "1AAIA1g5v_ZwgpR8jaQrti05grWVKCccnANyOz156q9-mr-L"
+    },
+    "response": {}
+  },
+  "signature": "0IAs58qlfNIV8hQIMR8DKs9PFTo90cDnirnvD_03RQQtAH7mJi3tFzcSo2DVj7oroPo4FnT-DRKu_dytd2bJ5sF7"
+}
+```
+
 #### RecoverAccount
 
 We registered a `recoveryHash` on account creation. Here, we pass the `recoveryKey` to the server
