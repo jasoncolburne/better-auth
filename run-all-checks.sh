@@ -53,7 +53,7 @@ main() {
     # 2. Lint
     echo ""
     echo "╔════════════════════════════════════════════════════════════════════╗"
-    echo "║  Step 2/4: Lint                                                     ║"
+    echo "║  Step 2/4: Lint                                                    ║"
     echo "╚════════════════════════════════════════════════════════════════════╝"
     if "$SCRIPT_DIR/run-lints.sh"; then
         print_success "Lint completed"
@@ -65,7 +65,7 @@ main() {
     # 3. Unit tests
     echo ""
     echo "╔════════════════════════════════════════════════════════════════════╗"
-    echo "║  Step 3/4: Unit Tests                                               ║"
+    echo "║  Step 3/4: Unit Tests                                              ║"
     echo "╚════════════════════════════════════════════════════════════════════╝"
     if "$SCRIPT_DIR/run-unit-tests.sh"; then
         print_success "Unit tests completed"
@@ -77,7 +77,7 @@ main() {
     # 4. Integration tests
     echo ""
     echo "╔════════════════════════════════════════════════════════════════════╗"
-    echo "║  Step 4/4: Integration Tests                                        ║"
+    echo "║  Step 4/4: Integration Tests                                       ║"
     echo "╚════════════════════════════════════════════════════════════════════╝"
     if "$SCRIPT_DIR/run-integration-tests.sh"; then
         print_success "Integration tests completed"
@@ -89,7 +89,7 @@ main() {
     # Final summary
     echo ""
     echo "╔════════════════════════════════════════════════════════════════════╗"
-    echo "║                         Final Summary                               ║"
+    echo "║                         Final Summary                              ║"
     echo "╚════════════════════════════════════════════════════════════════════╝"
     echo ""
 
