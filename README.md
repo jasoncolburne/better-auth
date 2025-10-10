@@ -67,8 +67,8 @@ and the other to reveal in the future when rotating. The identity derivation is 
 implementer, but could conceivably go as far as a DKMS like KERI. The verification of this identity
 is performed in another server side interface, before returning a response.
 
-`device` is simply a hash digest of the `publicKey`, and the protocol handles this transformation
-and verification.
+`device` is simply a hash digest of the `publicKey` and `rotationHash`, and the protocol handles
+this transformation and verification.
 
 `request`
 
