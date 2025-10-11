@@ -10,6 +10,8 @@ This is the **specification repository** that defines the core protocol. All imp
 
 ## Multi-Repository Architecture
 
+Typically, the implementations are in adjacent directories (eg ../better-auth-ts) and scanning github is not required.
+
 ### Implementation Repositories
 
 **Full Implementations (Client + Server):**
