@@ -11,10 +11,10 @@ NC='\033[0m' # No Color
 
 # Directories
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-REPOS_DIR="$(dirname "$SCRIPT_DIR")"
+REPOS_DIR="$SCRIPT_DIR/../implementations"
 
 # Repositories
-REPOS=("dart" "kt" "py" "rb" "rs" "swift" "ts")
+REPOS=("dart" "go" "kt" "py" "rb" "rs" "swift" "ts")
 
 # Function to print colored output
 print_status() {
@@ -33,117 +33,40 @@ print_warning() {
     echo -e "${YELLOW}[WARNING]${NC} $1"
 }
 
-# Function to run Dart lint
-run_dart_lint() {
-    local repo_dir="$REPOS_DIR/better-auth-dart"
-    print_status "Running Dart lint from $repo_dir"
-
-    cd "$repo_dir"
-    dart pub get > /dev/null 2>&1
-    if dart analyze --fatal-infos; then
-        print_success "Dart lint passed"
-        return 0
-    else
-        print_error "Dart lint failed"
-        return 1
-    fi
+# Function to check if directory exists
+dir_exists() {
+    [ -d "$1" ]
 }
 
-# Function to run Kotlin lint
-run_kt_lint() {
-    local repo_dir="$REPOS_DIR/better-auth-kt"
-    print_status "Running Kotlin lint from $repo_dir"
+# Function to run lint using make
+run_lint() {
+    local repo=$1
+    local repo_dir="$REPOS_DIR/better-auth-$repo"
+
+    if ! dir_exists "$repo_dir"; then
+        print_warning "Directory $repo_dir does not exist - skipping"
+        return 0
+    fi
+
+    # Platform-specific checks
+    if [ "$repo" = "swift" ] && ! command -v swift &> /dev/null; then
+        print_warning "Swift not available - skipping better-auth-$repo"
+        return 0
+    fi
+
+    if [ "$repo" = "kt" ] && [ -z "$JAVA_HOME" ]; then
+        print_warning "JAVA_HOME not set - skipping better-auth-$repo"
+        return 0
+    fi
+
+    print_status "Running lint from $repo_dir"
 
     cd "$repo_dir"
-    if env JAVA_HOME=/opt/homebrew/opt/openjdk@21 ./gradlew ktlintCheck; then
-        print_success "Kotlin lint passed"
+    if make lint; then
+        print_success "Lint passed for better-auth-$repo"
         return 0
     else
-        print_error "Kotlin lint failed"
-        return 1
-    fi
-}
-
-# Function to run Python lint
-run_py_lint() {
-    local repo_dir="$REPOS_DIR/better-auth-py"
-    print_status "Running Python lint from $repo_dir"
-
-    cd "$repo_dir"
-    if [ -d "venv" ]; then
-        source venv/bin/activate
-    fi
-
-    if ruff check .; then
-        print_success "Python lint passed"
-        return 0
-    else
-        print_error "Python lint failed"
-        return 1
-    fi
-}
-
-# Function to run Ruby lint
-run_rb_lint() {
-    local repo_dir="$REPOS_DIR/better-auth-rb"
-    print_status "Running Ruby lint from $repo_dir"
-
-    cd "$repo_dir"
-    if bundle exec rubocop; then
-        print_success "Ruby lint passed"
-        return 0
-    else
-        print_error "Ruby lint failed"
-        return 1
-    fi
-}
-
-# Function to run Rust lint
-run_rs_lint() {
-    local repo_dir="$REPOS_DIR/better-auth-rs"
-    print_status "Running Rust lint from $repo_dir"
-
-    cd "$repo_dir"
-    if cargo clippy -- -Dwarnings; then
-        print_success "Rust lint passed"
-        return 0
-    else
-        print_error "Rust lint failed"
-        return 1
-    fi
-}
-
-# Function to run Swift lint
-run_swift_lint() {
-    local repo_dir="$REPOS_DIR/better-auth-swift"
-    print_status "Running Swift lint from $repo_dir"
-
-    cd "$repo_dir"
-    if ! command -v swiftlint &> /dev/null; then
-        print_warning "swiftlint not installed - skipping"
-        return 0
-    fi
-
-    if swiftlint lint --strict; then
-        print_success "Swift lint passed"
-        return 0
-    else
-        print_error "Swift lint failed"
-        return 1
-    fi
-}
-
-# Function to run TypeScript lint
-run_ts_lint() {
-    local repo_dir="$REPOS_DIR/better-auth-ts"
-    print_status "Running TypeScript lint from $repo_dir"
-
-    cd "$repo_dir"
-    if npm run lint; then
-        print_success "TypeScript lint passed"
-        return 0
-    else
-        print_error "TypeScript lint failed"
+        print_error "Lint failed for better-auth-$repo"
         return 1
     fi
 }
@@ -152,6 +75,7 @@ run_ts_lint() {
 main() {
     local total_passed=0
     local total_failed=0
+    local total_skipped=0
     local results=()
 
     echo "╔════════════════════════════════════════════════════════════════════╗"
@@ -163,12 +87,23 @@ main() {
         echo ""
         echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 
-        if run_${repo}_lint; then
-            results+=("${GREEN}✓${NC} better-auth-$repo")
-            total_passed=$((total_passed + 1))
+        local output
+        output=$(run_lint "$repo" 2>&1)
+        local status=$?
+
+        if [ $status -eq 0 ]; then
+            if echo "$output" | grep -q "WARNING"; then
+                results+=("${YELLOW}−${NC} better-auth-$repo")
+                total_skipped=$((total_skipped + 1))
+            else
+                results+=("${GREEN}✓${NC} better-auth-$repo")
+                total_passed=$((total_passed + 1))
+            fi
+            echo "$output"
         else
             results+=("${RED}✗${NC} better-auth-$repo")
             total_failed=$((total_failed + 1))
+            echo "$output"
         fi
     done
 
@@ -186,7 +121,7 @@ main() {
     local total_tests=$((total_passed + total_failed))
     echo ""
     echo "════════════════════════════════════════════════════════════════════════"
-    echo "Summary: $total_passed passed, $total_failed failed out of $total_tests repositories"
+    echo "Summary: $total_passed passed, $total_failed failed, $total_skipped skipped out of ${#REPOS[@]} repositories"
     echo "════════════════════════════════════════════════════════════════════════"
 
     if [ $total_failed -gt 0 ]; then

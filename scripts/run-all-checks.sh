@@ -11,6 +11,7 @@ NC='\033[0m' # No Color
 
 # Directories
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+REPOS_DIR="$SCRIPT_DIR/../implementations"
 
 # Function to print colored output
 print_status() {

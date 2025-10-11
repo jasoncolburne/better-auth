@@ -11,7 +11,7 @@ NC='\033[0m' # No Color
 
 # Directories
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-REPOS_DIR="$(dirname "$SCRIPT_DIR")"
+REPOS_DIR="$SCRIPT_DIR/../implementations"
 
 # Repositories (kt excluded - ktlintCheck in lint script handles both)
 REPOS=("dart" "go" "py" "rs" "swift" "ts")
@@ -33,104 +33,35 @@ print_warning() {
     echo -e "${YELLOW}[WARNING]${NC} $1"
 }
 
-# Function to run Dart format check
-run_dart_format() {
-    local repo_dir="$REPOS_DIR/better-auth-dart"
-    print_status "Running Dart format check from $repo_dir"
-
-    cd "$repo_dir"
-    dart pub get > /dev/null 2>&1
-    if dart format -onone --set-exit-if-changed .; then
-        print_success "Dart format check passed"
-        return 0
-    else
-        print_error "Dart format check failed"
-        return 1
-    fi
+# Function to check if directory exists
+dir_exists() {
+    [ -d "$1" ]
 }
 
-# Function to run Go format check
-run_go_format() {
-    local repo_dir="$REPOS_DIR/better-auth-go"
-    print_status "Running Go format check from $repo_dir"
+# Function to run format check using make
+run_format_check() {
+    local repo=$1
+    local repo_dir="$REPOS_DIR/better-auth-$repo"
+
+    if ! dir_exists "$repo_dir"; then
+        print_warning "Directory $repo_dir does not exist - skipping"
+        return 0
+    fi
+
+    # Platform-specific checks
+    if [ "$repo" = "swift" ] && ! command -v swift &> /dev/null; then
+        print_warning "Swift not available - skipping better-auth-$repo"
+        return 0
+    fi
+
+    print_status "Running format check from $repo_dir"
 
     cd "$repo_dir"
-    local output=$(gofmt -e -l .)
-    if [ -z "$output" ]; then
-        print_success "Go format check passed"
+    if make format-check; then
+        print_success "Format check passed for better-auth-$repo"
         return 0
     else
-        print_error "Go format check failed"
-        echo "$output"
-        return 1
-    fi
-}
-
-# Function to run Python format check
-run_py_format() {
-    local repo_dir="$REPOS_DIR/better-auth-py"
-    print_status "Running Python format check from $repo_dir"
-
-    cd "$repo_dir"
-    if [ -d "venv" ]; then
-        source venv/bin/activate
-    fi
-
-    if black --check .; then
-        print_success "Python format check passed"
-        return 0
-    else
-        print_error "Python format check failed"
-        return 1
-    fi
-}
-
-# Function to run Rust format check
-run_rs_format() {
-    local repo_dir="$REPOS_DIR/better-auth-rs"
-    print_status "Running Rust format check from $repo_dir"
-
-    cd "$repo_dir"
-    if cargo fmt --check; then
-        print_success "Rust format check passed"
-        return 0
-    else
-        print_error "Rust format check failed"
-        return 1
-    fi
-}
-
-# Function to run Swift format check
-run_swift_format() {
-    local repo_dir="$REPOS_DIR/better-auth-swift"
-    print_status "Running Swift format check from $repo_dir"
-
-    cd "$repo_dir"
-    if ! command -v swiftformat &> /dev/null; then
-        print_warning "swiftformat not installed - skipping"
-        return 0
-    fi
-
-    if swiftformat --lint .; then
-        print_success "Swift format check passed"
-        return 0
-    else
-        print_error "Swift format check failed"
-        return 1
-    fi
-}
-
-# Function to run TypeScript format check
-run_ts_format() {
-    local repo_dir="$REPOS_DIR/better-auth-ts"
-    print_status "Running TypeScript format check from $repo_dir"
-
-    cd "$repo_dir"
-    if npm run format:check; then
-        print_success "TypeScript format check passed"
-        return 0
-    else
-        print_error "TypeScript format check failed"
+        print_error "Format check failed for better-auth-$repo"
         return 1
     fi
 }
@@ -139,6 +70,7 @@ run_ts_format() {
 main() {
     local total_passed=0
     local total_failed=0
+    local total_skipped=0
     local results=()
 
     echo "╔════════════════════════════════════════════════════════════════════╗"
@@ -150,12 +82,23 @@ main() {
         echo ""
         echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 
-        if run_${repo}_format; then
-            results+=("${GREEN}✓${NC} better-auth-$repo")
-            total_passed=$((total_passed + 1))
+        local output
+        output=$(run_format_check "$repo" 2>&1)
+        local status=$?
+
+        if [ $status -eq 0 ]; then
+            if echo "$output" | grep -q "WARNING"; then
+                results+=("${YELLOW}−${NC} better-auth-$repo")
+                total_skipped=$((total_skipped + 1))
+            else
+                results+=("${GREEN}✓${NC} better-auth-$repo")
+                total_passed=$((total_passed + 1))
+            fi
+            echo "$output"
         else
             results+=("${RED}✗${NC} better-auth-$repo")
             total_failed=$((total_failed + 1))
+            echo "$output"
         fi
     done
 
@@ -173,7 +116,7 @@ main() {
     local total_tests=$((total_passed + total_failed))
     echo ""
     echo "════════════════════════════════════════════════════════════════════════"
-    echo "Summary: $total_passed passed, $total_failed failed out of $total_tests repositories"
+    echo "Summary: $total_passed passed, $total_failed failed, $total_skipped skipped out of ${#REPOS[@]} repositories"
     echo "════════════════════════════════════════════════════════════════════════"
 
     if [ $total_failed -gt 0 ]; then

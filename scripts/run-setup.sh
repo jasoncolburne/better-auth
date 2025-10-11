@@ -11,10 +11,10 @@ NC='\033[0m' # No Color
 
 # Directories
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-REPOS_DIR="$(dirname "$SCRIPT_DIR")"
+REPOS_DIR="$SCRIPT_DIR/../implementations"
 
-# Repositories with unit tests
-REPOS=("go" "py" "rb" "rs" "ts")
+# All implementation repositories
+REPOS=("dart" "go" "kt" "py" "rb" "rs" "swift" "ts")
 
 # Function to print colored output
 print_status() {
@@ -33,81 +33,50 @@ print_warning() {
     echo -e "${YELLOW}[WARNING]${NC} $1"
 }
 
-# Function to run Go unit tests
-run_go_unit_tests() {
-    local repo_dir="$REPOS_DIR/better-auth-go"
-    print_status "Running Go unit tests from $repo_dir"
-
-    cd "$repo_dir"
-    if go test ./...; then
-        print_success "Go unit tests passed"
-        return 0
-    else
-        print_error "Go unit tests failed"
-        return 1
-    fi
+# Function to check if command exists
+command_exists() {
+    command -v "$1" >/dev/null 2>&1
 }
 
-# Function to run Python unit tests
-run_py_unit_tests() {
-    local repo_dir="$REPOS_DIR/better-auth-py"
-    print_status "Running Python unit tests from $repo_dir"
-
-    cd "$repo_dir"
-    if [ -d "venv" ]; then
-        source venv/bin/activate
-    fi
-
-    if pytest tests/test_api.py tests/test_token.py; then
-        print_success "Python unit tests passed"
-        return 0
-    else
-        print_error "Python unit tests failed"
-        return 1
-    fi
+# Function to check if directory exists
+dir_exists() {
+    [ -d "$1" ]
 }
 
-# Function to run Ruby unit tests
-run_rb_unit_tests() {
-    local repo_dir="$REPOS_DIR/better-auth-rb"
-    print_status "Running Ruby unit tests from $repo_dir"
+# Function to run setup using make
+run_setup() {
+    local repo=$1
+    local repo_dir="$REPOS_DIR/better-auth-$repo"
 
-    cd "$repo_dir"
-    if bundle exec rspec; then
-        print_success "Ruby unit tests passed"
+    if ! dir_exists "$repo_dir"; then
+        print_warning "Directory $repo_dir does not exist - skipping"
         return 0
-    else
-        print_error "Ruby unit tests failed"
-        return 1
     fi
-}
 
-# Function to run Rust unit tests
-run_rs_unit_tests() {
-    local repo_dir="$REPOS_DIR/better-auth-rs"
-    print_status "Running Rust unit tests from $repo_dir"
+    print_status "Setting up better-auth-$repo from $repo_dir"
 
-    cd "$repo_dir"
-    if cargo test --test api_test --test token_test; then
-        print_success "Rust unit tests passed"
+    # Platform-specific checks
+    if [ "$repo" = "swift" ] && ! command_exists swift; then
+        print_warning "Swift not installed - skipping better-auth-swift"
         return 0
-    else
-        print_error "Rust unit tests failed"
-        return 1
     fi
-}
 
-# Function to run TypeScript unit tests
-run_ts_unit_tests() {
-    local repo_dir="$REPOS_DIR/better-auth-ts"
-    print_status "Running TypeScript unit tests from $repo_dir"
+    if [ "$repo" = "kt" ] && [ -z "$JAVA_HOME" ]; then
+        print_warning "JAVA_HOME not set - skipping better-auth-kt"
+        return 0
+    fi
+
+    if [ "$repo" = "dart" ] && ! command_exists dart; then
+        print_warning "Dart not installed - skipping better-auth-dart"
+        return 0
+    fi
 
     cd "$repo_dir"
-    if npm test; then
-        print_success "TypeScript unit tests passed"
+    if make setup; then
+        print_success "Setup completed for better-auth-$repo"
         return 0
     else
-        print_error "TypeScript unit tests failed"
+        print_error "Setup failed for better-auth-$repo"
         return 1
     fi
 }
@@ -116,10 +85,11 @@ run_ts_unit_tests() {
 main() {
     local total_passed=0
     local total_failed=0
+    local total_skipped=0
     local results=()
 
     echo "╔════════════════════════════════════════════════════════════════════╗"
-    echo "║              Better Auth Unit Test Suite                           ║"
+    echo "║              Better Auth Setup Script                              ║"
     echo "╚════════════════════════════════════════════════════════════════════╝"
     echo ""
 
@@ -127,19 +97,30 @@ main() {
         echo ""
         echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 
-        if run_${repo}_unit_tests; then
-            results+=("${GREEN}✓${NC} better-auth-$repo")
-            total_passed=$((total_passed + 1))
+        local output
+        output=$(run_setup "$repo" 2>&1)
+        local status=$?
+
+        if [ $status -eq 0 ]; then
+            if echo "$output" | grep -q "WARNING"; then
+                results+=("${YELLOW}−${NC} better-auth-$repo")
+                total_skipped=$((total_skipped + 1))
+            else
+                results+=("${GREEN}✓${NC} better-auth-$repo")
+                total_passed=$((total_passed + 1))
+            fi
+            echo "$output"
         else
             results+=("${RED}✗${NC} better-auth-$repo")
             total_failed=$((total_failed + 1))
+            echo "$output"
         fi
     done
 
     # Print summary
     echo ""
     echo "╔════════════════════════════════════════════════════════════════════╗"
-    echo "║                        Unit Test Results                           ║"
+    echo "║                          Setup Results                             ║"
     echo "╚════════════════════════════════════════════════════════════════════╝"
     echo ""
 
@@ -147,10 +128,10 @@ main() {
         echo -e "  $result"
     done
 
-    local total_tests=$((total_passed + total_failed))
+    local total_repos=${#REPOS[@]}
     echo ""
     echo "════════════════════════════════════════════════════════════════════════"
-    echo "Summary: $total_passed passed, $total_failed failed out of $total_tests repositories"
+    echo "Summary: $total_passed completed, $total_failed failed, $total_skipped skipped out of $total_repos repositories"
     echo "════════════════════════════════════════════════════════════════════════"
 
     if [ $total_failed -gt 0 ]; then
