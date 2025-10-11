@@ -51,8 +51,7 @@ Better Auth is designed to be:
 
 All protocol request/response payloads contain these contexts:
 - `access`: Information relevant to the request/response pair
-- `request`: The request data
-- `response`: The response data
+- `request`/`response`: The request or response data
 
 These contexts are further broken down into:
 - `access`: Information that permits access by the current device
@@ -77,7 +76,8 @@ Keys are rotated by:
 2. When rotating, revealing the key that matches the previous hash
 3. Establishing a new rotationHash for the next rotation
 
-This creates a hash chain that provides forward secrecy - compromising the current key doesn't reveal past keys.
+This creates a hash chain that provides forward secrecy - compromising the current key doesn't reveal other keys
+and rotation permits recovery of the chain.
 
 ### Device Identity
 
@@ -103,7 +103,7 @@ Access tokens contain:
 - Issued/expiry timestamps
 - Custom attributes (e.g., permissions)
 
-Tokens are signed by the server and can be verified independently.
+Tokens are signed by the server and can be verified independently, permitting efficient scaling.
 
 ## Message Flow Patterns
 
@@ -178,7 +178,7 @@ The `run-integration-tests.sh` script in this repository coordinates integration
 
 When making protocol-level changes:
 1. Update the specification in this repository's README
-2. Update the reference implementation (better-auth-ts)
+2. If necessary, update the reference implementation (better-auth-ts) - sometimes this will be done by a human
 3. Update examples in this README using the reference implementation
 4. Propagate changes to other implementations
 5. Update integration tests
