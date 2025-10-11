@@ -1,24 +1,32 @@
 [submodule "implementations/better-auth-ts"]
 	path = implementations/better-auth-ts
 	url = git@github.com:jasoncolburne/better-auth-ts.git
+	branch = main
 [submodule "implementations/better-auth-py"]
 	path = implementations/better-auth-py
 	url = git@github.com:jasoncolburne/better-auth-py.git
+	branch = main
 [submodule "implementations/better-auth-go"]
 	path = implementations/better-auth-go
 	url = git@github.com:jasoncolburne/better-auth-go.git
+	branch = main
 [submodule "implementations/better-auth-rb"]
 	path = implementations/better-auth-rb
 	url = git@github.com:jasoncolburne/better-auth-rb.git
+	branch = main
 [submodule "implementations/better-auth-rs"]
 	path = implementations/better-auth-rs
 	url = git@github.com:jasoncolburne/better-auth-rs.git
+	branch = main
 [submodule "implementations/better-auth-swift"]
 	path = implementations/better-auth-swift
 	url = git@github.com:jasoncolburne/better-auth-swift.git
+	branch = main
 [submodule "implementations/better-auth-dart"]
 	path = implementations/better-auth-dart
 	url = git@github.com:jasoncolburne/better-auth-dart.git
+	branch = main
 [submodule "implementations/better-auth-kt"]
 	path = implementations/better-auth-kt
 	url = git@github.com:jasoncolburne/better-auth-kt.git
+	branch = main
