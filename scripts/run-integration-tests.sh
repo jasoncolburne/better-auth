@@ -14,7 +14,7 @@ PORT=8080
 
 # Directories
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-REPOS_DIR="$(dirname "$SCRIPT_DIR")"
+REPOS_DIR="$SCRIPT_DIR/../implementations"
 
 # Server implementations
 SERVERS=("go" "py" "rb" "rs" "ts")
@@ -36,6 +36,11 @@ print_error() {
 
 print_warning() {
     echo -e "${YELLOW}[WARNING]${NC} $1"
+}
+
+# Function to check if directory exists
+dir_exists() {
+    [ -d "$1" ]
 }
 
 # Function to check if a port is in use
@@ -68,107 +73,29 @@ wait_for_server() {
     return 1
 }
 
-# Function to start Go server
-start_go_server() {
-    local server_dir="$REPOS_DIR/better-auth-go"
-    print_status "Starting Go server from $server_dir"
+# Function to start server using make
+start_server() {
+    local server=$1
+    local server_dir="$REPOS_DIR/better-auth-$server"
 
-    cd "$server_dir"
-    go run examples/server.go > /tmp/better-auth-go.log 2>&1 &
-    local pid=$!
-    echo $pid > /tmp/better-auth-go.pid
-
-    if wait_for_server; then
-        print_success "Go server started (PID: $pid)"
-        return 0
-    else
-        print_error "Go server failed to start"
-        cat /tmp/better-auth-go.log
+    if ! dir_exists "$server_dir"; then
+        print_warning "Directory $server_dir does not exist - skipping"
         return 1
     fi
-}
 
-# Function to start Python server
-start_py_server() {
-    local server_dir="$REPOS_DIR/better-auth-py"
-    print_status "Starting Python server from $server_dir"
+    print_status "Starting $server server from $server_dir"
 
     cd "$server_dir"
-    # Activate venv if it exists
-    if [ -d "venv" ]; then
-        source venv/bin/activate
-    fi
-
-    python -m examples.server > /tmp/better-auth-py-server.log 2>&1 &
+    make server > /tmp/better-auth-${server}.log 2>&1 &
     local pid=$!
-    echo $pid > /tmp/better-auth-py-server.pid
+    echo $pid > /tmp/better-auth-${server}.pid
 
     if wait_for_server; then
-        print_success "Python server started (PID: $pid)"
+        print_success "$server server started (PID: $pid)"
         return 0
     else
-        print_error "Python server failed to start"
-        cat /tmp/better-auth-py-server.log
-        return 1
-    fi
-}
-
-# Function to start Ruby server
-start_rb_server() {
-    local server_dir="$REPOS_DIR/better-auth-rb"
-    print_status "Starting Ruby server from $server_dir"
-
-    cd "$server_dir"
-    bundle exec ruby examples/server.rb > /tmp/better-auth-rb.log 2>&1 &
-    local pid=$!
-    echo $pid > /tmp/better-auth-rb.pid
-
-    if wait_for_server; then
-        print_success "Ruby server started (PID: $pid)"
-        return 0
-    else
-        print_error "Ruby server failed to start"
-        cat /tmp/better-auth-rb.log
-        return 1
-    fi
-}
-
-# Function to start Rust server
-start_rs_server() {
-    local server_dir="$REPOS_DIR/better-auth-rs"
-    print_status "Starting Rust server from $server_dir"
-
-    cd "$server_dir"
-    cargo run --example server > /tmp/better-auth-rs.log 2>&1 &
-    local pid=$!
-    echo $pid > /tmp/better-auth-rs.pid
-
-    if wait_for_server; then
-        print_success "Rust server started (PID: $pid)"
-        return 0
-    else
-        print_error "Rust server failed to start"
-        cat /tmp/better-auth-rs.log
-        return 1
-    fi
-}
-
-# Function to start TypeScript server
-start_ts_server() {
-    local server_dir="$REPOS_DIR/better-auth-ts"
-    print_status "Starting TypeScript server from $server_dir"
-
-    cd "$server_dir"
-    npm run server > /tmp/better-auth-ts.log 2>&1 &
-    local pid=$!
-    echo $pid > /tmp/better-auth-ts.pid
-
-    if wait_for_server; then
-        print_success "TypeScript server started (PID: $pid)"
-        return 0
-    else
-        print_error "TypeScript server failed to start"
-        cat /tmp/better-auth-ts.log
+        print_error "$server server failed to start"
+        cat /tmp/better-auth-${server}.log
         return 1
     fi
 }
@@ -193,92 +120,35 @@ stop_server() {
     kill_port
 }
 
-# Function to run Dart tests
-run_dart_tests() {
-    local client_dir="$REPOS_DIR/better-auth-dart"
-    print_status "Running Dart integration tests from $client_dir"
+# Function to run client tests using make
+run_client_tests() {
+    local client=$1
+    local client_dir="$REPOS_DIR/better-auth-$client"
 
-    cd "$client_dir"
-    if dart test test/integration_test.dart; then
-        print_success "Dart tests passed"
-        return 0
-    else
-        print_error "Dart tests failed"
-        return 1
+    if ! dir_exists "$client_dir"; then
+        print_warning "Directory $client_dir does not exist - skipping"
+        return 2  # Return 2 for skipped
     fi
-}
 
-# Function to run Kotlin tests
-run_kt_tests() {
-    local client_dir="$REPOS_DIR/better-auth-kt"
-    print_status "Running Kotlin integration tests from $client_dir"
-
-    cd "$client_dir"
-    if env JAVA_HOME=/opt/homebrew/opt/openjdk@21 ./gradlew test --tests "com.betterauth.IntegrationTest" --rerun-tasks; then
-        print_success "Kotlin tests passed"
-        return 0
-    else
-        print_error "Kotlin tests failed"
-        return 1
+    # Platform-specific checks
+    if [ "$client" = "swift" ] && ! command -v swift &> /dev/null; then
+        print_warning "Swift not available - skipping better-auth-$client"
+        return 2  # Return 2 for skipped
     fi
-}
 
-# Function to run Python tests
-run_py_tests() {
-    local client_dir="$REPOS_DIR/better-auth-py"
-    print_status "Running Python integration tests from $client_dir"
-
-    cd "$client_dir"
-    if (source venv/bin/activate && pytest tests/integration/test_integration.py); then
-        print_success "Python tests passed"
-        return 0
-    else
-        print_error "Python tests failed"
-        return 1
+    if [ "$client" = "kt" ] && [ -z "$JAVA_HOME" ]; then
+        print_warning "JAVA_HOME not set - skipping better-auth-$client"
+        return 2  # Return 2 for skipped
     fi
-}
 
-# Function to run Rust tests
-run_rs_tests() {
-    local client_dir="$REPOS_DIR/better-auth-rs"
-    print_status "Running Rust integration tests from $client_dir"
+    print_status "Running $client integration tests from $client_dir"
 
     cd "$client_dir"
-    if cargo test --test integration_test; then
-        print_success "Rust tests passed"
+    if make test-integration; then
+        print_success "$client tests passed"
         return 0
     else
-        print_error "Rust tests failed"
-        return 1
-    fi
-}
-
-# Function to run Swift tests
-run_swift_tests() {
-    local client_dir="$REPOS_DIR/better-auth-swift"
-    print_status "Running Swift integration tests from $client_dir"
-
-    cd "$client_dir"
-    if swift test --filter BetterAuthTests.IntegrationTests; then
-        print_success "Swift tests passed"
-        return 0
-    else
-        print_error "Swift tests failed"
-        return 1
-    fi
-}
-
-# Function to run TypeScript tests
-run_ts_tests() {
-    local client_dir="$REPOS_DIR/better-auth-ts"
-    print_status "Running TypeScript integration tests from $client_dir"
-
-    cd "$client_dir"
-    if npm run test:integration; then
-        print_success "TypeScript tests passed"
-        return 0
-    else
-        print_error "TypeScript tests failed"
+        print_error "$client tests failed"
         return 1
     fi
 }
@@ -294,9 +164,17 @@ run_all_client_tests() {
         print_status "Testing $client client" >&2
         echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━" >&2
 
-        if run_${client}_tests >&2; then
+        local output
+        output=$(run_client_tests "$client" 2>&1)
+        local status=$?
+        echo "$output" >&2
+
+        if [ $status -eq 0 ]; then
             results+=("${client}:PASS")
             client_results+=("${GREEN}✓${NC} $client")
+        elif [ $status -eq 2 ]; then
+            results+=("${client}:SKIP")
+            client_results+=("${YELLOW}−${NC} $client")
         else
             results+=("${client}:FAIL")
             client_results+=("${RED}✗${NC} $client")
@@ -318,6 +196,7 @@ run_all_client_tests() {
 main() {
     local total_passed=0
     local total_failed=0
+    local total_skipped=0
     local results_matrix=()
 
     echo "╔════════════════════════════════════════════════════════════════════╗"
@@ -335,10 +214,11 @@ main() {
         echo "╚════════════════════════════════════════════════════════════════════╝"
 
         # Start the server
-        if ! start_${server}_server; then
+        if ! start_server "$server"; then
             print_error "Failed to start $server server, skipping tests"
             for client in "${CLIENTS[@]}"; do
                 results_matrix+=("${server}:${client}:SKIP")
+                total_skipped=$((total_skipped + 1))
             done
             stop_server "$server"
             continue
@@ -357,6 +237,8 @@ main() {
 
             if [ "$status" = "PASS" ]; then
                 total_passed=$((total_passed + 1))
+            elif [ "$status" = "SKIP" ]; then
+                total_skipped=$((total_skipped + 1))
             else
                 total_failed=$((total_failed + 1))
             fi
@@ -406,8 +288,7 @@ main() {
         echo ""
     done
 
-    local total_tests=$((total_passed + total_failed))
-    local total_skipped=$((${#SERVERS[@]} * ${#CLIENTS[@]} - total_tests))
+    local total_tests=$((total_passed + total_failed + total_skipped))
 
     echo ""
     echo "════════════════════════════════════════════════════════════════════════"
