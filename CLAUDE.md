@@ -10,7 +10,12 @@ This is the **specification repository** that defines the core protocol. All imp
 
 ## Multi-Repository Architecture
 
-Typically, the implementations are in adjacent directories (eg ../better-auth-ts) and scanning github is not required.
+All implementation repositories are included as **git submodules** in the `implementations/` directory. Each submodule is configured with:
+- SSH URLs for authentication (`git@github.com:jasoncolburne/better-auth-*.git`)
+- Branch tracking pointing to `main`
+- Standardized Makefiles for common operations
+
+Submodules track specific commits to ensure reproducible builds, while branch tracking makes it easy to pull latest changes from `main`.
 
 ### Implementation Repositories
 
@@ -172,7 +177,107 @@ Integration tests verify cross-language interoperability:
 - Python client → Go server
 - Etc.
 
-The `run-integration-tests.sh` script in this repository coordinates integration testing across implementations.
+The `scripts/run-integration-tests.sh` script in this repository coordinates integration testing across implementations.
+
+## Getting Started with Development
+
+### Initial Clone
+
+Clone the repository with all submodules:
+
+```bash
+git clone --recurse-submodules git@github.com:jasoncolburne/better-auth.git
+cd better-auth
+```
+
+If you've already cloned without `--recurse-submodules`, initialize them:
+
+```bash
+git submodule update --init --recursive
+```
+
+### Setup All Implementations
+
+Run the setup script to install dependencies in all implementations and install git hooks:
+
+```bash
+./scripts/run-setup.sh
+```
+
+This will:
+- Run `make setup` in each implementation (installs dependencies, creates Python venv)
+- Install git hooks from `scripts/hooks/` to `.git/hooks/`
+- Skip implementations where required tooling is not available (Swift, Kotlin, Dart)
+
+### Updating Submodules
+
+To pull the latest changes from the `main` branch in all submodules:
+
+```bash
+./scripts/pull-repos.sh
+```
+
+This script intelligently:
+- Only pulls submodules that are on the `main` branch
+- Skips submodules on feature branches (with warning)
+- Skips submodules in detached HEAD state (with warning)
+- Shows summary of updated/skipped repos
+
+### Running Tests
+
+Each orchestration script runs the corresponding `make` target across all implementations:
+
+```bash
+./scripts/run-type-checks.sh    # make type-check
+./scripts/run-unit-tests.sh     # make test
+./scripts/run-lints.sh          # make lint
+./scripts/run-format-checks.sh  # make format-check
+./scripts/run-integration-tests.sh  # Starts servers, runs integration tests
+./scripts/run-all-checks.sh     # Runs all checks in sequence
+```
+
+Scripts gracefully skip implementations where tooling is not available.
+
+## Git Hooks
+
+### Pre-Commit Hook
+
+The repository includes a pre-commit hook that **prevents committing to the parent repository when any submodule is not on the main branch**. This is critical because:
+
+1. Git submodules record specific commit hashes
+2. If you commit while a submodule is on a feature branch or in detached HEAD state, the parent repo will point to that commit
+3. Other developers may not be able to access that commit (if the branch isn't pushed, gets deleted, or is unreachable)
+4. This breaks reproducible builds and collaboration
+
+### Hook Behavior
+
+The pre-commit hook checks all submodules and:
+- ✅ Allows commit if all submodules are on `main` branch
+- ❌ Blocks commit if any submodule is on a feature branch
+- ❌ Blocks commit if any submodule is in detached HEAD state
+- Shows clear error message listing which submodules are problematic
+
+### Hook Installation
+
+Hooks are automatically installed by `./scripts/run-setup.sh`.
+
+To manually install or update hooks:
+
+```bash
+./scripts/install-hooks.sh
+```
+
+The hooks are version-controlled in `scripts/hooks/` and symlinked to `.git/hooks/`.
+
+### Overriding the Hook
+
+If you have a specific reason to commit while submodules are on feature branches:
+
+```bash
+git commit --no-verify -m "message"
+```
+
+**Warning:** Only do this if you understand the implications. Generally, the correct workflow is to merge the feature branch to main in the submodule first, then commit to the parent repo.
 
 ## Making Changes Across Implementations
 
@@ -193,15 +298,103 @@ When making changes to a specific implementation:
 - Update that implementation's tests
 - Run integration tests to verify interoperability
 
+### Working with Submodules
+
+**Recommended Workflow:**
+
+1. **Work on feature branches in submodules as usual:**
+   ```bash
+   cd implementations/better-auth-ts
+   git checkout -b feature/my-feature
+   # make changes, commit
+   ```
+
+2. **When ready to integrate, merge to main in the submodule:**
+   ```bash
+   # In the submodule
+   git checkout main
+   git merge feature/my-feature
+   git push origin main
+   ```
+
+3. **Then update the parent repository:**
+   ```bash
+   # Back in the parent repo
+   cd ../..
+   git add implementations/better-auth-ts
+   git commit -m "Update better-auth-ts: implement my feature"
+   ```
+
+**Important Notes:**
+
+- The pre-commit hook will block step 3 if you forget step 2
+- Always push the submodule changes before pushing the parent repo
+- If others need to access your changes, the submodule commits must be on main
+- Using `git commit --no-verify` to bypass the hook is **not recommended** unless you have a specific reason and understand the implications
+
+**Updating Parent Repo Submodule References:**
+
+After pulling changes in a submodule:
+```bash
+cd implementations/better-auth-ts
+git pull origin main
+cd ../..
+git add implementations/better-auth-ts
+git commit -m "Update better-auth-ts to latest"
+```
+
+Or use the automated script if all submodules are on main:
+```bash
+./scripts/pull-repos.sh  # Pulls all submodules on main
+git add implementations/
+git commit -m "Update all implementations to latest"
+```
+
 ## Repository Structure
 
 This spec repository contains:
+
+### Core Documentation
 - `README.md`: Complete protocol specification with examples
-- `run-integration-tests.sh`: Integration test orchestration
-- `run-unit-tests.sh`: Unit test runner for all implementations
-- `run-lints.sh`: Lint runner for all implementations
-- `run-format-checks.sh`: Format checker for all implementations
-- `run-all-checks.sh`: Master script to run all checks
+- `CLAUDE.md`: This file - development guidelines and architecture
+
+### Implementation Submodules
+- `implementations/`: Git submodules for all 8 implementations
+  - `implementations/better-auth-ts/` - TypeScript (reference implementation)
+  - `implementations/better-auth-py/` - Python
+  - `implementations/better-auth-go/` - Go
+  - `implementations/better-auth-rb/` - Ruby
+  - `implementations/better-auth-rs/` - Rust
+  - `implementations/better-auth-swift/` - Swift
+  - `implementations/better-auth-dart/` - Dart
+  - `implementations/better-auth-kt/` - Kotlin
+
+### Orchestration Scripts
+- `scripts/pull-repos.sh`: Update all submodules (only pulls if on `main` branch)
+- `scripts/run-setup.sh`: Setup all implementations + install git hooks
+- `scripts/run-type-checks.sh`: Run type checkers across implementations
+- `scripts/run-unit-tests.sh`: Run unit tests across implementations
+- `scripts/run-lints.sh`: Run linters across implementations
+- `scripts/run-format-checks.sh`: Run format checkers across implementations
+- `scripts/run-integration-tests.sh`: Run integration tests (all client/server combinations)
+- `scripts/run-all-checks.sh`: Master script to run all checks
+
+### Git Hooks
+- `scripts/hooks/pre-commit`: Pre-commit hook (version controlled)
+- `scripts/install-hooks.sh`: Install git hooks to `.git/hooks/`
+
+### Standardized Makefiles
+Each implementation has a Makefile with common targets:
+- `make setup`: Install dependencies (creates venv for Python)
+- `make test`: Run unit tests
+- `make type-check`: Run type checker
+- `make lint`: Run linter
+- `make format`: Auto-format code
+- `make format-check`: Check code formatting
+- `make clean`: Clean build artifacts
+- `make server`: Start development server (server implementations only)
+- `make test-integration`: Run integration tests (client implementations only)
+- `make build`: Build project (where applicable)
 
 ## Development Status
 

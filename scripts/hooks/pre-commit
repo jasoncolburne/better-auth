@@ -1,0 +1,54 @@
+#!/usr/bin/env bash
+
+# Pre-commit hook to ensure all submodules are on main branch (not feature branches or detached HEAD)
+# This prevents accidentally recording unreachable or feature branch commits in the parent repo
+
+# Colors for output
+RED='\033[0;31m'
+YELLOW='\033[1;33m'
+BLUE='\033[0;34m'
+NC='\033[0m' # No Color
+
+# All submodules
+SUBMODULES=("implementations/better-auth-ts" "implementations/better-auth-py" "implementations/better-auth-go" "implementations/better-auth-rb" "implementations/better-auth-rs" "implementations/better-auth-swift" "implementations/better-auth-dart" "implementations/better-auth-kt")
+
+# Track submodules not on main
+non_main_submodules=()
+
+# Check each submodule
+for submodule in "${SUBMODULES[@]}"; do
+    if [ -d "$submodule" ]; then
+        cd "$submodule"
+        current_branch=$(git branch --show-current)
+
+        # Block if not on main branch or if in detached HEAD state
+        if [ -z "$current_branch" ]; then
+            # Detached HEAD state
+            non_main_submodules+=("  • $(basename $submodule): detached HEAD")
+        elif [ "$current_branch" != "main" ]; then
+            # On a branch that's not main
+            non_main_submodules+=("  • $(basename $submodule): $current_branch")
+        fi
+
+        cd - > /dev/null
+    fi
+done
+
+# If any submodules are not on main, block the commit
+if [ ${#non_main_submodules[@]} -gt 0 ]; then
+    echo -e "${RED}[ERROR]${NC} Cannot commit: submodules must be on main branch"
+    echo ""
+    echo "The following submodules are not on main:"
+    for item in "${non_main_submodules[@]}"; do
+        echo -e "${YELLOW}$item${NC}"
+    done
+    echo ""
+    echo "Please either:"
+    echo "  1. Switch submodules to main branch (checkout main)"
+    echo "  2. Use 'git commit --no-verify' to override (not recommended)"
+    echo ""
+    exit 1
+fi
+
+# All good, allow commit
+exit 0

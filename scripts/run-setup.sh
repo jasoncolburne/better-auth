@@ -137,6 +137,11 @@ main() {
     if [ $total_failed -gt 0 ]; then
         exit 1
     fi
+
+    # Install git hooks
+    echo ""
+    echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    "$SCRIPT_DIR/install-hooks.sh"
 }
 
 main "$@"
