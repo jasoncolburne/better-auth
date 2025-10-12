@@ -49,6 +49,81 @@ This will run `make setup` in each implementation repository, which:
 
 Implementations are gracefully skipped if required tooling is not available.
 
+## For Contributors
+
+### Git Hooks
+
+This repository includes a pre-commit hook that ensures submodules are on the `main` branch before committing to the parent repository. The hook blocks commits if any submodule is on a feature branch or in detached HEAD state. This is critical because:
+
+- Git submodules record specific commit hashes
+- Committing while a submodule is on a feature branch or detached HEAD can break reproducible builds
+- Other developers may not be able to access those commits if they're unreachable or on unpushed branches
+
+The hooks are **automatically installed** when you run `./scripts/run-setup.sh`.
+
+To manually install hooks:
+
+```bash
+./scripts/install-hooks.sh
+```
+
+If you need to override the hook (not recommended):
+
+```bash
+git commit --no-verify -m "message"
+```
+
+### Working with Submodules
+
+Each implementation is a git submodule located in `implementations/`. Here's the recommended workflow:
+
+**1. Work on feature branches in submodules:**
+```bash
+cd implementations/better-auth-ts
+git checkout -b feature/my-feature
+# make changes, commit
+```
+
+**2. When ready, merge to main in the submodule:**
+```bash
+git checkout main
+git merge feature/my-feature
+git push origin main
+```
+
+**3. Then commit to the parent repository:**
+```bash
+cd ../..
+git add implementations/better-auth-ts
+git commit -m "Update better-auth-ts: my feature"
+```
+
+The pre-commit hook will block step 3 if you forget step 2, preventing accidental feature branch or detached HEAD commits from being recorded in the parent repo.
+
+### Running Tests
+
+All orchestration scripts are in the `scripts/` directory:
+
+```bash
+./scripts/run-setup.sh           # Setup all implementations + install hooks
+./scripts/pull-repos.sh          # Pull latest changes (only if on main)
+./scripts/run-type-checks.sh     # Run type checkers
+./scripts/run-unit-tests.sh      # Run unit tests
+./scripts/run-lints.sh           # Run linters
+./scripts/run-format-checks.sh   # Check code formatting
+./scripts/run-integration-tests.sh  # Run integration tests
+./scripts/run-all-checks.sh      # Run all checks in sequence
+```
+
+Each implementation has standardized Makefile targets:
+- `make setup` - Install dependencies
+- `make test` - Run unit tests
+- `make type-check` - Run type checker
+- `make lint` - Run linter
+- `make format` - Auto-format code
+- `make format-check` - Check formatting
+- `make clean` - Clean build artifacts
+
 ## Design Principles
 
 1. All actions except authentication to acquire an access session are gated by a rotation operation.
