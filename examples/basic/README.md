@@ -135,7 +135,7 @@ cd examples/basic
 
 ### 2. Deploy Everything
 
-Garden will build Docker images, deploy to Kubernetes, and set up port forwarding:
+Garden will build Docker images, deploy to Kubernetes, and set up ingresses:
 
 ```bash
 garden deploy
@@ -145,9 +145,10 @@ This command will:
 - Build the auth Docker image
 - Build the app Docker image
 - Create Kubernetes deployments and services
-- Forward ports for local access:
-  - Auth Server: http://localhost:8080
-  - App Server: http://localhost:3000
+- Setup ingresses for local access:
+  - Auth Service: http://auth.better-auth.local/
+  - App Service: http://app.better-auth.local/
+  - Keys Service: http://keys.better-auth.local/
 
 ### 3. Verify Deployment
 
@@ -174,6 +175,12 @@ Add these lines
 ```
 
 ### 5. Test the Services
+
+Check for keys:
+
+```bash
+curl http://keys.better-auth.local/keys
+```
 
 From the typescript implementation:
 
@@ -214,13 +221,6 @@ garden delete deploy
 # Shell into running container
 kubectl exec -it -n better-auth-basic-example-dev deployment/auth -- sh
 kubectl exec -it -n better-auth-basic-example-dev deployment/app -- sh
-
-# Port forward manually if needed
-kubectl port-forward -n better-auth-basic-example-dev deployment/auth 8080:8080
-kubectl port-forward -n better-auth-basic-example-dev deployment/app 3000:3000
-
-# View Garden dashboard
-garden dashboard
 ```
 
 ## Project Structure
