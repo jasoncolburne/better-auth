@@ -47,7 +47,7 @@ This will run `make setup` in each implementation repository, which:
 - Gets Dart packages (Dart)
 - Sets up Gradle dependencies (Kotlin)
 
-Implementations are gracefully skipped if required tooling is not available.
+Some implementations will be gracefully skipped if tooling is unavailable.
 
 ## For Contributors
 

@@ -236,7 +236,7 @@ Each orchestration script runs the corresponding `make` target across all implem
 ./scripts/run-all-checks.sh     # Runs all checks in sequence
 ```
 
-Scripts gracefully skip implementations where tooling is not available.
+Scripts gracefully skip implementations where tooling is not available (for some toolchains).
 
 ## Git Hooks
 
