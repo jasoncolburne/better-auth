@@ -1,0 +1,29 @@
+apiVersion: garden.io/v2
+kind: Project
+name: better-auth-basic-example
+defaultEnvironment: local
+
+# This example demonstrates a basic Better Auth setup with:
+# - Go-based authentication server
+# - TypeScript-based application server that uses the auth service
+
+environments:
+  - name: local
+    defaultNamespace: dev
+
+providers:
+  - name: local-kubernetes
+    setupIngressController: nginx
+    defaultHostname: better-auth.local
+    environments: [local]
+    # Garden will auto-detect Docker Desktop, Minikube, k3s, etc.
+    # No need to specify context for local development
+
+    # Use local Docker daemon for building images
+    buildMode: local-docker
+
+variables:
+  # Shared configuration
+  authServerPort: "8080"
+  appServerPort: "3000"
+  keysServerPort: "8081"

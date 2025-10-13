@@ -1,0 +1,29 @@
+kind: Build
+name: app
+type: container
+
+source:
+  path: ../../../..  # Set build context to repository root
+
+include:
+  - implementations/better-auth-ts/**/*
+  - examples/basic/services/app/**/*
+
+spec:
+  # Build the Docker image for the TypeScript app server
+  dockerfile: examples/basic/services/app/Dockerfile
+  buildArgs: {}
+
+---
+
+kind: Deploy
+name: app
+type: kubernetes
+
+# Dependencies - app server needs auth server to be running
+dependencies:
+  - build.app
+
+spec:
+  manifestTemplates:
+    - manifests.yml.tpl

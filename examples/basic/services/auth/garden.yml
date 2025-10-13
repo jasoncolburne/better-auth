@@ -1,0 +1,30 @@
+kind: Build
+name: auth
+type: container
+
+source:
+  path: ../../../..  # Set build context to repository root
+
+include:
+  - implementations/better-auth-go/**/*
+  - examples/basic/services/auth/**/*
+
+spec:
+  # Build the Docker image for the Go auth server
+  dockerfile: examples/basic/services/auth/Dockerfile
+  buildArgs: {}
+
+---
+
+kind: Deploy
+name: auth
+type: kubernetes
+
+# Build and runtime dependencies
+dependencies:
+  - build.auth
+  - deploy.redis
+
+spec:
+  manifestTemplates:
+    - manifests.yml.tpl

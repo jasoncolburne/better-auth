@@ -1,0 +1,26 @@
+kind: Deploy
+name: redis
+type: kubernetes
+
+spec:
+  manifestFiles:
+    - manifests.yml
+
+---
+
+kind: Test
+name: redis-health
+type: kubernetes-exec
+
+dependencies:
+  - deploy.redis
+
+spec:
+  resource:
+    kind: Deployment
+    name: redis
+
+  command:
+    - sh
+    - -c
+    - "redis-cli ping | grep PONG"
