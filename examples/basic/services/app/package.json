@@ -1,0 +1,22 @@
+{
+  "name": "better-auth-app",
+  "version": "0.1.0",
+  "description": "Example application server using Better Auth",
+  "type": "module",
+  "main": "dist/server.js",
+  "scripts": {
+    "build": "tsc",
+    "dev": "node --loader ts-node/esm src/server.ts",
+    "start": "node dist/server.js"
+  },
+  "dependencies": {
+    "better-auth-ts": "file:../dependencies/better-auth-ts",
+    "ioredis": "^5.3.2",
+    "pako": "^2.1.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "@types/pako": "^2.0.4",
+    "typescript": "^5.3.0"
+  }
+}
