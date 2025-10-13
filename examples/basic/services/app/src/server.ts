@@ -7,6 +7,8 @@ import { Rfc3339Nano } from './utils/encoding/timestamper.js'
 import { TokenEncoder } from './utils/encoding/token_encoder.js'
 import { Redis } from 'ioredis'
 
+var _timer: NodeJS.Timeout
+
 interface TokenAttributes {
   permissionsByRole: Record<string, string[]>
 }
@@ -188,12 +190,12 @@ class ApplicationServer {
             break
           default:
             res.writeHead(404, { 'Content-Type': 'application/json' })
-            res.end(JSON.stringify({ error: 'Not found' }))
+            res.end(JSON.stringify({ error: 'not found' }))
         }
       } catch (error) {
         console.error('Error handling request:', error)
         res.writeHead(500, { 'Content-Type': 'application/json' })
-        res.end(JSON.stringify({ error: 'Internal server error' }))
+        res.end(JSON.stringify({ error: 'internal server error' }))
       }
     })
 
@@ -211,12 +213,12 @@ async function main(): Promise<void> {
   app.startServer(port)
 
   // Schedule server shutdown after 12 hours for key rotation
-  const shutdownTimer = 12 * 60 * 60 * 1000 // 12 hours in milliseconds
-  setTimeout(async () => {
+  const shutdownTimeout = 12 * 60 * 60 * 1000 // 12 hours in milliseconds
+  _timer = setTimeout(async () => {
     console.log('Server lifetime expired (12 hours), shutting down for key rotation')
     await app.quitAccessClient()
     process.exit(0)
-  }, shutdownTimer)
+  }, shutdownTimeout)
   console.log('Server will shutdown in 12 hours for automatic key rotation')
 }
 
