@@ -45,16 +45,6 @@ class ApplicationServer {
     const responseClient = new Redis(redisHost, { db: 1 })
 
     try {
-      // Scan all keys from DB 0 (access keys)
-      const accessKeys: string[] = []
-      const stream = accessClient.scanStream()
-
-      for await (const keys of stream) {
-        accessKeys.push(...keys)
-      }
-
-      console.log(`Found ${accessKeys.length} access key(s) in Redis`)
-
       // Create verification key store and add all access keys
       const verifier = new Secp256r1Verifier()
       const verificationKeyStore = new VerificationKeyStore(accessClient)
