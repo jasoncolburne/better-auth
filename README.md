@@ -105,14 +105,14 @@ The pre-commit hook will block step 3 if you forget step 2, preventing accidenta
 All orchestration scripts are in the `scripts/` directory:
 
 ```bash
-./scripts/run-setup.sh           # Setup all implementations + install hooks
-./scripts/pull-repos.sh          # Pull latest changes (only if on main)
-./scripts/run-type-checks.sh     # Run type checkers
-./scripts/run-unit-tests.sh      # Run unit tests
-./scripts/run-lints.sh           # Run linters
-./scripts/run-format-checks.sh   # Check code formatting
+./scripts/run-setup.sh              # Setup all implementations + install hooks
+./scripts/pull-repos.sh             # Pull latest changes (only if on main)
+./scripts/run-type-checks.sh        # Run type checkers
+./scripts/run-unit-tests.sh         # Run unit tests
+./scripts/run-lints.sh              # Run linters
+./scripts/run-format-checks.sh      # Check code formatting
 ./scripts/run-integration-tests.sh  # Run integration tests
-./scripts/run-all-checks.sh      # Run all checks in sequence
+./scripts/run-all-checks.sh         # Run all checks in sequence
 ```
 
 Each implementation has standardized Makefile targets:
@@ -123,6 +123,11 @@ Each implementation has standardized Makefile targets:
 - `make format` - Auto-format code
 - `make format-check` - Check formatting
 - `make clean` - Clean build artifacts
+
+### Full Example
+
+Check `examples/basic` for a multi-service Kubernetes deployment. Follow instructions in
+`examples/basic/README.md` and then run `npm run test:k8s` from the typescript implementation.
 
 ## Design Principles
 

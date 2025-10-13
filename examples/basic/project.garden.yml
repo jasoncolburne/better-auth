@@ -21,3 +21,7 @@ providers:
 
     # Use local Docker daemon for building images
     buildMode: local-docker
+
+variables:
+  redisDbAccessKeys: 0
+  redisDbResponseKeys: 1

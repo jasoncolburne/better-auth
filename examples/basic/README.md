@@ -44,8 +44,6 @@ This example consists of two services:
    choco install garden-cli
    ```
 
-3. **Go 1.22+** and **Node.js 20+** (for local development)
-
 ### Verify Setup
 
 ```bash
@@ -255,21 +253,19 @@ examples/basic/
 **Project Level** (`project.garden.yml`):
 - Defines the project name and environments
 - Configures the `local-kubernetes` provider
-- Sets default namespace and resource limits
 - Defines shared variables
 
 **Service Level** (`garden.yml` in each service):
 - Defines Build actions (Docker image builds)
 - Defines Deploy actions (Kubernetes deployments)
-- Defines Test actions (health checks)
 - Specifies dependencies between services
-- Configures port forwarding
 
 ### Kubernetes Manifests
 
-Each service has a `manifests.yml` file that defines:
+Each service has a `manifests.yml.tpl` file that defines:
 - **Deployment**: Pod specification with container image, environment variables, health checks
 - **Service**: ClusterIP service for internal communication
+- **Ingress**: Ingress into the service from the nginx proxy
 
 Garden injects the built Docker image reference using template variables:
 ```yaml
@@ -278,27 +274,18 @@ image: ${actions.build.auth.outputs.deployment-image-id}
 
 ### Service Communication
 
-Services synchronize keys in redis. That is all.
+Services synchronize keys in redis, they don't communicate for auth. This is by design.
 
 ## Customization
-
-### Change Port Numbers
-
-Edit `project.garden.yml`:
-```yaml
-variables:
-  authServerPort: "8080"  # Change here
-  appServerPort: "3000"   # Change here
-```
-
-Then update the corresponding manifests and code.
 
 ### Add More Services
 
 1. Create a new directory under `services/`
-2. Add Dockerfile, garden.yml, and manifests.yml
-3. Reference Better Auth library using the appropriate method for your language
-4. Deploy with `garden deploy <service-name>`
+2. Add Dockerfile, garden.yml, and manifests.yml.tpl
+3. Connect your access key store to redis
+4. Register your response key in redis
+5. Verify requests using the Access Verifier from the  Better Auth library in your language
+6. Deploy with `garden deploy <service-name>`
 
 ### Use Remote Kubernetes Cluster
 
@@ -346,10 +333,6 @@ garden delete deploy
 garden build --force
 garden deploy
 ```
-
-### Port conflicts
-
-If ports 8080 or 3000 are already in use, change them in `project.garden.yml` and redeploy.
 
 ### Garden CLI issues
 

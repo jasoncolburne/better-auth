@@ -38,11 +38,14 @@ class ApplicationServer {
     const redisHost = process.env.REDIS_HOST || 'redis:6379'
     console.log(`Connecting to Redis at ${redisHost}`)
 
+    const redisDbAccessKeys = parseInt(process.env.REDIS_DB_ACCESS_KEYS || '0')
+    const redisDbResponseKeys = parseInt(process.env.REDIS_DB_RESPONSE_KEYS || '1')
+
     // Connect to Redis DB 0 to read access keys
-    const accessClient = new Redis(redisHost, { db: 0 })
+    const accessClient = new Redis(redisHost, { db: redisDbAccessKeys })
 
     // Connect to Redis DB 1 to write/read response keys
-    const responseClient = new Redis(redisHost, { db: 1 })
+    const responseClient = new Redis(redisHost, { db: redisDbResponseKeys })
 
     try {
       // Create verification key store and add all access keys
