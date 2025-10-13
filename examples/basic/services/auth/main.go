@@ -222,13 +222,8 @@ func (s *Server) StartServer() error {
 		http.NotFound(w, r)
 	})
 
-	port := os.Getenv("PORT")
-	if port == "" {
-		port = "8080"
-	}
-
-	log.Printf("Auth server starting on port %s", port)
-	return http.ListenAndServe(":"+port, nil)
+	log.Printf("Auth server starting on port 80")
+	return http.ListenAndServe(":80", nil)
 }
 
 // registerKeysInRedis writes the server's access and response public keys to Redis

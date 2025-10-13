@@ -23,6 +23,6 @@ COPY --from=builder /usr/local/bundle /usr/local/bundle
 # Copy application code
 COPY --from=builder /app /app
 
-EXPOSE 8081
+EXPOSE 80
 
-CMD ["bundle", "exec", "puma", "config.ru", "-p", "8081"]
+CMD ["bundle", "exec", "puma", "config.ru", "-p", "80"]

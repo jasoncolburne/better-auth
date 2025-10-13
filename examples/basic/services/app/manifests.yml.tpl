@@ -18,13 +18,9 @@ spec:
         - name: app
           image: ${actions.build.app.outputs.deployment-image-id}
           ports:
-            - containerPort: 3000
+            - containerPort: 80
               name: http
           env:
-            - name: PORT
-              value: "3000"
-            - name: AUTH_SERVER_URL
-              value: "http://auth:8080"
             - name: REDIS_HOST
               value: "redis:6379"
             - name: NODE_ENV
@@ -32,13 +28,13 @@ spec:
           livenessProbe:
             httpGet:
               path: /health
-              port: 3000
+              port: 80
             initialDelaySeconds: 10
             periodSeconds: 10
           readinessProbe:
             httpGet:
               path: /health
-              port: 3000
+              port: 80
             initialDelaySeconds: 5
             periodSeconds: 5
           resources:
@@ -60,8 +56,8 @@ metadata:
 spec:
   type: ClusterIP
   ports:
-    - port: 3000
-      targetPort: 3000
+    - port: 80
+      targetPort: 80
       protocol: TCP
       name: http
   selector:
@@ -87,4 +83,4 @@ spec:
               service:
                 name: app
                 port:
-                  number: 3000
+                  number: 80

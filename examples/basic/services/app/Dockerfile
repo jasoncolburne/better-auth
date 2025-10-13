@@ -35,6 +35,6 @@ COPY --from=builder /app/dist ./dist
 COPY --from=builder /app/node_modules ./node_modules
 COPY --from=builder /app/package.json ./
 
-EXPOSE 3000
+EXPOSE 80
 
 CMD ["node", "dist/server.js"]

@@ -12,7 +12,6 @@ include:
 spec:
   # Build the Docker image for the TypeScript app server
   dockerfile: examples/basic/services/app/Dockerfile
-  buildArgs: {}
 
 ---
 
@@ -20,7 +19,6 @@ kind: Deploy
 name: app
 type: kubernetes
 
-# Dependencies - app server needs auth server to be running
 dependencies:
   - build.app
 

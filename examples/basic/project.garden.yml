@@ -21,9 +21,3 @@ providers:
 
     # Use local Docker daemon for building images
     buildMode: local-docker
-
-variables:
-  # Shared configuration
-  authServerPort: "8080"
-  appServerPort: "3000"
-  keysServerPort: "8081"

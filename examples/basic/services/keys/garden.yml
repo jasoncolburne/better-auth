@@ -11,7 +11,6 @@ include:
 spec:
   # Build the Docker image for the Ruby keys server
   dockerfile: examples/basic/services/keys/Dockerfile
-  buildArgs: {}
 
 ---
 
