@@ -19,6 +19,14 @@ This example consists of two services:
 
 3. **Keys Server (Ruby)**: Example key service that provides a set of valid response keys from redis
    - Exposes response public keys for client side verification
+   - We should probably sign these keys and bake a rotating verification key into the client. Then,
+     an attacker must compromise both the signing key and the data source of public keys to mount a
+     successful attack. This set of signing keys should probably live in an HSM. One could put two
+     hashes in the client, for the current and next public keys. The client could request the
+     current public key from the server and ensure it matches one of the hashes, and use it to
+     verify the signature on the response keys. After rotating the backend key, one would simply
+     need to roll out new clients with the previous next hash moved to the new current, while the
+     new next hash is computed as a hash of a new public key to be used in the future.
 
 4. **Redis**: Backing store for current public keys
    - Access keys are in DB 0
@@ -135,7 +143,7 @@ cd examples/basic
 
 ### 2. Deploy Everything
 
-Garden will build Docker images, deploy to Kubernetes, and set up port forwarding:
+Garden will build Docker images, deploy to Kubernetes, and set up ingresses:
 
 ```bash
 garden deploy
@@ -145,9 +153,10 @@ This command will:
 - Build the auth Docker image
 - Build the app Docker image
 - Create Kubernetes deployments and services
-- Forward ports for local access:
-  - Auth Server: http://localhost:8080
-  - App Server: http://localhost:3000
+- Setup ingresses for local access:
+  - Auth Service: http://auth.better-auth.local/
+  - App Service: http://app.better-auth.local/
+  - Keys Service: http://keys.better-auth.local/
 
 ### 3. Verify Deployment
 
@@ -174,6 +183,12 @@ Add these lines
 ```
 
 ### 5. Test the Services
+
+Check for keys:
+
+```bash
+curl http://keys.better-auth.local/keys
+```
 
 From the typescript implementation:
 
@@ -214,13 +229,6 @@ garden delete deploy
 # Shell into running container
 kubectl exec -it -n better-auth-basic-example-dev deployment/auth -- sh
 kubectl exec -it -n better-auth-basic-example-dev deployment/app -- sh
-
-# Port forward manually if needed
-kubectl port-forward -n better-auth-basic-example-dev deployment/auth 8080:8080
-kubectl port-forward -n better-auth-basic-example-dev deployment/app 3000:3000
-
-# View Garden dashboard
-garden dashboard
 ```
 
 ## Project Structure
@@ -284,7 +292,7 @@ Services synchronize keys in redis, they don't communicate for auth. This is by 
 2. Add Dockerfile, garden.yml, and manifests.yml.tpl
 3. Connect your access key store to redis
 4. Register your response key in redis
-5. Verify requests using the Access Verifier from the  Better Auth library in your language
+5. Verify requests using the Access Verifier from the Better Auth library in your language
 6. Deploy with `garden deploy <service-name>`
 
 ### Use Remote Kubernetes Cluster
