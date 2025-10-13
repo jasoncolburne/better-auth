@@ -278,10 +278,7 @@ image: ${actions.build.auth.outputs.deployment-image-id}
 
 ### Service Communication
 
-Services communicate using Kubernetes service discovery:
-- App server connects to auth server via `http://auth:8080`
-- Kubernetes DNS resolves service names to ClusterIP addresses
-- No need for localhost or external IPs
+Services synchronize keys in redis. That is all.
 
 ## Customization
 
