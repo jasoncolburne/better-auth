@@ -284,7 +284,7 @@ Services synchronize keys in redis, they don't communicate for auth. This is by 
 2. Add Dockerfile, garden.yml, and manifests.yml.tpl
 3. Connect your access key store to redis
 4. Register your response key in redis
-5. Verify requests using the Access Verifier from the  Better Auth library in your language
+5. Verify requests using the Access Verifier from the Better Auth library in your language
 6. Deploy with `garden deploy <service-name>`
 
 ### Use Remote Kubernetes Cluster
