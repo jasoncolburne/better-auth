@@ -160,7 +160,7 @@ This command will:
 
 ### 3. Verify Deployment
 
-Check that both services are healthy:
+Check that all services are healthy:
 
 ```bash
 # Check pod status
@@ -189,6 +189,15 @@ Check for keys:
 ```bash
 curl http://keys.better-auth.local/keys
 ```
+
+Check that this fails (it's not going to be able to find the key in redis, and the token is
+expired):
+
+```bash
+curl -X POST -d '{"payload":{"access":{"nonce":"0ACiyd8ipcuCR2OPObSZpxpG","timestamp":"2025-10-12T23:46:50.312000000Z","token":"0ICzKIW-OBWIYEb-V_m4KzLDiexBaAK5WffDEwesi-G_-40g4XllepYgJaygNI1munYOoC7lPEkZmtzjFXqpCEXjH4sIAAAAAAAC_2yOWW-bQBRG_8t9NhUzZnDCG068QOo6LAnBVYXAXMw4ZvHMQAKR_3vlSl2k5vXq3O-cD5AoehROjrXiagALiG079qEiiT9EN3HkVSGe07twI9zktdzMDOMl0QOvKlaMxXXRGjCBHHu-R7BgsdUe2vOR7UatiHzXd0jiOUX8hMYzebuN3XiUgcmJnZryABPgf60LlyWPeUXF2BaHzLD7WZitgvLeS-zDzZmutszZ1dp8FuOyhwm0XXbi-wf8E1xVR2PY50ZeR9O5PrqROkbjkjf7jbhfBLt27Q1D8hgv754oTEA0KlW8qdepLH_J0fe-NcXXnJVa7tOX7aCC9XtbO-wUZ8--3cnmxJavvT_k12wpO8xtBRZQnTKN6BqhIZ1ahmkx_cuUEDKjhkl3MAF8b7kY_iWnoa5bOvmPFFgIlOXikwdCfk_rt-aUmLMrnyoleNYplGB9QIui4lLyppbzwW9OeD12EgVY30Fgeu1-E1wh_LhcLj8DAAD__wM5bjb3AQAA"},"request":{"foo":"bar","bar":"foo"}},"signature":"0IDxi-eJgnOrdV86w6pTk7_cLFT2NOuDDrVabWk6bDHcNHB9VJb3qVNhK-vIJ4pPSnmApdmZ2iiCiuGuod-rzIWP"}' http://app.better-auth.local/foo/bar
+```
+
+If you dump backend logs for app you'll see the error.
 
 From the typescript implementation:
 
