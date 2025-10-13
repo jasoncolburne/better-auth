@@ -7,6 +7,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"strconv"
 	"time"
 
 	"github.com/jasoncolburne/better-auth-go/api"
@@ -233,6 +234,19 @@ func registerKeysInRedis(accessKey, responseKey cryptointerfaces.SigningKey) err
 		redisHost = "redis:6379"
 	}
 
+	redisDbAccessKeysString := os.Getenv("REDIS_DB_ACCESS_KEYS")
+	redisDbResponseKeysString := os.Getenv("REDIS_DB_RESPONSE_KEYS")
+
+	redisDbAccessKeys, err := strconv.Atoi(redisDbAccessKeysString)
+	if err != nil {
+		return err
+	}
+
+	redisDbResponseKeys, err := strconv.Atoi(redisDbResponseKeysString)
+	if err != nil {
+		return err
+	}
+
 	ctx := context.Background()
 
 	// Get public keys
@@ -246,10 +260,9 @@ func registerKeysInRedis(accessKey, responseKey cryptointerfaces.SigningKey) err
 		return fmt.Errorf("failed to get response public key: %w", err)
 	}
 
-	// Connect to Redis DB 0 (Access Keys)
 	accessClient := redis.NewClient(&redis.Options{
 		Addr: redisHost,
-		DB:   0,
+		DB:   redisDbAccessKeys,
 	})
 	defer accessClient.Close()
 
@@ -259,10 +272,9 @@ func registerKeysInRedis(accessKey, responseKey cryptointerfaces.SigningKey) err
 	}
 	log.Printf("Registered access key in Redis DB 0 (TTL: 24 hours)")
 
-	// Connect to Redis DB 1 (Response Keys)
 	responseClient := redis.NewClient(&redis.Options{
 		Addr: redisHost,
-		DB:   1,
+		DB:   redisDbResponseKeys,
 	})
 	defer responseClient.Close()
 

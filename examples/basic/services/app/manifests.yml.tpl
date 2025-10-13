@@ -23,6 +23,10 @@ spec:
           env:
             - name: REDIS_HOST
               value: "redis:6379"
+            - name: REDIS_DB_ACCESS_KEYS
+              value: "${variables.redisDbAccessKeys}"
+            - name: REDIS_DB_RESPONSE_KEYS
+              value: "${variables.redisDbResponseKeys}"
             - name: NODE_ENV
               value: "production"
           livenessProbe:

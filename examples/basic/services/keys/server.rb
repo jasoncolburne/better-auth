@@ -10,9 +10,10 @@ class KeysServer < Sinatra::Base
     # Configure Redis connection to DB 1 (where response keys are stored)
     redis_host = ENV['REDIS_HOST'] || 'redis:6379'
     host, port = redis_host.split(':')
-    set :redis, Redis.new(host: host, port: port.to_i, db: 1)
+    db = ENV['REDIS_DB_RESPONSE_KEYS'] || '1'
+    set :redis, Redis.new(host: host, port: port.to_i, db: db.to_i)
 
-    puts "Keys server configured to connect to Redis at #{redis_host}, DB 1"
+    puts "Keys server configured to connect to Redis at #{redis_host}, DB #{db}"
   end
 
   # Enable CORS for all routes
