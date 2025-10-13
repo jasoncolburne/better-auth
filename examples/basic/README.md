@@ -19,6 +19,9 @@ This example consists of two services:
 
 3. **Keys Server (Ruby)**: Example key service that provides a set of valid response keys from redis
    - Exposes response public keys for client side verification
+   - We should probably sign these keys and bake a rotating verification key into the client. Then,
+     an attacker must compromise both the signing key and the data source of public keys to mount a
+     successful attack. This set of signing keys should probably live in an HSM.
 
 4. **Redis**: Backing store for current public keys
    - Access keys are in DB 0
