@@ -21,7 +21,12 @@ This example consists of two services:
    - Exposes response public keys for client side verification
    - We should probably sign these keys and bake a rotating verification key into the client. Then,
      an attacker must compromise both the signing key and the data source of public keys to mount a
-     successful attack. This set of signing keys should probably live in an HSM.
+     successful attack. This set of signing keys should probably live in an HSM. One could put two
+     hashes in the client, for the current and next public keys. The client could request the
+     current public key from the server and ensure it matches one of the hashes, and use it to
+     verify the signature on the response keys. After rotating the backend key, one would simply
+     need to roll out new clients with the previous next hash moved to the new current, while the
+     new next hash is computed as a hash of a new public key to be used in the future.
 
 4. **Redis**: Backing store for current public keys
    - Access keys are in DB 0
