@@ -4,7 +4,7 @@ require 'json'
 
 class KeysServer < Sinatra::Base
   configure do
-    set :port, ENV['PORT'] || 8081
+    set :port, 80
     set :bind, '0.0.0.0'
 
     # Configure Redis connection to DB 1 (where response keys are stored)

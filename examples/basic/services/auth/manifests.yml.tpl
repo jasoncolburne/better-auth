@@ -18,23 +18,21 @@ spec:
         - name: auth
           image: ${actions.build.auth.outputs.deployment-image-id}
           ports:
-            - containerPort: 8080
+            - containerPort: 80
               name: http
           env:
-            - name: PORT
-              value: "8080"
             - name: REDIS_HOST
               value: "redis:6379"
           livenessProbe:
             httpGet:
               path: /health
-              port: 8080
+              port: 80
             initialDelaySeconds: 10
             periodSeconds: 10
           readinessProbe:
             httpGet:
               path: /health
-              port: 8080
+              port: 80
             initialDelaySeconds: 5
             periodSeconds: 5
           resources:
@@ -56,8 +54,8 @@ metadata:
 spec:
   type: ClusterIP
   ports:
-    - port: 8080
-      targetPort: 8080
+    - port: 80
+      targetPort: 80
       protocol: TCP
       name: http
   selector:
@@ -83,4 +81,4 @@ spec:
               service:
                 name: auth
                 port:
-                  number: 8080
+                  number: 80

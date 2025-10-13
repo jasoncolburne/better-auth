@@ -12,7 +12,6 @@ include:
 spec:
   # Build the Docker image for the Go auth server
   dockerfile: examples/basic/services/auth/Dockerfile
-  buildArgs: {}
 
 ---
 

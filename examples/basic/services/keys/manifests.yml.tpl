@@ -18,11 +18,9 @@ spec:
         - name: keys
           image: ${actions.build.keys.outputs.deployment-image-id}
           ports:
-            - containerPort: 8081
+            - containerPort: 80
               name: http
           env:
-            - name: PORT
-              value: "8081"
             - name: REDIS_HOST
               value: "redis:6379"
             - name: APP_ENV
@@ -30,13 +28,13 @@ spec:
           livenessProbe:
             httpGet:
               path: /health
-              port: 8081
+              port: 80
             initialDelaySeconds: 10
             periodSeconds: 10
           readinessProbe:
             httpGet:
               path: /health
-              port: 8081
+              port: 80
             initialDelaySeconds: 5
             periodSeconds: 5
           resources:
@@ -58,8 +56,8 @@ metadata:
 spec:
   type: ClusterIP
   ports:
-    - port: 8081
-      targetPort: 8081
+    - port: 80
+      targetPort: 80
       protocol: TCP
       name: http
   selector:
@@ -85,4 +83,4 @@ spec:
               service:
                 name: keys
                 port:
-                  number: 8081
+                  number: 80
