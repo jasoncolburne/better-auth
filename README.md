@@ -47,7 +47,7 @@ This will run `make setup` in each implementation repository, which:
 - Gets Dart packages (Dart)
 - Sets up Gradle dependencies (Kotlin)
 
-Implementations are gracefully skipped if required tooling is not available.
+Some implementations will be gracefully skipped if tooling is unavailable.
 
 ## For Contributors
 
@@ -58,6 +58,8 @@ This repository includes a pre-commit hook that ensures submodules are on the `m
 - Git submodules record specific commit hashes
 - Committing while a submodule is on a feature branch or detached HEAD can break reproducible builds
 - Other developers may not be able to access those commits if they're unreachable or on unpushed branches
+
+The detached HEAD constraint may be revisited when the implementations are published.
 
 The hooks are **automatically installed** when you run `./scripts/run-setup.sh`.
 
