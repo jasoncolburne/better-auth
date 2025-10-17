@@ -27,6 +27,7 @@ interface AppState {
   authenticated: boolean
   responseKey?: ISigningKey
   accessClient?: Redis
+  server?: http.Server
 }
 
 class Logger {
@@ -42,6 +43,10 @@ class ApplicationServer {
 
   async quitAccessClient() {
     await this.state.accessClient?.quit()
+  }
+
+  terminate(callback: () => void) {
+    this.state.server?.close(callback)
   }
 
   async initialize(): Promise<void> {
@@ -203,6 +208,8 @@ class ApplicationServer {
       }
     })
 
+    this.state.server = server
+
     server.listen(port, '0.0.0.0', () => {
       Logger.log(`Application server running on port ${port}`)
     })
@@ -217,8 +224,10 @@ async function main(): Promise<void> {
 
   process.on('SIGTERM', async () => {
     console.log('SIGTERM received, starting graceful shutdown...')
-    await app.quitAccessClient()
-    process.exit(0)
+    app.terminate(async () => {
+      await app.quitAccessClient()
+      process.exit(0)
+    });
   })
 
   app.startServer(port)
