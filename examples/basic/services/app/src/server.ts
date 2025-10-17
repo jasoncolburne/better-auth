@@ -203,12 +203,6 @@ class ApplicationServer {
       }
     })
 
-    process.on('SIGTERM', async () => {
-      console.log('SIGTERM received, starting graceful shutdown...')
-      await this.quitAccessClient()
-      process.exit(0)
-    })
-
     server.listen(port, '0.0.0.0', () => {
       Logger.log(`Application server running on port ${port}`)
     })
@@ -220,6 +214,13 @@ async function main(): Promise<void> {
 
   const app = new ApplicationServer()
   await app.initialize()
+
+  process.on('SIGTERM', async () => {
+    console.log('SIGTERM received, starting graceful shutdown...')
+    await app.quitAccessClient()
+    process.exit(0)
+  })
+
   app.startServer(port)
 }
 
