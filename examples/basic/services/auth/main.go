@@ -7,7 +7,9 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"os/signal"
 	"strconv"
+	"syscall"
 	"time"
 
 	"github.com/jasoncolburne/better-auth-go/api"
@@ -297,6 +299,14 @@ func main() {
 	if err := registerKeysInRedis(server.serverAccessKey, server.serverResponseKey); err != nil {
 		log.Fatalf("Failed to register keys in Redis: %v", err)
 	}
+
+	c := make(chan os.Signal, 1)
+	signal.Notify(c, syscall.SIGTERM, syscall.SIGINT)
+	go func() {
+		<-c
+		log.Println("SIGTERM received, shutting down gracefully...")
+		os.Exit(0)
+	}()
 
 	if err := server.StartServer(); err != nil {
 		log.Fatalf("Server failed: %v", err)
