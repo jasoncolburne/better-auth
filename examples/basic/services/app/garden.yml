@@ -21,6 +21,8 @@ type: kubernetes
 
 dependencies:
   - build.app
+  - deploy.redis
+  - deploy.restart-controller
 
 spec:
   manifestTemplates:

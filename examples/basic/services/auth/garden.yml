@@ -23,6 +23,7 @@ type: kubernetes
 dependencies:
   - build.auth
   - deploy.redis
+  - deploy.restart-controller
 
 spec:
   manifestTemplates:

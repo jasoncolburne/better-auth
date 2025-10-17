@@ -9,13 +9,16 @@ defaultEnvironment: local
 
 environments:
   - name: local
-    defaultNamespace: dev
+    defaultNamespace: ${project.name}-dev
 
 providers:
   - name: local-kubernetes
     setupIngressController: nginx
     defaultHostname: better-auth.local
     environments: [local]
+    namespace:
+      name: ${project.name}-dev
+      
     # Garden will auto-detect Docker Desktop, Minikube, k3s, etc.
     # No need to specify context for local development
 

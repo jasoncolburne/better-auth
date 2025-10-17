@@ -298,15 +298,7 @@ func main() {
 		log.Fatalf("Failed to register keys in Redis: %v", err)
 	}
 
-	// Schedule server shutdown after 12 hours for key rotation
-	timer := time.AfterFunc(12*time.Hour, func() {
-		log.Printf("Server lifetime expired (12 hours), shutting down for key rotation")
-		os.Exit(0)
-	})
-	log.Printf("Server will shutdown in 12 hours for automatic key rotation")
-
 	if err := server.StartServer(); err != nil {
-		timer.Stop()
 		log.Fatalf("Server failed: %v", err)
 	}
 }

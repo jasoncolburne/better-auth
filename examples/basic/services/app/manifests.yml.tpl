@@ -51,6 +51,33 @@ spec:
 
 ---
 
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: app-rolling-restart
+  namespace: ${environment.namespace}
+spec:
+  schedule: "0 */12 * * *"
+  concurrencyPolicy: Forbid
+  jobTemplate:
+    spec:
+      activeDeadlineSeconds: 300
+      backoffLimit: 1
+      template:
+        spec:
+          restartPolicy: Never
+          serviceAccountName: restart-controller
+          containers:
+          - name: kubectl
+            image: bitnami/kubectl:latest
+            command:
+            - /bin/sh
+            - -c
+            - |
+              kubectl rollout restart deployment app -n ${environment.namespace}
+
+---
+
 apiVersion: v1
 kind: Service
 metadata:
