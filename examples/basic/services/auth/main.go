@@ -29,6 +29,7 @@ type Server struct {
 	av                *api.AccessVerifier[TokenAttributes]
 	serverAccessKey   cryptointerfaces.SigningKey
 	serverResponseKey cryptointerfaces.SigningKey
+	server            http.Server
 }
 
 func NewServer() (*Server, error) {
@@ -226,7 +227,16 @@ func (s *Server) StartServer() error {
 	})
 
 	log.Printf("Auth server starting on port 80")
-	return http.ListenAndServe(":80", nil)
+
+	s.server = http.Server{Addr: ":80"}
+	return s.server.ListenAndServe()
+}
+
+func (s *Server) StopServer() error {
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	return s.server.Shutdown(ctx)
 }
 
 // registerKeysInRedis writes the server's access and response public keys to Redis
@@ -305,6 +315,9 @@ func main() {
 	go func() {
 		<-c
 		log.Println("SIGTERM received, shutting down gracefully...")
+		if err := server.StopServer(); err != nil {
+			log.Printf("Failed to stop server: %v", err)
+		}
 		os.Exit(0)
 	}()
 
