@@ -40,6 +40,10 @@ class ApplicationServer {
     authenticated: false,
   }
 
+  async quitAccessClient() {
+    await this.state.accessClient?.quit()
+  }
+
   async initialize(): Promise<void> {
     const redisHost = process.env.REDIS_HOST || 'redis:6379'
     Logger.log(`Connecting to Redis at ${redisHost}`)
@@ -197,6 +201,12 @@ class ApplicationServer {
         res.writeHead(500, { 'Content-Type': 'application/json' })
         res.end(JSON.stringify({ error: 'internal server error' }))
       }
+    })
+
+    process.on('SIGTERM', async () => {
+      console.log('SIGTERM received, starting graceful shutdown...')
+      await this.quitAccessClient()
+      process.exit(0)
     })
 
     server.listen(port, '0.0.0.0', () => {
