@@ -7,7 +7,9 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"os/signal"
 	"strconv"
+	"syscall"
 	"time"
 
 	"github.com/jasoncolburne/better-auth-go/api"
@@ -298,15 +300,15 @@ func main() {
 		log.Fatalf("Failed to register keys in Redis: %v", err)
 	}
 
-	// Schedule server shutdown after 12 hours for key rotation
-	timer := time.AfterFunc(12*time.Hour, func() {
-		log.Printf("Server lifetime expired (12 hours), shutting down for key rotation")
+	c := make(chan os.Signal, 1)
+	signal.Notify(c, syscall.SIGTERM, syscall.SIGINT)
+	go func() {
+		<-c
+		log.Println("SIGTERM received, shutting down gracefully...")
 		os.Exit(0)
-	})
-	log.Printf("Server will shutdown in 12 hours for automatic key rotation")
+	}()
 
 	if err := server.StartServer(); err != nil {
-		timer.Stop()
 		log.Fatalf("Server failed: %v", err)
 	}
 }

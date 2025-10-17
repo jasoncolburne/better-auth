@@ -1,0 +1,7 @@
+kind: Deploy
+name: restart-controller
+type: kubernetes
+
+spec:
+  manifestTemplates:
+    - manifests.yml.tpl

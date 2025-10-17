@@ -7,8 +7,6 @@ import { Rfc3339Nano } from './utils/encoding/timestamper.js'
 import { TokenEncoder } from './utils/encoding/token_encoder.js'
 import { Redis } from 'ioredis'
 
-var _timer: NodeJS.Timeout
-
 interface TokenAttributes {
   permissionsByRole: Record<string, string[]>
 }
@@ -31,14 +29,24 @@ interface AppState {
   accessClient?: Redis
 }
 
+class Logger {
+  static log(message: string) {
+    console.log(`${new Date()}: ${message}`)
+  }
+}
+
 class ApplicationServer {
   private state: AppState = {
     authenticated: false,
   }
 
+  async quitAccessClient() {
+    await this.state.accessClient?.quit()
+  }
+
   async initialize(): Promise<void> {
     const redisHost = process.env.REDIS_HOST || 'redis:6379'
-    console.log(`Connecting to Redis at ${redisHost}`)
+    Logger.log(`Connecting to Redis at ${redisHost}`)
 
     const redisDbAccessKeys = parseInt(process.env.REDIS_DB_ACCESS_KEYS || '0')
     const redisDbResponseKeys = parseInt(process.env.REDIS_DB_RESPONSE_KEYS || '1')
@@ -74,7 +82,7 @@ class ApplicationServer {
         },
       })
 
-      console.log('AccessVerifier initialized')
+      Logger.log('AccessVerifier initialized')
 
       // Generate app response key
       const appResponseKey = new Secp256r1()
@@ -83,7 +91,7 @@ class ApplicationServer {
 
       // Store response key in Redis DB 1 with 12 hour 1 minute TTL: SET <publicKey> <publicKey> EX 43260
       await responseClient.set(appResponsePublicKey, appResponsePublicKey, 'EX', 12 * 60 * 60 + 60)
-      console.log(`Registered app response key in Redis DB 1 (TTL: 12 hours): ${appResponsePublicKey.substring(0, 20)}...`)
+      Logger.log(`Registered app response key in Redis DB 1 (TTL: 12 hours): ${appResponsePublicKey.substring(0, 20)}...`)
 
       this.state.responseKey = appResponseKey
     } finally {
@@ -91,7 +99,7 @@ class ApplicationServer {
       this.state.accessClient = accessClient
     }
 
-    console.log('Application server initialized')
+    Logger.log('Application server initialized')
   }
 
   async handleHealth(req: http.IncomingMessage, res: http.ServerResponse): Promise<void> {
@@ -163,10 +171,6 @@ class ApplicationServer {
     res.end()
   }
 
-  async quitAccessClient(): Promise<void> {
-    await this.state.accessClient?.quit()
-  }
-
   startServer(port: number): void {
     const server = http.createServer(async (req, res) => {
       // Handle CORS preflight
@@ -200,7 +204,7 @@ class ApplicationServer {
     })
 
     server.listen(port, '0.0.0.0', () => {
-      console.log(`Application server running on port ${port}`)
+      Logger.log(`Application server running on port ${port}`)
     })
   }
 }
@@ -210,16 +214,14 @@ async function main(): Promise<void> {
 
   const app = new ApplicationServer()
   await app.initialize()
-  app.startServer(port)
 
-  // Schedule server shutdown after 12 hours for key rotation
-  const shutdownTimeout = 12 * 60 * 60 * 1000 // 12 hours in milliseconds
-  _timer = setTimeout(async () => {
-    console.log('Server lifetime expired (12 hours), shutting down for key rotation')
+  process.on('SIGTERM', async () => {
+    console.log('SIGTERM received, starting graceful shutdown...')
     await app.quitAccessClient()
     process.exit(0)
-  }, shutdownTimeout)
-  console.log('Server will shutdown in 12 hours for automatic key rotation')
+  })
+
+  app.startServer(port)
 }
 
 main().catch((error) => {
