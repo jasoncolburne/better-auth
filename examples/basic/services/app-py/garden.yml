@@ -1,0 +1,29 @@
+kind: Build
+name: app-py
+type: container
+
+source:
+  path: ../../../..  # Set build context to repository root
+
+include:
+  - implementations/better-auth-py/**/*
+  - examples/basic/services/app-py/**/*
+
+spec:
+  # Build the Docker image for the Python app server
+  dockerfile: examples/basic/services/app-py/Dockerfile
+
+---
+
+kind: Deploy
+name: app-py
+type: kubernetes
+
+dependencies:
+  - build.app-py
+  - deploy.redis
+  - deploy.restart-controller
+
+spec:
+  manifestTemplates:
+    - manifests.yml.tpl

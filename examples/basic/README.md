@@ -4,7 +4,7 @@ This example demonstrates a production-like Better Auth deployment using Garden.
 
 ## Architecture
 
-This example consists of two services:
+This example consists of multiple services:
 
 1. **Auth Server (Go)**: Provides authentication services using the `better-auth-go` library
    - Handles account creation, recovery, deletion
@@ -12,10 +12,14 @@ This example consists of two services:
    - Session management (request, create, refresh)
    - Issues and validates access tokens
 
-2. **Application Server (TypeScript)**: Example application that uses auth tokens
-   - Demonstrates how to integrate with Better Auth
-   - Provides a protected endpoint
-   - Uses the `better-auth-ts` access verifier
+2. **Application Servers** (4 language implementations): Example applications that use auth tokens
+   - **app-ts (TypeScript)**: Uses the `better-auth-ts` access verifier
+   - **app-rb (Ruby)**: Uses the `better-auth-rb` access verifier
+   - **app-rs (Rust)**: Uses the `better-auth-rs` access verifier
+   - **app-py (Python)**: Uses the `better-auth-py` access verifier
+   - Each demonstrates how to integrate with Better Auth
+   - Each provides the same protected `/foo/bar` endpoint
+   - Each returns a unique `serverName` field to identify which implementation handled the request
 
 3. **Keys Server (Ruby)**: Example key service that provides a set of valid response keys from redis
    - Exposes response public keys for client side verification
@@ -151,11 +155,15 @@ garden deploy
 
 This command will:
 - Build the auth Docker image
-- Build the app Docker image
+- Build the app Docker images (TypeScript, Ruby, Rust, Python)
 - Create Kubernetes deployments and services
 - Setup ingresses for local access:
   - Auth Service: http://auth.better-auth.local/
-  - App Service: http://app.better-auth.local/
+  - App Services:
+    - TypeScript: http://app-ts.better-auth.local/
+    - Ruby: http://app-rb.better-auth.local/
+    - Rust: http://app-rs.better-auth.local/
+    - Python: http://app-py.better-auth.local/
   - Keys Service: http://keys.better-auth.local/
 
 ### 3. Verify Deployment
@@ -168,7 +176,10 @@ kubectl get pods -n better-auth-basic-example-dev
 
 # View logs
 garden logs auth
-garden logs app
+garden logs app-ts
+garden logs app-rb
+garden logs app-rs
+garden logs app-py
 garden logs keys
 ```
 
@@ -178,7 +189,10 @@ Add these lines
 
 ```
 127.0.0.1 auth.better-auth.local
-127.0.0.1 app.better-auth.local
+127.0.0.1 app-ts.better-auth.local
+127.0.0.1 app-rb.better-auth.local
+127.0.0.1 app-rs.better-auth.local
+127.0.0.1 app-py.better-auth.local
 127.0.0.1 keys.better-auth.local
 ```
 
@@ -191,13 +205,23 @@ curl http://keys.better-auth.local/keys
 ```
 
 Check that this fails (it's not going to be able to find the key in redis, and the token is
-expired):
+expired) - you can try any of the app servers:
 
 ```bash
-curl -X POST -d '{"payload":{"access":{"nonce":"0ACiyd8ipcuCR2OPObSZpxpG","timestamp":"2025-10-12T23:46:50.312000000Z","token":"0ICzKIW-OBWIYEb-V_m4KzLDiexBaAK5WffDEwesi-G_-40g4XllepYgJaygNI1munYOoC7lPEkZmtzjFXqpCEXjH4sIAAAAAAAC_2yOWW-bQBRG_8t9NhUzZnDCG068QOo6LAnBVYXAXMw4ZvHMQAKR_3vlSl2k5vXq3O-cD5AoehROjrXiagALiG079qEiiT9EN3HkVSGe07twI9zktdzMDOMl0QOvKlaMxXXRGjCBHHu-R7BgsdUe2vOR7UatiHzXd0jiOUX8hMYzebuN3XiUgcmJnZryABPgf60LlyWPeUXF2BaHzLD7WZitgvLeS-zDzZmutszZ1dp8FuOyhwm0XXbi-wf8E1xVR2PY50ZeR9O5PrqROkbjkjf7jbhfBLt27Q1D8hgv754oTEA0KlW8qdepLH_J0fe-NcXXnJVa7tOX7aCC9XtbO-wUZ8--3cnmxJavvT_k12wpO8xtBRZQnTKN6BqhIZ1ahmkx_cuUEDKjhkl3MAF8b7kY_iWnoa5bOvmPFFgIlOXikwdCfk_rt-aUmLMrnyoleNYplGB9QIui4lLyppbzwW9OeD12EgVY30Fgeu1-E1wh_LhcLj8DAAD__wM5bjb3AQAA"},"request":{"foo":"bar","bar":"foo"}},"signature":"0IDxi-eJgnOrdV86w6pTk7_cLFT2NOuDDrVabWk6bDHcNHB9VJb3qVNhK-vIJ4pPSnmApdmZ2iiCiuGuod-rzIWP"}' http://app.better-auth.local/foo/bar
+# Try TypeScript implementation
+curl -X POST -d '{"payload":{"access":{"nonce":"0ACiyd8ipcuCR2OPObSZpxpG","timestamp":"2025-10-12T23:46:50.312000000Z","token":"0ICzKIW-OBWIYEb-V_m4KzLDiexBaAK5WffDEwesi-G_-40g4XllepYgJaygNI1munYOoC7lPEkZmtzjFXqpCEXjH4sIAAAAAAAC_2yOWW-bQBRG_8t9NhUzZnDCG068QOo6LAnBVYXAXMw4ZvHMQAKR_3vlSl2k5vXq3O-cD5AoehROjrXiagALiG079qEiiT9EN3HkVSGe07twI9zktdzMDOMl0QOvKlaMxXXRGjCBHHu-R7BgsdUe2vOR7UatiHzXd0jiOUX8hMYzebuN3XiUgcmJnZryABPgf60LlyWPeUXF2BaHzLD7WZitgvLeS-zDzZmutszZ1dp8FuOyhwm0XXbi-wf8E1xVR2PY50ZeR9O5PrqROkbjkjf7jbhfBLt27Q1D8hgv754oTEA0KlW8qdepLH_J0fe-NcXXnJVa7tOX7aCC9XtbO-wUZ8--3cnmxJavvT_k12wpO8xtBRZQnTKN6BqhIZ1ahmkx_cuUEDKjhkl3MAF8b7kY_iWnoa5bOvmPFFgIlOXikwdCfk_rt-aUmLMrnyoleNYplGB9QIui4lLyppbzwW9OeD12EgVY30Fgeu1-E1wh_LhcLj8DAAD__wM5bjb3AQAA"},"request":{"foo":"bar","bar":"foo"}},"signature":"0IDxi-eJgnOrdV86w6pTk7_cLFT2NOuDDrVabWk6bDHcNHB9VJb3qVNhK-vIJ4pPSnmApdmZ2iiCiuGuod-rzIWP"}' http://app-ts.better-auth.local/foo/bar
+
+# Or try Ruby implementation
+curl -X POST -d '...' http://app-rb.better-auth.local/foo/bar
+
+# Or try Rust implementation
+curl -X POST -d '...' http://app-rs.better-auth.local/foo/bar
+
+# Or try Python implementation
+curl -X POST -d '...' http://app-py.better-auth.local/foo/bar
 ```
 
-If you dump backend logs for app you'll see the error.
+If you dump backend logs for the app servers you'll see the error.
 
 From the typescript implementation:
 
@@ -215,12 +239,18 @@ garden deploy
 
 # Deploy specific service
 garden deploy auth
-garden deploy app
+garden deploy app-ts
+garden deploy app-rb
+garden deploy app-rs
+garden deploy app-py
 garden deploy keys
 
 # View logs
 garden logs auth
-garden logs app
+garden logs app-ts
+garden logs app-rb
+garden logs app-rs
+garden logs app-py
 garden logs keys
 garden logs --follow  # Follow all logs
 
@@ -237,7 +267,11 @@ garden delete deploy
 ```bash
 # Shell into running container
 kubectl exec -it -n better-auth-basic-example-dev deployment/auth -- sh
-kubectl exec -it -n better-auth-basic-example-dev deployment/app -- sh
+kubectl exec -it -n better-auth-basic-example-dev deployment/app-ts -- sh
+kubectl exec -it -n better-auth-basic-example-dev deployment/app-rb -- sh
+kubectl exec -it -n better-auth-basic-example-dev deployment/app-rs -- sh
+kubectl exec -it -n better-auth-basic-example-dev deployment/app-py -- sh
+kubectl exec -it -n better-auth-basic-example-dev deployment/keys -- sh
 ```
 
 ## Project Structure
@@ -247,20 +281,60 @@ examples/basic/
 ├── project.garden.yml              # Main Garden project configuration
 ├── README.md                       # This file
 └── services/
-    ├── auth/                # Go authentication server
+    ├── auth/                       # Go authentication server
     │   ├── Dockerfile              # Multi-stage build (Debian-based)
     │   ├── garden.yml              # Service-specific Garden config
-    │   ├── manifests.yml           # Kubernetes manifests
+    │   ├── manifests.yml.tpl       # Kubernetes manifests
     │   ├── go.mod                  # With replace directive for local lib
     │   └── main.go                 # Server implementation
-    └── app/                 # TypeScript application server
-        ├── Dockerfile              # Multi-stage build (Debian-based)
-        ├── garden.yml              # Service-specific Garden config
-        ├── manifests.yml           # Kubernetes manifests
-        ├── package.json            # With file: reference for local lib
-        ├── tsconfig.json           # TypeScript configuration
-        └── src/
-            └── server.ts           # Application server implementation
+    ├── app-ts/                     # TypeScript application server
+    │   ├── Dockerfile              # Multi-stage build (Debian-based)
+    │   ├── garden.yml              # Service-specific Garden config
+    │   ├── manifests.yml.tpl       # Kubernetes manifests
+    │   ├── package.json            # With file: reference for local lib
+    │   ├── tsconfig.json           # TypeScript configuration
+    │   └── src/
+    │       └── server.ts           # Application server implementation
+    ├── app-rb/                     # Ruby application server
+    │   ├── Dockerfile              # Multi-stage build (Debian-based)
+    │   ├── garden.yml              # Service-specific Garden config
+    │   ├── manifests.yml.tpl       # Kubernetes manifests
+    │   ├── Gemfile                 # With path reference for local lib
+    │   ├── config.ru               # Rack config
+    │   ├── server.rb               # Application server implementation
+    │   └── lib/                    # Crypto, storage, encoding utilities
+    ├── app-rs/                     # Rust application server
+    │   ├── Dockerfile              # Multi-stage build (Debian-based)
+    │   ├── garden.yml              # Service-specific Garden config
+    │   ├── manifests.yml.tpl       # Kubernetes manifests
+    │   ├── Cargo.toml              # With path reference for local lib
+    │   └── src/
+    │       ├── main.rs             # Application server implementation
+    │       └── implementation/     # Crypto, storage, encoding utilities
+    ├── app-py/                     # Python application server
+    │   ├── Dockerfile              # Multi-stage build (Debian-based)
+    │   ├── garden.yml              # Service-specific Garden config
+    │   ├── manifests.yml.tpl       # Kubernetes manifests
+    │   ├── requirements.txt        # With file reference for local lib
+    │   └── server.py               # Application server implementation
+    ├── keys/                       # Ruby keys server
+    │   ├── Dockerfile              # Multi-stage build (Debian-based)
+    │   ├── garden.yml              # Service-specific Garden config
+    │   ├── manifests.yml.tpl       # Kubernetes manifests
+    │   ├── Gemfile                 # Dependencies
+    │   ├── config.ru               # Rack config
+    │   └── server.rb               # Keys server implementation
+    ├── redis/                      # Redis deployment
+    │   ├── garden.yml              # Service-specific Garden config
+    │   └── manifests.yml           # Kubernetes manifests
+    ├── restart-controller/         # Service account for rolling restarts
+    │   ├── garden.yml              # Service-specific Garden config
+    │   └── manifests.yml.tpl       # Kubernetes manifests
+    └── dependencies/               # Symlinks to implementations
+        ├── better-auth-ts -> ../../../../implementations/better-auth-ts
+        ├── better-auth-rb -> ../../../../implementations/better-auth-rb
+        ├── better-auth-rs -> ../../../../implementations/better-auth-rs
+        └── better-auth-py -> ../../../../implementations/better-auth-py
 ```
 
 ## How It Works
@@ -366,7 +440,7 @@ brew upgrade garden-cli  # macOS
 - Add database persistence (PostgreSQL)
 - Add more complex authentication flows
 - Add monitoring and observability (Prometheus, Grafana)
-- Create additional language implementations (Python, Rust)
+- Add client implementations for Swift, Dart, and Kotlin
 
 ## Resources
 
@@ -374,4 +448,7 @@ brew upgrade garden-cli  # macOS
 - [Better Auth Specification](../../README.md)
 - [better-auth-go](../../implementations/better-auth-go/)
 - [better-auth-ts](../../implementations/better-auth-ts/)
+- [better-auth-rb](../../implementations/better-auth-rb/)
+- [better-auth-rs](../../implementations/better-auth-rs/)
+- [better-auth-py](../../implementations/better-auth-py/)
 - [Kubernetes Documentation](https://kubernetes.io/docs/)
