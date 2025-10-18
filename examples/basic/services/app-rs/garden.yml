@@ -1,0 +1,29 @@
+kind: Build
+name: app-rs
+type: container
+
+source:
+  path: ../../../..  # Set build context to repository root
+
+include:
+  - implementations/better-auth-rs/**/*
+  - examples/basic/services/app-rs/**/*
+
+spec:
+  # Build the Docker image for the Rust app server
+  dockerfile: examples/basic/services/app-rs/Dockerfile
+
+---
+
+kind: Deploy
+name: app-rs
+type: kubernetes
+
+dependencies:
+  - build.app-rs
+  - deploy.redis
+  - deploy.restart-controller
+
+spec:
+  manifestTemplates:
+    - manifests.yml.tpl

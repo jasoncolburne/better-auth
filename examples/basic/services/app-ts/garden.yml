@@ -1,5 +1,5 @@
 kind: Build
-name: app
+name: app-ts
 type: container
 
 source:
@@ -7,20 +7,20 @@ source:
 
 include:
   - implementations/better-auth-ts/**/*
-  - examples/basic/services/app/**/*
+  - examples/basic/services/app-ts/**/*
 
 spec:
   # Build the Docker image for the TypeScript app server
-  dockerfile: examples/basic/services/app/Dockerfile
+  dockerfile: examples/basic/services/app-ts/Dockerfile
 
 ---
 
 kind: Deploy
-name: app
+name: app-ts
 type: kubernetes
 
 dependencies:
-  - build.app
+  - build.app-ts
   - deploy.redis
   - deploy.restart-controller
 

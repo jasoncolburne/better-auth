@@ -1,22 +1,22 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: app
+  name: app-rs
   labels:
-    app: app
+    app: app-rs
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: app
+      app: app-rs
   template:
     metadata:
       labels:
-        app: app
+        app: app-rs
     spec:
       containers:
-        - name: app
-          image: ${actions.build.app.outputs.deployment-image-id}
+        - name: app-rs
+          image: ${actions.build.app-rs.outputs.deployment-image-id}
           ports:
             - containerPort: 80
               name: http
@@ -27,8 +27,6 @@ spec:
               value: "${variables.redisDbAccessKeys}"
             - name: REDIS_DB_RESPONSE_KEYS
               value: "${variables.redisDbResponseKeys}"
-            - name: NODE_ENV
-              value: "production"
           livenessProbe:
             httpGet:
               path: /health
@@ -54,7 +52,7 @@ spec:
 apiVersion: batch/v1
 kind: CronJob
 metadata:
-  name: app-rolling-restart
+  name: app-rs-rolling-restart
   namespace: ${environment.namespace}
 spec:
   schedule: "0 */12 * * *"
@@ -74,16 +72,16 @@ spec:
             - /bin/sh
             - -c
             - |
-              kubectl rollout restart deployment app -n ${environment.namespace}
+              kubectl rollout restart deployment app-rs -n ${environment.namespace}
 
 ---
 
 apiVersion: v1
 kind: Service
 metadata:
-  name: app
+  name: app-rs
   labels:
-    app: app
+    app: app-rs
 spec:
   type: ClusterIP
   ports:
@@ -92,26 +90,26 @@ spec:
       protocol: TCP
       name: http
   selector:
-    app: app
+    app: app-rs
 
 ---
 
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
-  name: app
+  name: app-rs
   labels:
-    app: app
+    app: app-rs
 spec:
   ingressClassName: nginx
   rules:
-    - host: app.better-auth.local
+    - host: app-rs.better-auth.local
       http:
         paths:
           - path: /
             pathType: Prefix
             backend:
               service:
-                name: app
+                name: app-rs
                 port:
                   number: 80
