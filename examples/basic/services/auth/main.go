@@ -189,6 +189,10 @@ func (s *Server) rotateAccess(w http.ResponseWriter, r *http.Request) {
 	wrapResponse(w, r, s.ba.RefreshSession)
 }
 
+func (s *Server) changeRecoveryKey(w http.ResponseWriter, r *http.Request) {
+	wrapResponse(w, r, s.ba.ChangeRecoveryKey)
+}
+
 func (s *Server) healthCheck(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	fmt.Fprintf(w, "{\"status\":\"healthy\"}")
@@ -216,6 +220,8 @@ func (s *Server) StartServer() error {
 	http.HandleFunc("/device/rotate", s.rotateAuthentication)
 	http.HandleFunc("/device/link", s.link)
 	http.HandleFunc("/device/unlink", s.unlink)
+
+	http.HandleFunc("/recovery/change", s.changeRecoveryKey)
 
 	// Handle OPTIONS for CORS
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {

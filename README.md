@@ -173,7 +173,9 @@ device.
 contexts as well (when creating a link, the link context contains a payload and signature from
 the device being linked).
 
-There are 3 groups of protocols. `Account`, `Device` and `Session`.
+There are 4 groups of protocols. `Account`, `Device`, `Session`, and `Recovery`. `Recovery` only
+contains a method to update an identity's recovery key hash. The `RecoverAccount()` method exists
+in the `Account` protocol group.
 
 Additionally, there is an `Access` request protocol that supports arbitrary request/response
 payloads.
@@ -609,6 +611,49 @@ This rotates the access key.
     }
   },
   "signature": "0IC5f9WVJ5vS_IcJ3YTJ6GyG919MKWeR0_OKa0RnXSeXmzP5_rr5dipiCNfWdskd_UIg5OkQmk-rORUlApVIhkgm"
+}
+```
+
+### Recovery
+
+#### ChangeRecoveryKey
+
+This protocol updates the recovery key hash to a new hash for a given identity.
+
+`request`
+
+```json
+{
+  "payload": {
+    "access": {
+      "nonce": "0ACUki5ud0-U3oYJW0IeoJOQ"
+    },
+    "request": {
+      "authentication": {
+        "device": "EIE_OcS_NTmW_qviA11FJRzXUmlw-H04GNkVunkvSFUb",
+        "identity": "EJHrDLVaac6PHnE-VtdpieFRzOGQD1qDK6m93xmGMwDd",
+        "publicKey": "1AAIA02sReVcy_PH9u6SbowgQxtTgU_U4wc638hry-xvTD3a",
+        "recoveryHash": "EJHPQs7ddvTm-p0cI62zcwg9d9jdgY38GzUgswUMIr1v",
+        "rotationHash": "ENCKdkGXWiaQb16VRl1Efj9_tAMs-fs1c7l0MCEKdl3h"
+      }
+    }
+  },
+  "signature": "0IA7Gjk3zOUcfwOV3Wl_MaQJB6SiGAG1w1c0BWzlKdAoOPYtWu2IPakxNtjm44nS_8Nn4Z6m5oQiu32tumiFXM9r"
+}
+```
+
+`response`
+
+```json
+{
+  "payload": {
+    "access": {
+      "nonce": "0ACUki5ud0-U3oYJW0IeoJOQ",
+      "serverIdentity": "1AAIAuaNDFO9drP0R50q02vMQQAVl5ePSjIDeUqAhxRrBSdx"
+    },
+    "response": {}
+  },
+  "signature": "0IDiUm3xC407y3BlkzeB7hBS0bC5HBkS-5cgLtF8ehWJ-PdhTitLUdOkqYkZp6CVglj5_Yy1wNlDz2whi0PKOSJF"
 }
 ```
 
