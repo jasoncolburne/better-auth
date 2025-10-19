@@ -1,6 +1,8 @@
 # Multi-stage build for Python app server
 # Force rebuild: 2025-10-18-v3
-FROM python:3.12-bookworm AS builder
+FROM python:3.14-bookworm AS builder
+
+RUN curl https://sh.rustup.rs -sSf | sh -s -- -y
 
 WORKDIR /app
 
@@ -15,20 +17,20 @@ RUN pip install --no-cache-dir -e .
 # Copy app requirements and install
 WORKDIR /app
 COPY examples/basic/services/app-py/requirements.txt ./
-RUN pip install --no-cache-dir -r requirements.txt
+RUN . "$HOME/.cargo/env" && pip install --no-cache-dir -r requirements.txt
 
 # Copy application code
 COPY examples/basic/services/app-py/ .
 
 # Final stage
-FROM python:3.12-slim-bookworm
+FROM python:3.14-slim-bookworm
 
 RUN apt-get update && apt-get install -y ca-certificates && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
 
 # Copy Python packages from builder
-COPY --from=builder /usr/local/lib/python3.12/site-packages /usr/local/lib/python3.12/site-packages
+COPY --from=builder /usr/local/lib/python3.14/site-packages /usr/local/lib/python3.14/site-packages
 COPY --from=builder /usr/local/bin /usr/local/bin
 
 # Copy better-auth-py implementation (needed for -e install)
