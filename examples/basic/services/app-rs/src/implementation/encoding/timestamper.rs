@@ -20,8 +20,8 @@ impl TimestamperTrait for Rfc3339Nano {
         use chrono::{DateTime, Utc};
 
         let datetime: DateTime<Utc> = when.into();
-        // RFC3339 with nanoseconds (9 digits after decimal)
-        datetime.to_rfc3339_opts(chrono::SecondsFormat::Nanos, true)
+        // RFC3339 with milliseconds (3 digits after decimal)
+        datetime.to_rfc3339_opts(chrono::SecondsFormat::Millis, true)
     }
 
     fn parse(&self, when: &str) -> Result<SystemTime, String> {

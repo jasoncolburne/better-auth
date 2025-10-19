@@ -2,14 +2,14 @@ import { ITimestamper } from 'better-auth-ts'
 
 export class Rfc3339Nano implements ITimestamper {
   format(when: Date): string {
-    const isoString = when.toISOString()
-    return isoString.replace('Z', '000000Z')
+    // Use standard RFC3339 format with millisecond precision (3 digits)
+    return when.toISOString()
   }
 
   parse(when: string | Date): Date {
     if (typeof when === 'string') {
-      // Truncate nanoseconds to milliseconds for JavaScript Date compatibility
-      // Match timestamps with 9 or more fractional digits before Z
+      // Truncate any extra precision beyond milliseconds for JavaScript Date compatibility
+      // Match timestamps with more than 3 fractional digits before Z
       when = when.replace(/\.(\d{3})\d+Z/, '.$1Z')
     }
 
