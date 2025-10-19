@@ -1,7 +1,7 @@
 # Multi-stage build for Python app server
-# Force rebuild: 2025-10-18-v3
 FROM python:3.14-bookworm AS builder
 
+# running a script from web is sketchy, so probably download a static copy for a prod deployment
 RUN curl https://sh.rustup.rs -sSf | sh -s -- -y
 
 WORKDIR /app

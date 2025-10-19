@@ -1,5 +1,4 @@
 # Multi-stage build for Ruby app server
-# Force rebuild: 2025-10-18-v9
 FROM ruby:3.4-bookworm AS builder
 
 # Install build dependencies for native extensions
