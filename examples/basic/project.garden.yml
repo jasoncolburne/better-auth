@@ -5,7 +5,7 @@ defaultEnvironment: local
 
 # This example demonstrates a basic Better Auth setup with:
 # - Go-based authentication server
-# - TypeScript-based application server that uses the auth service
+# - Multi-language application servers (TypeScript, Ruby, Rust, Python)
 
 environments:
   - name: local

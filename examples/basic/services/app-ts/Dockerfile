@@ -13,14 +13,14 @@ RUN npm install && npm run build:tsc
 
 # Copy app files
 WORKDIR /app
-COPY examples/basic/services/app/package*.json ./
-COPY examples/basic/services/app/tsconfig.json ./
+COPY examples/basic/services/app-ts/package*.json ./
+COPY examples/basic/services/app-ts/tsconfig.json ./
 
 # Install dependencies (will use local better-auth-ts via file: reference)
 RUN npm install --install-links
 
 # Copy source code
-COPY examples/basic/services/app/src ./src
+COPY examples/basic/services/app-ts/src ./src
 
 # Build the application
 RUN npm run build
