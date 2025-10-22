@@ -3,7 +3,10 @@ module github.com/jasoncolburne/better-auth/examples/basic/auth
 go 1.25.1
 
 require (
-	github.com/jasoncolburne/better-auth-go v0.1.0
+	github.com/jasoncolburne/better-auth-go v0.0.0-20251020150458-7adc091a9196
+	github.com/jasoncolburne/verifiable-storage-go v0.0.0-20251022080739-ed0dd46ef122
+	github.com/jmoiron/sqlx v1.4.0
+	github.com/lib/pq v1.10.9
 	github.com/redis/go-redis/v9 v9.7.0
 )
 

@@ -5,7 +5,7 @@ metadata:
   labels:
     app: auth
 spec:
-  replicas: 1
+  replicas: 2
   selector:
     matchLabels:
       app: auth
@@ -27,6 +27,18 @@ spec:
               value: "${variables.redisDbAccessKeys}"
             - name: REDIS_DB_RESPONSE_KEYS
               value: "${variables.redisDbResponseKeys}"
+            - name: REDIS_DB_ACCESS_KEYHASH
+              value: "${variables.redisDbAccessKeyHash}"
+            - name: POSTGRES_HOST
+              value: "postgres"
+            - name: POSTGRES_PORT
+              value: "5432"
+            - name: POSTGRES_DATABASE
+              value: "${variables.postgresDatabase}"
+            - name: POSTGRES_USER
+              value: "${variables.postgresUser}"
+            - name: POSTGRES_PASSWORD
+              value: "${variables.postgresPassword}"
           livenessProbe:
             httpGet:
               path: /health

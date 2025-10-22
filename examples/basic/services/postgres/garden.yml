@@ -1,5 +1,5 @@
 kind: Deploy
-name: redis
+name: postgres
 type: kubernetes
 
 spec:
