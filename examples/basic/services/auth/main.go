@@ -15,8 +15,10 @@ import (
 	"github.com/jasoncolburne/better-auth-go/api"
 	"github.com/jasoncolburne/better-auth-go/examples/crypto"
 	"github.com/jasoncolburne/better-auth-go/examples/encoding"
-	"github.com/jasoncolburne/better-auth-go/examples/storage"
 	"github.com/jasoncolburne/better-auth-go/pkg/cryptointerfaces"
+	"github.com/jasoncolburne/better-auth/examples/basic/auth/pkg/db"
+	"github.com/jasoncolburne/better-auth/examples/basic/auth/pkg/implementation"
+	"github.com/jasoncolburne/better-auth/examples/basic/auth/pkg/models"
 	"github.com/redis/go-redis/v9"
 )
 
@@ -25,16 +27,21 @@ type TokenAttributes struct {
 }
 
 type Server struct {
-	ba                *api.BetterAuthServer[TokenAttributes]
-	av                *api.AccessVerifier[TokenAttributes]
-	serverAccessKey   cryptointerfaces.SigningKey
-	serverResponseKey cryptointerfaces.SigningKey
-	server            http.Server
+	ba                         *api.BetterAuthServer[TokenAttributes]
+	serverAccessKey            cryptointerfaces.SigningKey
+	serverResponseKey          cryptointerfaces.SigningKey
+	accessVerificationKeyStore *implementation.AccessVerificationKeyStore
+	server                     http.Server
+}
+
+func (s *Server) CloseAccessClient() {
+	if s.accessVerificationKeyStore != nil {
+		_ = s.accessVerificationKeyStore.CloseClient()
+	}
 }
 
 func NewServer() (*Server, error) {
 	accessLifetime := 15 * time.Minute
-	accessWindow := 30 * time.Second
 	refreshLifetime := 12 * time.Hour
 	authenticationChallengeLifetime := 1 * time.Minute
 
@@ -42,11 +49,51 @@ func NewServer() (*Server, error) {
 	verifier := crypto.NewSecp256r1Verifier()
 	noncer := crypto.NewNoncer()
 
-	accessKeyHashStore := storage.NewInMemoryTimeLockStore(refreshLifetime)
-	accessNonceStore := storage.NewInMemoryTimeLockStore(accessWindow)
-	authenticationKeyStore := storage.NewInMemoryAuthenticationKeyStore(hasher)
-	authenticationNonceStore := storage.NewInMemoryAuthenticationNonceStore(authenticationChallengeLifetime)
-	recoveryHashStore := storage.NewInMemoryRecoveryHashStore()
+	accessKeyHashStore, err := implementation.NewAccessKeyHashStore(refreshLifetime)
+	if err != nil {
+		return nil, err
+	}
+
+	accessVerificationKeyStore, err := implementation.NewAccessVerificationKeyStore()
+	if err != nil {
+		return nil, err
+	}
+
+	migrations := []string{
+		models.AUTHENTICATION_KEYS_TABLE_SQL,
+		models.IDENTITY_TABLE_SQL,
+		models.AUTHENTICATION_NONCE_TABLE_SQL,
+		models.RECOVERY_HASH_TABLE_SQL,
+	}
+
+	user := os.Getenv("POSTGRES_USER")
+	password := os.Getenv("POSTGRES_PASSWORD")
+	database := os.Getenv("POSTGRES_DATABASE")
+	host := os.Getenv("POSTGRES_HOST")
+	port := os.Getenv("POSTGRES_PORT")
+
+	dsn := fmt.Sprintf(
+		"user=%s password=%s dbname=%s host=%s port=%s sslmode=disable",
+		user,
+		password,
+		database,
+		host,
+		port,
+	)
+
+	store, err := db.NewPostgreSQLStore(context.Background(), dsn, migrations)
+	if err != nil {
+		return nil, err
+	}
+
+	authenticationKeyStore, err := implementation.NewAuthenticationKeyStore(store)
+	if err != nil {
+		return nil, err
+	}
+
+	// TODO: implement these two in postgres
+	authenticationNonceStore := implementation.NewAuthenticationNonceStore(store, authenticationChallengeLifetime)
+	recoveryHashStore := implementation.NewRecoveryHashStore(store)
 
 	identityVerifier := encoding.NewMockIdentityVerifier(hasher)
 	timestamper := encoding.NewRfc3339Nano()
@@ -83,7 +130,8 @@ func NewServer() (*Server, error) {
 		},
 		&api.StoresContainer{
 			Access: &api.AccessStoreContainer{
-				KeyHash: accessKeyHashStore,
+				KeyHash:         accessKeyHashStore,
+				VerificationKey: accessVerificationKeyStore,
 			},
 			Authentication: &api.AuthenticationStoreContainer{
 				Key:   authenticationKeyStore,
@@ -95,42 +143,24 @@ func NewServer() (*Server, error) {
 		},
 	)
 
-	accessKeyStore := storage.NewVerificationKeyStore()
-	serverAccessIdentity, err := serverAccessKey.Identity()
-	if err != nil {
-		return nil, err
-	}
-	accessKeyStore.Add(serverAccessIdentity, serverAccessKey)
-
-	av := api.NewAccessVerifier[TokenAttributes](
-		&api.VerifierCryptoContainer{
-			Verifier: verifier,
-		},
-		&api.VerifierEncodingContainer{
-			TokenEncoder: tokenEncoder,
-			Timestamper:  timestamper,
-		},
-		&api.VerifierStoreContainer{
-			AccessNonce: accessNonceStore,
-			AccessKey:   accessKeyStore,
-		},
-	)
-
 	return &Server{
-		ba:                ba,
-		av:                av,
-		serverAccessKey:   serverAccessKey,
-		serverResponseKey: serverResponseKey,
+		ba:                         ba,
+		serverAccessKey:            serverAccessKey,
+		serverResponseKey:          serverResponseKey,
+		accessVerificationKeyStore: accessVerificationKeyStore,
 	}, nil
 }
 
-func wrapResponse(w http.ResponseWriter, r *http.Request, logic func(message string) (string, error)) {
+func wrapResponse(w http.ResponseWriter, r *http.Request, logic func(ctx context.Context, message string) (string, error)) {
 	var reply string
 
 	message, err := io.ReadAll(r.Body)
 
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
 	if err == nil {
-		reply, err = logic(string(message))
+		reply, err = logic(ctx, string(message))
 	}
 
 	if err != nil {
@@ -169,8 +199,8 @@ func (s *Server) startAuthentication(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) finishAuthentication(w http.ResponseWriter, r *http.Request) {
-	wrapResponse(w, r, func(message string) (string, error) {
-		return s.ba.CreateSession(message, TokenAttributes{
+	wrapResponse(w, r, func(ctx context.Context, message string) (string, error) {
+		return s.ba.CreateSession(ctx, message, TokenAttributes{
 			PermissionsByRole: map[string][]string{
 				"user": {
 					"read",

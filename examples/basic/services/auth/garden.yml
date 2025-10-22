@@ -22,6 +22,7 @@ type: kubernetes
 # Build and runtime dependencies
 dependencies:
   - build.auth
+  - deploy.postgres
   - deploy.redis
   - deploy.restart-controller
 
