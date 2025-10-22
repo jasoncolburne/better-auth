@@ -16,6 +16,9 @@ import (
 	"github.com/jasoncolburne/better-auth-go/examples/crypto"
 	"github.com/jasoncolburne/better-auth-go/examples/encoding"
 	"github.com/jasoncolburne/better-auth-go/pkg/cryptointerfaces"
+	"github.com/jasoncolburne/better-auth/examples/basic/auth/pkg/db"
+	"github.com/jasoncolburne/better-auth/examples/basic/auth/pkg/implementation"
+	"github.com/jasoncolburne/better-auth/examples/basic/auth/pkg/models"
 	"github.com/redis/go-redis/v9"
 )
 
@@ -27,13 +30,13 @@ type Server struct {
 	ba                         *api.BetterAuthServer[TokenAttributes]
 	serverAccessKey            cryptointerfaces.SigningKey
 	serverResponseKey          cryptointerfaces.SigningKey
-	accessVerificationKeyStore *AccessVerificationKeyStore
+	accessVerificationKeyStore *implementation.AccessVerificationKeyStore
 	server                     http.Server
 }
 
 func (s *Server) CloseAccessClient() {
 	if s.accessVerificationKeyStore != nil {
-		s.accessVerificationKeyStore.client.Close()
+		_ = s.accessVerificationKeyStore.CloseClient()
 	}
 }
 
@@ -46,21 +49,21 @@ func NewServer() (*Server, error) {
 	verifier := crypto.NewSecp256r1Verifier()
 	noncer := crypto.NewNoncer()
 
-	accessKeyHashStore, err := NewAccessKeyHashStore(refreshLifetime)
+	accessKeyHashStore, err := implementation.NewAccessKeyHashStore(refreshLifetime)
 	if err != nil {
 		return nil, err
 	}
 
-	accessVerificationKeyStore, err := NewAccessVerificationKeyStore()
+	accessVerificationKeyStore, err := implementation.NewAccessVerificationKeyStore()
 	if err != nil {
 		return nil, err
 	}
 
 	migrations := []string{
-		AUTHENTICATION_KEYS_TABLE_SQL,
-		IDENTITY_TABLE_SQL,
-		AUTHENTICATION_NONCE_TABLE_SQL,
-		RECOVERY_HASH_TABLE_SQL,
+		models.AUTHENTICATION_KEYS_TABLE_SQL,
+		models.IDENTITY_TABLE_SQL,
+		models.AUTHENTICATION_NONCE_TABLE_SQL,
+		models.RECOVERY_HASH_TABLE_SQL,
 	}
 
 	user := os.Getenv("POSTGRES_USER")
@@ -78,19 +81,19 @@ func NewServer() (*Server, error) {
 		port,
 	)
 
-	store, err := NewPostgreSQLStore(context.Background(), dsn, migrations)
+	store, err := db.NewPostgreSQLStore(context.Background(), dsn, migrations)
 	if err != nil {
 		return nil, err
 	}
 
-	authenticationKeyStore, err := NewAuthenticationKeyStore(store)
+	authenticationKeyStore, err := implementation.NewAuthenticationKeyStore(store)
 	if err != nil {
 		return nil, err
 	}
 
 	// TODO: implement these two in postgres
-	authenticationNonceStore := NewAuthenticationNonceStore(store, authenticationChallengeLifetime)
-	recoveryHashStore := NewRecoveryHashStore(store)
+	authenticationNonceStore := implementation.NewAuthenticationNonceStore(store, authenticationChallengeLifetime)
+	recoveryHashStore := implementation.NewRecoveryHashStore(store)
 
 	identityVerifier := encoding.NewMockIdentityVerifier(hasher)
 	timestamper := encoding.NewRfc3339Nano()
