@@ -11,17 +11,55 @@
 		BA000003 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BA000004 /* ContentView.swift */; };
 		BA000005 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = BA000006 /* Assets.xcassets */; };
 		BA000007 /* BetterAuth in Frameworks */ = {isa = PBXBuildFile; productRef = BA000008 /* BetterAuth */; };
-		BA000009 /* PlaceholderImplementations.swift in Sources */ = {isa = PBXBuildFile; fileRef = BA00000A /* PlaceholderImplementations.swift */; };
 		BA000025 /* BLAKE3 in Frameworks */ = {isa = PBXBuildFile; productRef = BA000020 /* BLAKE3 */; };
 		BA000026 /* Crypto in Frameworks */ = {isa = PBXBuildFile; productRef = BA000022 /* Crypto */; };
+		BA000027 /* Blake3.swift in Sources */ = {isa = PBXBuildFile; fileRef = BA000028 /* Blake3.swift */; };
+		BA000029 /* Entropy.swift in Sources */ = {isa = PBXBuildFile; fileRef = BA00002A /* Entropy.swift */; };
+		BA00002B /* Hasher.swift in Sources */ = {isa = PBXBuildFile; fileRef = BA00002C /* Hasher.swift */; };
+		BA00002D /* Noncer.swift in Sources */ = {isa = PBXBuildFile; fileRef = BA00002E /* Noncer.swift */; };
+		BA00002F /* Secp256r1.swift in Sources */ = {isa = PBXBuildFile; fileRef = BA000030 /* Secp256r1.swift */; };
+		BA000031 /* Secp256r1VerificationKey.swift in Sources */ = {isa = PBXBuildFile; fileRef = BA000032 /* Secp256r1VerificationKey.swift */; };
+		BA000033 /* Secp256r1Verifier.swift in Sources */ = {isa = PBXBuildFile; fileRef = BA000034 /* Secp256r1Verifier.swift */; };
+		BA000035 /* AppState.swift in Sources */ = {isa = PBXBuildFile; fileRef = BA000036 /* AppState.swift */; };
+		BA000037 /* FakeResponse.swift in Sources */ = {isa = PBXBuildFile; fileRef = BA000038 /* FakeResponse.swift */; };
+		BA000039 /* FakeResponseMessage.swift in Sources */ = {isa = PBXBuildFile; fileRef = BA00003A /* FakeResponseMessage.swift */; };
+		BA00003B /* Network.swift in Sources */ = {isa = PBXBuildFile; fileRef = BA00003C /* Network.swift */; };
+		BA00003D /* DefaultPaths.swift in Sources */ = {isa = PBXBuildFile; fileRef = BA00003E /* DefaultPaths.swift */; };
+		BA00003F /* ClientRotatingKeyStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = BA000040 /* ClientRotatingKeyStore.swift */; };
+		BA000041 /* ClientValueStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = BA000042 /* ClientValueStore.swift */; };
+		BA000043 /* VerificationKeyStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = BA000044 /* VerificationKeyStore.swift */; };
+		BA000045 /* Rfc3339Nano.swift in Sources */ = {isa = PBXBuildFile; fileRef = BA000046 /* Rfc3339Nano.swift */; };
+		BA000047 /* Base64.swift in Sources */ = {isa = PBXBuildFile; fileRef = BA000048 /* Base64.swift */; };
+		BA000049 /* Debug.swift in Sources */ = {isa = PBXBuildFile; fileRef = BA00004A /* Debug.swift */; };
+	BA000053 /* KeychainHelper.swift in Sources */ = {isa = PBXBuildFile; fileRef = BA000054 /* KeychainHelper.swift */; };
+	BA000055 /* HardwareSecp256r1.swift in Sources */ = {isa = PBXBuildFile; fileRef = BA000056 /* HardwareSecp256r1.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
 		BA000002 /* BetterAuthBasicExampleApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BetterAuthBasicExampleApp.swift; sourceTree = "<group>"; };
 		BA000004 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
 		BA000006 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
-		BA00000A /* PlaceholderImplementations.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlaceholderImplementations.swift; sourceTree = "<group>"; };
 		BA00000B /* BetterAuthBasicExample.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = BetterAuthBasicExample.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		BA000028 /* Blake3.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Blake3.swift; sourceTree = "<group>"; };
+		BA00002A /* Entropy.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Entropy.swift; sourceTree = "<group>"; };
+		BA00002C /* Hasher.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Hasher.swift; sourceTree = "<group>"; };
+		BA00002E /* Noncer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Noncer.swift; sourceTree = "<group>"; };
+		BA000030 /* Secp256r1.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Secp256r1.swift; sourceTree = "<group>"; };
+		BA000032 /* Secp256r1VerificationKey.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Secp256r1VerificationKey.swift; sourceTree = "<group>"; };
+		BA000034 /* Secp256r1Verifier.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Secp256r1Verifier.swift; sourceTree = "<group>"; };
+		BA000036 /* AppState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppState.swift; sourceTree = "<group>"; };
+		BA000038 /* FakeResponse.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FakeResponse.swift; sourceTree = "<group>"; };
+		BA00003A /* FakeResponseMessage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FakeResponseMessage.swift; sourceTree = "<group>"; };
+		BA00003C /* Network.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Network.swift; sourceTree = "<group>"; };
+		BA00003E /* DefaultPaths.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DefaultPaths.swift; sourceTree = "<group>"; };
+		BA000040 /* ClientRotatingKeyStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClientRotatingKeyStore.swift; sourceTree = "<group>"; };
+		BA000042 /* ClientValueStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClientValueStore.swift; sourceTree = "<group>"; };
+		BA000044 /* VerificationKeyStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VerificationKeyStore.swift; sourceTree = "<group>"; };
+		BA000046 /* Rfc3339Nano.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Rfc3339Nano.swift; sourceTree = "<group>"; };
+		BA000048 /* Base64.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Base64.swift; sourceTree = "<group>"; };
+		BA00004A /* Debug.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Debug.swift; sourceTree = "<group>"; };
+	BA000054 /* KeychainHelper.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeychainHelper.swift; sourceTree = "<group>"; };
+	BA000056 /* HardwareSecp256r1.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HardwareSecp256r1.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -43,7 +81,7 @@
 			children = (
 				BA000002 /* BetterAuthBasicExampleApp.swift */,
 				BA000004 /* ContentView.swift */,
-				BA00000A /* PlaceholderImplementations.swift */,
+				BA00004B /* Implementation */,
 				BA000006 /* Assets.xcassets */,
 			);
 			path = BetterAuthBasicExample;
@@ -63,6 +101,89 @@
 				BA00000B /* BetterAuthBasicExample.app */,
 			);
 			name = Products;
+			sourceTree = "<group>";
+		};
+		BA00004B /* Implementation */ = {
+			isa = PBXGroup;
+			children = (
+				BA00004C /* Crypto */,
+				BA00004D /* Models */,
+				BA00004E /* Network */,
+				BA00004F /* Protocol */,
+				BA000050 /* Stores */,
+				BA000051 /* Time */,
+				BA000052 /* Utilities */,
+			);
+			path = Implementation;
+			sourceTree = "<group>";
+		};
+		BA00004C /* Crypto */ = {
+			isa = PBXGroup;
+			children = (
+				BA000028 /* Blake3.swift */,
+				BA00002A /* Entropy.swift */,
+				BA00002C /* Hasher.swift */,
+				BA000056 /* HardwareSecp256r1.swift */,
+				BA00002E /* Noncer.swift */,
+				BA000030 /* Secp256r1.swift */,
+				BA000032 /* Secp256r1VerificationKey.swift */,
+				BA000034 /* Secp256r1Verifier.swift */,
+			);
+			path = Crypto;
+			sourceTree = "<group>";
+		};
+		BA00004D /* Models */ = {
+			isa = PBXGroup;
+			children = (
+				BA000036 /* AppState.swift */,
+				BA000038 /* FakeResponse.swift */,
+				BA00003A /* FakeResponseMessage.swift */,
+			);
+			path = Models;
+			sourceTree = "<group>";
+		};
+		BA00004E /* Network */ = {
+			isa = PBXGroup;
+			children = (
+				BA00003C /* Network.swift */,
+			);
+			path = Network;
+			sourceTree = "<group>";
+		};
+		BA00004F /* Protocol */ = {
+			isa = PBXGroup;
+			children = (
+				BA00003E /* DefaultPaths.swift */,
+			);
+			path = Protocol;
+			sourceTree = "<group>";
+		};
+		BA000050 /* Stores */ = {
+			isa = PBXGroup;
+			children = (
+				BA000040 /* ClientRotatingKeyStore.swift */,
+				BA000042 /* ClientValueStore.swift */,
+				BA000044 /* VerificationKeyStore.swift */,
+			);
+			path = Stores;
+			sourceTree = "<group>";
+		};
+		BA000051 /* Time */ = {
+			isa = PBXGroup;
+			children = (
+				BA000046 /* Rfc3339Nano.swift */,
+			);
+			path = Time;
+			sourceTree = "<group>";
+		};
+		BA000052 /* Utilities */ = {
+			isa = PBXGroup;
+			children = (
+				BA000048 /* Base64.swift */,
+				BA00004A /* Debug.swift */,
+				BA000054 /* KeychainHelper.swift */,
+			);
+			path = Utilities;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -146,7 +267,26 @@
 			files = (
 				BA000003 /* ContentView.swift in Sources */,
 				BA000001 /* BetterAuthBasicExampleApp.swift in Sources */,
-				BA000009 /* PlaceholderImplementations.swift in Sources */,
+				BA000027 /* Blake3.swift in Sources */,
+				BA000029 /* Entropy.swift in Sources */,
+				BA00002B /* Hasher.swift in Sources */,
+				BA00002D /* Noncer.swift in Sources */,
+				BA00002F /* Secp256r1.swift in Sources */,
+				BA000031 /* Secp256r1VerificationKey.swift in Sources */,
+				BA000033 /* Secp256r1Verifier.swift in Sources */,
+				BA000035 /* AppState.swift in Sources */,
+				BA000037 /* FakeResponse.swift in Sources */,
+				BA000039 /* FakeResponseMessage.swift in Sources */,
+				BA00003B /* Network.swift in Sources */,
+				BA00003D /* DefaultPaths.swift in Sources */,
+				BA00003F /* ClientRotatingKeyStore.swift in Sources */,
+				BA000041 /* ClientValueStore.swift in Sources */,
+				BA000043 /* VerificationKeyStore.swift in Sources */,
+				BA000045 /* Rfc3339Nano.swift in Sources */,
+				BA000047 /* Base64.swift in Sources */,
+				BA000049 /* Debug.swift in Sources */,
+				BA000053 /* KeychainHelper.swift in Sources */,
+				BA000055 /* HardwareSecp256r1.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

@@ -1,46 +1,9 @@
 import SwiftUI
 import BetterAuth
 
-struct FakeResponse: Codable {
-    let wasFoo: String
-    let wasBar: String
-    let serverName: String
-}
-
-class FakeResponseMessage: ServerResponse<[String: Any]> {
-    var response: FakeResponse {
-        let payload = self.payload as! [String: Any]
-        let responseDict = payload["response"] as! [String: Any]
-        return FakeResponse(
-            wasFoo: responseDict["wasFoo"] as! String,
-            wasBar: responseDict["wasBar"] as! String,
-            serverName: responseDict["serverName"] as! String
-        )
-    }
-
-    var serverIdentity: String {
-        let payload = self.payload as! [String: Any]
-        let access = payload["access"] as! [String: Any]
-        return access["serverIdentity"] as! String
-    }
-
-    static func parse(_ message: String) throws -> FakeResponseMessage {
-        try ServerResponse<[String: Any]>.parse(message) { response, serverIdentity, nonce in
-            let msg = FakeResponseMessage(response: response, serverIdentity: serverIdentity, nonce: nonce)
-            return msg
-        } as! FakeResponseMessage
-    }
-}
-
-enum AppState {
-    case ready
-    case created
-    case authenticated
-}
-
 struct ContentView: View {
-    @State private var state = AppState.ready
-    @State private var statusMessage = "Ready"
+    @State private var state: AppState
+    @State private var statusMessage: String
     @State private var isLoading = false
     @State private var recoveryKey: Secp256r1 = { return Secp256r1() }()
     @State private var foo = ""
@@ -52,23 +15,40 @@ struct ContentView: View {
 
     // Create shared verification key store
     private let verificationKeyStore = VerificationKeyStore()
+    private let authenticationKeyStore = ClientRotatingKeyStore(prefix: "authentication")
+    private let accessKeyStore = ClientRotatingKeyStore(prefix: "access")
 
     // Create the BetterAuthClient with real implementations
     private let betterAuthClient: BetterAuthClient
 
     init() {
+        // Infer app state based on keychain contents
+        let hasAuthentication = authenticationKeyStore.isInitialized()
+        let hasAccess = accessKeyStore.isInitialized()
+
+        if hasAccess {
+            state = .authenticated
+            statusMessage = "Authenticated"
+        } else if hasAuthentication {
+            state = .created
+            statusMessage = "Account created"
+        } else {
+            state = .ready
+            statusMessage = "Ready"
+        }
+
         betterAuthClient = BetterAuthClient(
             hasher: Hasher(),
             noncer: Noncer(),
             verificationKeyStore: verificationKeyStore,
             timestamper: Rfc3339Nano(),
-            network: PlaceholderNetwork(),
+            network: Network(),
             paths: createDefaultPaths(),
-            deviceIdentifierStore: ClientValueStore(),
-            identityIdentifierStore: ClientValueStore(),
-            accessKeyStore: ClientRotatingKeyStore(),
-            authenticationKeyStore: ClientRotatingKeyStore(),
-            accessTokenStore: ClientValueStore()
+            deviceIdentifierStore: ClientValueStore(suffix: "device"),
+            identityIdentifierStore: ClientValueStore(suffix: "identity"),
+            accessKeyStore: accessKeyStore,
+            authenticationKeyStore: authenticationKeyStore,
+            accessTokenStore: ClientValueStore(suffix: "token")
         )
     }
 
@@ -131,6 +111,29 @@ struct ContentView: View {
                     }
                     .disabled(isLoading)
                     .padding(.horizontal)
+
+                    Button(action: {
+                        Task {
+                            await handleDeleteAccount()
+                        }
+                    }) {
+                        HStack {
+                            if isLoading {
+                                ProgressView()
+                                    .progressViewStyle(CircularProgressViewStyle(tint: .white))
+                                    .frame(width: 20, height: 20)
+                            }
+                            Text("Delete account")
+                                .fontWeight(.semibold)
+                        }
+                        .frame(maxWidth: .infinity)
+                        .padding()
+                        .background(isLoading ? Color.gray : Color.blue)
+                        .foregroundColor(.white)
+                        .cornerRadius(10)
+                    }
+                    .disabled(isLoading)
+                    .padding(.horizontal)
                 case AppState.authenticated:
                     Button(action: {
                         Task {
@@ -144,6 +147,29 @@ struct ContentView: View {
                                     .frame(width: 20, height: 20)
                             }
                             Text("Refresh session")
+                                .fontWeight(.semibold)
+                        }
+                        .frame(maxWidth: .infinity)
+                        .padding()
+                        .background(isLoading ? Color.gray : Color.blue)
+                        .foregroundColor(.white)
+                        .cornerRadius(10)
+                    }
+                    .disabled(isLoading)
+                    .padding(.horizontal)
+
+                    Button(action: {
+                        Task {
+                            await handleEndSession()
+                        }
+                    }) {
+                        HStack {
+                            if isLoading {
+                                ProgressView()
+                                    .progressViewStyle(CircularProgressViewStyle(tint: .white))
+                                    .frame(width: 20, height: 20)
+                            }
+                            Text("End session")
                                 .fontWeight(.semibold)
                         }
                         .frame(maxWidth: .infinity)
@@ -230,6 +256,22 @@ struct ContentView: View {
         isLoading = false
     }
 
+    private func handleDeleteAccount() async {
+        isLoading = true
+        statusMessage = "Deleting account..."
+
+        do {
+            try await betterAuthClient.deleteAccount()
+            authenticationKeyStore.reset()
+            state = AppState.ready
+            statusMessage = "Account deleted."
+        } catch {
+            statusMessage = "Error: \(error.localizedDescription)"
+        }
+
+        isLoading = false
+    }
+
     private func handleCreateSession() async {
         isLoading = true
         statusMessage = "Creating session..."
@@ -255,6 +297,17 @@ struct ContentView: View {
         } catch {
             statusMessage = "Error: \(error.localizedDescription)"
         }
+
+        isLoading = false
+    }
+
+    private func handleEndSession() async {
+        isLoading = true
+        statusMessage = "Ending session..."
+
+        accessKeyStore.reset()
+        statusMessage = "Session ended."
+        state = AppState.created
 
         isLoading = false
     }
