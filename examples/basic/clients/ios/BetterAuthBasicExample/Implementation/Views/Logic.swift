@@ -7,6 +7,7 @@ class ContentViewLogic {
     let authenticationKeyStore: ClientRotatingKeyStore
     let accessKeyStore: ClientRotatingKeyStore
     let identityValueStore: ClientValueStore
+    let deviceValueStore: ClientValueStore
     let verificationKeyStore: VerificationKeyStore
     let recoveryKey: Secp256r1
 
@@ -14,6 +15,8 @@ class ContentViewLogic {
     var statusMessage = ""
     var state: AppState
     var identityValue = ""
+    var deviceValue = ""
+    var otherDeviceValue = ""
     var pyOutput = ""
     var rbOutput = ""
     var rsOutput = ""
@@ -24,21 +27,25 @@ class ContentViewLogic {
         authenticationKeyStore: ClientRotatingKeyStore,
         accessKeyStore: ClientRotatingKeyStore,
         identityValueStore: ClientValueStore,
+        deviceValueStore: ClientValueStore,
         verificationKeyStore: VerificationKeyStore,
         recoveryKey: Secp256r1,
         initialState: AppState,
         initialStatusMessage: String,
-        initialIdentityValue: String
+        initialIdentityValue: String,
+        initialDeviceValue: String,
     ) {
         self.betterAuthClient = betterAuthClient
         self.authenticationKeyStore = authenticationKeyStore
         self.accessKeyStore = accessKeyStore
         self.identityValueStore = identityValueStore
+        self.deviceValueStore = deviceValueStore
         self.verificationKeyStore = verificationKeyStore
         self.recoveryKey = recoveryKey
         self.state = initialState
         self.statusMessage = initialStatusMessage
         self.identityValue = initialIdentityValue
+        self.deviceValue = initialDeviceValue
     }
 
     func handleCreateAccount() async {
@@ -56,6 +63,7 @@ class ContentViewLogic {
             try await betterAuthClient.createAccount(recoveryHash)
             statusMessage = "Account created successfully!"
             identityValue = try identityValueStore.getSync()
+            deviceValue = try deviceValueStore.getSync()
             state = AppState.created
         } catch {
             statusMessage = "Error: \(error.localizedDescription)"
@@ -70,14 +78,35 @@ class ContentViewLogic {
 
         do {
             try await betterAuthClient.deleteAccount()
+
+            authenticationKeyStore.reset()
+            state = AppState.ready
+            identityValue = ""
+            deviceValue = ""
+            statusMessage = "Account deleted."
         } catch {
-            //
+            statusMessage = "Error: \(error.localizedDescription)"
         }
 
-        authenticationKeyStore.reset()
-        state = AppState.ready
-        identityValue = ""
-        statusMessage = "Account deleted."
+        isLoading = false
+    }
+
+    func handleEraseCredentials() async {
+        isLoading = true
+        statusMessage = "Erasing credentials..."
+
+        do {
+            authenticationKeyStore.reset()
+            try? await identityValueStore.store("")
+            try? await deviceValueStore.store("")
+            state = AppState.ready
+            identityValue = ""
+            deviceValue = ""
+
+            statusMessage = "Credentials erased."
+        } catch {
+            statusMessage = "Error: \(error.localizedDescription)"
+        }
 
         isLoading = false
     }
@@ -89,8 +118,10 @@ class ContentViewLogic {
         do {
             UIPasteboard.general.string = try await betterAuthClient.generateLinkContainer(identityValue)
             state = AppState.created
+            deviceValue = try await deviceValueStore.get()
             statusMessage = "Link data copied to clipboard."
         } catch {
+            identityValue = ""
             statusMessage = "Error: \(error.localizedDescription)"
         }
 
@@ -104,6 +135,25 @@ class ContentViewLogic {
         do {
             try await betterAuthClient.linkDevice(linkContainer)
             statusMessage = "Device linked."
+        } catch {
+            statusMessage = "Error: \(error.localizedDescription)"
+        }
+
+        isLoading = false
+    }
+
+    func handleUnlinkDevice() async {
+        isLoading = true
+        statusMessage = "Unlinking device..."
+
+        do {
+            try await betterAuthClient.unlinkDevice(otherDeviceValue)
+            if (otherDeviceValue == deviceValue) {
+                try? await authenticationKeyStore.reset()
+                state = AppState.ready
+            }
+            otherDeviceValue = ""
+            statusMessage = "Device unlinked."
         } catch {
             statusMessage = "Error: \(error.localizedDescription)"
         }

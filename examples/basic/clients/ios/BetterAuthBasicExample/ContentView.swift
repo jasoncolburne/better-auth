@@ -12,11 +12,16 @@ struct ContentView: View {
         logic.identityValue.count > 36 ? String(logic.identityValue.dropFirst(36)) : ""
     }
 
+    private var device: String {
+        logic.deviceValue.count > 36 ? String(logic.deviceValue.dropFirst(36)) : ""
+    }
+
     init() {
         let verificationKeyStore = VerificationKeyStore()
         let authenticationKeyStore = ClientRotatingKeyStore(prefix: "authentication")
         let accessKeyStore = ClientRotatingKeyStore(prefix: "access")
         let identityValueStore = ClientValueStore(suffix: "identity")
+        let deviceValueStore = ClientValueStore(suffix: "device")
         let recoveryKey = Secp256r1()
 
         let betterAuthClient = BetterAuthClient(
@@ -26,7 +31,7 @@ struct ContentView: View {
             timestamper: Rfc3339Nano(),
             network: Network(),
             paths: createDefaultPaths(),
-            deviceIdentifierStore: ClientValueStore(suffix: "device"),
+            deviceIdentifierStore: deviceValueStore,
             identityIdentifierStore: identityValueStore,
             accessKeyStore: accessKeyStore,
             authenticationKeyStore: authenticationKeyStore,
@@ -40,18 +45,22 @@ struct ContentView: View {
         let initialState: AppState
         let initialStatusMessage: String
         let initialIdentityValue: String
+        let initialDeviceValue: String
 
         if hasAccess {
             initialState = .authenticated
             initialIdentityValue = (try? identityValueStore.getSync()) ?? ""
+            initialDeviceValue = (try? deviceValueStore.getSync()) ?? ""
             initialStatusMessage = "Authenticated"
         } else if hasAuthentication {
             initialState = .created
             initialIdentityValue = (try? identityValueStore.getSync()) ?? ""
+            initialDeviceValue = (try? deviceValueStore.getSync()) ?? ""
             initialStatusMessage = "Account created"
         } else {
             initialState = .ready
             initialIdentityValue = ""
+            initialDeviceValue = ""
             initialStatusMessage = "Ready"
         }
 
@@ -60,11 +69,13 @@ struct ContentView: View {
             authenticationKeyStore: authenticationKeyStore,
             accessKeyStore: accessKeyStore,
             identityValueStore: identityValueStore,
+            deviceValueStore: deviceValueStore,
             verificationKeyStore: verificationKeyStore,
             recoveryKey: recoveryKey,
             initialState: initialState,
             initialStatusMessage: initialStatusMessage,
-            initialIdentityValue: initialIdentityValue
+            initialIdentityValue: initialIdentityValue,
+            initialDeviceValue: initialDeviceValue,
         )
     }
 
@@ -79,6 +90,14 @@ struct ContentView: View {
                     .font(.subheadline)
                     .onTapGesture {
                         UIPasteboard.general.string = logic.identityValue
+                    }
+            }
+
+            if (device.count > 0) {
+                Text("device: ...\(device)")
+                    .font(.subheadline)
+                    .onTapGesture {
+                        UIPasteboard.general.string = logic.deviceValue
                     }
             }
 
@@ -100,8 +119,11 @@ struct ContentView: View {
                     CreatedStateView(
                         isLoading: $logic.isLoading,
                         showLinkDevicePrompt: $showLinkDevicePrompt,
+                        deviceValue: $logic.otherDeviceValue,
                         onCreateSession: { await logic.handleCreateSession() },
-                        onDeleteAccount: { await logic.handleDeleteAccount() }
+                        onUnlinkDevice: { await logic.handleUnlinkDevice() },
+                        onDeleteAccount: { await logic.handleDeleteAccount() },
+                        onEraseCredentials: { await logic.handleEraseCredentials() }
                     )
                 case AppState.authenticated:
                     AuthenticatedStateView(

@@ -31,7 +31,7 @@ struct ReadyStateView: View {
             .disabled(isLoading)
             .padding(.horizontal)
 
-            TextField("Other device identity", text: $identityValue)
+            TextField("Other identity", text: $identityValue)
                 .textFieldStyle(RoundedBorderTextFieldStyle())
                 .padding(.horizontal)
 
