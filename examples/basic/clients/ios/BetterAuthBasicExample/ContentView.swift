@@ -13,10 +13,10 @@ struct ContentView: View {
     @State private var rsOutput = ""
     @State private var tsOutput = ""
     @State private var identityValue = ""
+    @State private var showLinkDevicePrompt = false
+    @State private var linkContainer = ""
     private var identity: String {
-        identityValue.count > 0 ?
-            identityValue.substring(from: String.Index(encodedOffset: 36)) :
-            identityValue
+        identityValue.count > 36 ? String(identityValue.dropFirst(36)) : ""
     }
 
     // Create shared verification key store
@@ -67,8 +67,13 @@ struct ContentView: View {
                 .font(.largeTitle)
                 .fontWeight(.bold)
 
-            Text("identity: ...\(identity)")
-                .font(.subheadline)
+            if (identity.count > 0) {
+                Text("identity: ...\(identity)")
+                    .font(.subheadline)
+                    .onTapGesture {
+                        UIPasteboard.general.string = identityValue
+                    }
+            }
 
             Text(statusMessage)
                 .font(.body)
@@ -100,6 +105,33 @@ struct ContentView: View {
                     }
                     .disabled(isLoading)
                     .padding(.horizontal)
+
+                    TextField("Other device identity", text: $identityValue)
+                        .textFieldStyle(RoundedBorderTextFieldStyle())
+                        .padding(.horizontal)
+
+                    Button(action: {
+                        Task {
+                            await handleGenerateLinkContainer()
+                        }
+                    }) {
+                        HStack {
+                            if isLoading {
+                                ProgressView()
+                                    .progressViewStyle(CircularProgressViewStyle(tint: .white))
+                                    .frame(width: 20, height: 20)
+                            }
+                            Text("Link this device")
+                                .fontWeight(.semibold)
+                        }
+                        .frame(maxWidth: .infinity)
+                        .padding()
+                        .background(isLoading ? Color.gray : Color.blue)
+                        .foregroundColor(.white)
+                        .cornerRadius(10)
+                    }
+                    .disabled(isLoading)
+                    .padding(.horizontal)
                 case AppState.created:
                     Button(action: {
                         Task {
@@ -113,6 +145,29 @@ struct ContentView: View {
                                     .frame(width: 20, height: 20)
                             }
                             Text("Create session")
+                                .fontWeight(.semibold)
+                        }
+                        .frame(maxWidth: .infinity)
+                        .padding()
+                        .background(isLoading ? Color.gray : Color.blue)
+                        .foregroundColor(.white)
+                        .cornerRadius(10)
+                    }
+                    .disabled(isLoading)
+                    .padding(.horizontal)
+
+                    Button(action: {
+                        Task {
+                            showLinkDevicePrompt = true
+                        }
+                    }) {
+                        HStack {
+                            if isLoading {
+                                ProgressView()
+                                    .progressViewStyle(CircularProgressViewStyle(tint: .white))
+                                    .frame(width: 20, height: 20)
+                            }
+                            Text("Link another device")
                                 .fontWeight(.semibold)
                         }
                         .frame(maxWidth: .infinity)
@@ -244,6 +299,14 @@ struct ContentView: View {
             Spacer()
         }
         .padding()
+        .sheet(isPresented: $showLinkDevicePrompt) {
+            LinkDevicePromptView(linkContainer: $linkContainer, onSubmit: {
+                showLinkDevicePrompt = false
+                Task {
+                    await handleLinkDevice(linkContainer: linkContainer)
+                }
+            })
+        }
     }
 
     private func handleCreateAccount() async {
@@ -275,10 +338,41 @@ struct ContentView: View {
 
         do {
             try await betterAuthClient.deleteAccount()
-            authenticationKeyStore.reset()
-            state = AppState.ready
-            identityValue = ""
-            statusMessage = "Account deleted."
+        } catch {
+            //
+        }
+
+        authenticationKeyStore.reset()
+        state = AppState.ready
+        identityValue = ""
+        statusMessage = "Account deleted."
+
+        isLoading = false
+    }
+
+
+    private func handleGenerateLinkContainer() async {
+        isLoading = true
+        statusMessage = "Generating link data..."
+
+        do {
+            UIPasteboard.general.string = try await betterAuthClient.generateLinkContainer(identityValue)
+            state = AppState.created
+            statusMessage = "Link data copied to clipboard."
+        } catch {
+            statusMessage = "Error: \(error.localizedDescription)"
+        }
+
+        isLoading = false
+    }
+
+    private func handleLinkDevice(linkContainer: String) async {
+        isLoading = true
+        statusMessage = "Linking device..."
+
+        do {
+            try await betterAuthClient.linkDevice(linkContainer)
+            statusMessage = "Device linked."
         } catch {
             statusMessage = "Error: \(error.localizedDescription)"
         }

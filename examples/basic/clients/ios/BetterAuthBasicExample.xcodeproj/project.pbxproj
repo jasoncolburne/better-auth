@@ -21,6 +21,7 @@
 		BA000031 /* Secp256r1VerificationKey.swift in Sources */ = {isa = PBXBuildFile; fileRef = BA000032 /* Secp256r1VerificationKey.swift */; };
 		BA000033 /* Secp256r1Verifier.swift in Sources */ = {isa = PBXBuildFile; fileRef = BA000034 /* Secp256r1Verifier.swift */; };
 		BA000035 /* AppState.swift in Sources */ = {isa = PBXBuildFile; fileRef = BA000036 /* AppState.swift */; };
+		BAVIEW02 /* LinkDevicePromptView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BAVIEW01 /* LinkDevicePromptView.swift */; };
 		BA000037 /* FakeResponse.swift in Sources */ = {isa = PBXBuildFile; fileRef = BA000038 /* FakeResponse.swift */; };
 		BA000039 /* FakeResponseMessage.swift in Sources */ = {isa = PBXBuildFile; fileRef = BA00003A /* FakeResponseMessage.swift */; };
 		BA00003B /* Network.swift in Sources */ = {isa = PBXBuildFile; fileRef = BA00003C /* Network.swift */; };
@@ -48,6 +49,7 @@
 		BA000032 /* Secp256r1VerificationKey.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Secp256r1VerificationKey.swift; sourceTree = "<group>"; };
 		BA000034 /* Secp256r1Verifier.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Secp256r1Verifier.swift; sourceTree = "<group>"; };
 		BA000036 /* AppState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppState.swift; sourceTree = "<group>"; };
+		BAVIEW01 /* LinkDevicePromptView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LinkDevicePromptView.swift; sourceTree = "<group>"; };
 		BA000038 /* FakeResponse.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FakeResponse.swift; sourceTree = "<group>"; };
 		BA00003A /* FakeResponseMessage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FakeResponseMessage.swift; sourceTree = "<group>"; };
 		BA00003C /* Network.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Network.swift; sourceTree = "<group>"; };
@@ -113,8 +115,17 @@
 				BA000050 /* Stores */,
 				BA000051 /* Time */,
 				BA000052 /* Utilities */,
+				BAVIEW03 /* Views */,
 			);
 			path = Implementation;
+			sourceTree = "<group>";
+		};
+		BAVIEW03 /* Views */ = {
+			isa = PBXGroup;
+			children = (
+				BAVIEW01 /* LinkDevicePromptView.swift */,
+			);
+			path = Views;
 			sourceTree = "<group>";
 		};
 		BA00004C /* Crypto */ = {
@@ -287,6 +298,7 @@
 				BA000049 /* Debug.swift in Sources */,
 				BA000053 /* KeychainHelper.swift in Sources */,
 				BA000055 /* HardwareSecp256r1.swift in Sources */,
+				BAVIEW02 /* LinkDevicePromptView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
