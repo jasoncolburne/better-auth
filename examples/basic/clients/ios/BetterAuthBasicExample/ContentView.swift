@@ -1,46 +1,9 @@
 import SwiftUI
 import BetterAuth
 
-struct FakeResponse: Codable {
-    let wasFoo: String
-    let wasBar: String
-    let serverName: String
-}
-
-class FakeResponseMessage: ServerResponse<[String: Any]> {
-    var response: FakeResponse {
-        let payload = self.payload as! [String: Any]
-        let responseDict = payload["response"] as! [String: Any]
-        return FakeResponse(
-            wasFoo: responseDict["wasFoo"] as! String,
-            wasBar: responseDict["wasBar"] as! String,
-            serverName: responseDict["serverName"] as! String
-        )
-    }
-
-    var serverIdentity: String {
-        let payload = self.payload as! [String: Any]
-        let access = payload["access"] as! [String: Any]
-        return access["serverIdentity"] as! String
-    }
-
-    static func parse(_ message: String) throws -> FakeResponseMessage {
-        try ServerResponse<[String: Any]>.parse(message) { response, serverIdentity, nonce in
-            let msg = FakeResponseMessage(response: response, serverIdentity: serverIdentity, nonce: nonce)
-            return msg
-        } as! FakeResponseMessage
-    }
-}
-
-enum AppState {
-    case ready
-    case created
-    case authenticated
-}
-
 struct ContentView: View {
-    @State private var state = AppState.ready
-    @State private var statusMessage = "Ready"
+    @State private var state: AppState
+    @State private var statusMessage: String
     @State private var isLoading = false
     @State private var recoveryKey: Secp256r1 = { return Secp256r1() }()
     @State private var foo = ""
@@ -49,26 +12,52 @@ struct ContentView: View {
     @State private var rbOutput = ""
     @State private var rsOutput = ""
     @State private var tsOutput = ""
+    @State private var identityValue = ""
+    @State private var showLinkDevicePrompt = false
+    @State private var linkContainer = ""
+    private var identity: String {
+        identityValue.count > 36 ? String(identityValue.dropFirst(36)) : ""
+    }
 
     // Create shared verification key store
     private let verificationKeyStore = VerificationKeyStore()
+    private let authenticationKeyStore = ClientRotatingKeyStore(prefix: "authentication")
+    private let accessKeyStore = ClientRotatingKeyStore(prefix: "access")
+    private let identityValueStore = ClientValueStore(suffix: "identity")
 
     // Create the BetterAuthClient with real implementations
     private let betterAuthClient: BetterAuthClient
 
     init() {
+        // Infer app state based on keychain contents
+        let hasAuthentication = authenticationKeyStore.isInitialized()
+        let hasAccess = accessKeyStore.isInitialized()
+
+        if hasAccess {
+            state = .authenticated
+            identityValue = try! identityValueStore.getSync()
+            statusMessage = "Authenticated"
+        } else if hasAuthentication {
+            state = .created
+            identityValue = try! identityValueStore.getSync()
+            statusMessage = "Account created"
+        } else {
+            state = .ready
+            statusMessage = "Ready"
+        }
+
         betterAuthClient = BetterAuthClient(
             hasher: Hasher(),
             noncer: Noncer(),
             verificationKeyStore: verificationKeyStore,
             timestamper: Rfc3339Nano(),
-            network: PlaceholderNetwork(),
+            network: Network(),
             paths: createDefaultPaths(),
-            deviceIdentifierStore: ClientValueStore(),
-            identityIdentifierStore: ClientValueStore(),
-            accessKeyStore: ClientRotatingKeyStore(),
-            authenticationKeyStore: ClientRotatingKeyStore(),
-            accessTokenStore: ClientValueStore()
+            deviceIdentifierStore: ClientValueStore(suffix: "device"),
+            identityIdentifierStore: identityValueStore,
+            accessKeyStore: accessKeyStore,
+            authenticationKeyStore: authenticationKeyStore,
+            accessTokenStore: ClientValueStore(suffix: "token")
         )
     }
 
@@ -77,6 +66,14 @@ struct ContentView: View {
             Text("Better Auth Example")
                 .font(.largeTitle)
                 .fontWeight(.bold)
+
+            if (identity.count > 0) {
+                Text("identity: ...\(identity)")
+                    .font(.subheadline)
+                    .onTapGesture {
+                        UIPasteboard.general.string = identityValue
+                    }
+            }
 
             Text(statusMessage)
                 .font(.body)
@@ -98,6 +95,33 @@ struct ContentView: View {
                                     .frame(width: 20, height: 20)
                             }
                             Text("Create account")
+                                .fontWeight(.semibold)
+                        }
+                        .frame(maxWidth: .infinity)
+                        .padding()
+                        .background(isLoading ? Color.gray : Color.blue)
+                        .foregroundColor(.white)
+                        .cornerRadius(10)
+                    }
+                    .disabled(isLoading)
+                    .padding(.horizontal)
+
+                    TextField("Other device identity", text: $identityValue)
+                        .textFieldStyle(RoundedBorderTextFieldStyle())
+                        .padding(.horizontal)
+
+                    Button(action: {
+                        Task {
+                            await handleGenerateLinkContainer()
+                        }
+                    }) {
+                        HStack {
+                            if isLoading {
+                                ProgressView()
+                                    .progressViewStyle(CircularProgressViewStyle(tint: .white))
+                                    .frame(width: 20, height: 20)
+                            }
+                            Text("Link this device")
                                 .fontWeight(.semibold)
                         }
                         .frame(maxWidth: .infinity)
@@ -131,6 +155,52 @@ struct ContentView: View {
                     }
                     .disabled(isLoading)
                     .padding(.horizontal)
+
+                    Button(action: {
+                        Task {
+                            showLinkDevicePrompt = true
+                        }
+                    }) {
+                        HStack {
+                            if isLoading {
+                                ProgressView()
+                                    .progressViewStyle(CircularProgressViewStyle(tint: .white))
+                                    .frame(width: 20, height: 20)
+                            }
+                            Text("Link another device")
+                                .fontWeight(.semibold)
+                        }
+                        .frame(maxWidth: .infinity)
+                        .padding()
+                        .background(isLoading ? Color.gray : Color.blue)
+                        .foregroundColor(.white)
+                        .cornerRadius(10)
+                    }
+                    .disabled(isLoading)
+                    .padding(.horizontal)
+
+                    Button(action: {
+                        Task {
+                            await handleDeleteAccount()
+                        }
+                    }) {
+                        HStack {
+                            if isLoading {
+                                ProgressView()
+                                    .progressViewStyle(CircularProgressViewStyle(tint: .white))
+                                    .frame(width: 20, height: 20)
+                            }
+                            Text("Delete account")
+                                .fontWeight(.semibold)
+                        }
+                        .frame(maxWidth: .infinity)
+                        .padding()
+                        .background(isLoading ? Color.gray : Color.blue)
+                        .foregroundColor(.white)
+                        .cornerRadius(10)
+                    }
+                    .disabled(isLoading)
+                    .padding(.horizontal)
                 case AppState.authenticated:
                     Button(action: {
                         Task {
@@ -144,6 +214,29 @@ struct ContentView: View {
                                     .frame(width: 20, height: 20)
                             }
                             Text("Refresh session")
+                                .fontWeight(.semibold)
+                        }
+                        .frame(maxWidth: .infinity)
+                        .padding()
+                        .background(isLoading ? Color.gray : Color.blue)
+                        .foregroundColor(.white)
+                        .cornerRadius(10)
+                    }
+                    .disabled(isLoading)
+                    .padding(.horizontal)
+
+                    Button(action: {
+                        Task {
+                            await handleEndSession()
+                        }
+                    }) {
+                        HStack {
+                            if isLoading {
+                                ProgressView()
+                                    .progressViewStyle(CircularProgressViewStyle(tint: .white))
+                                    .frame(width: 20, height: 20)
+                            }
+                            Text("End session")
                                 .fontWeight(.semibold)
                         }
                         .frame(maxWidth: .infinity)
@@ -206,6 +299,14 @@ struct ContentView: View {
             Spacer()
         }
         .padding()
+        .sheet(isPresented: $showLinkDevicePrompt) {
+            LinkDevicePromptView(linkContainer: $linkContainer, onSubmit: {
+                showLinkDevicePrompt = false
+                Task {
+                    await handleLinkDevice(linkContainer: linkContainer)
+                }
+            })
+        }
     }
 
     private func handleCreateAccount() async {
@@ -222,7 +323,56 @@ struct ContentView: View {
             // Call the createAccount function
             try await betterAuthClient.createAccount(recoveryHash)
             statusMessage = "Account created successfully!"
+            identityValue = try identityValueStore.getSync()
             state = AppState.created
+        } catch {
+            statusMessage = "Error: \(error.localizedDescription)"
+        }
+
+        isLoading = false
+    }
+
+    private func handleDeleteAccount() async {
+        isLoading = true
+        statusMessage = "Deleting account..."
+
+        do {
+            try await betterAuthClient.deleteAccount()
+        } catch {
+            //
+        }
+
+        authenticationKeyStore.reset()
+        state = AppState.ready
+        identityValue = ""
+        statusMessage = "Account deleted."
+
+        isLoading = false
+    }
+
+
+    private func handleGenerateLinkContainer() async {
+        isLoading = true
+        statusMessage = "Generating link data..."
+
+        do {
+            UIPasteboard.general.string = try await betterAuthClient.generateLinkContainer(identityValue)
+            state = AppState.created
+            statusMessage = "Link data copied to clipboard."
+        } catch {
+            statusMessage = "Error: \(error.localizedDescription)"
+        }
+
+        isLoading = false
+    }
+
+    private func handleLinkDevice(linkContainer: String) async {
+        isLoading = true
+        statusMessage = "Linking device..."
+
+        do {
+            try await betterAuthClient.linkDevice(linkContainer)
+            statusMessage = "Device linked."
         } catch {
             statusMessage = "Error: \(error.localizedDescription)"
         }
@@ -255,6 +405,17 @@ struct ContentView: View {
         } catch {
             statusMessage = "Error: \(error.localizedDescription)"
         }
+
+        isLoading = false
+    }
+
+    private func handleEndSession() async {
+        isLoading = true
+        statusMessage = "Ending session..."
+
+        accessKeyStore.reset()
+        statusMessage = "Session ended."
+        state = AppState.created
 
         isLoading = false
     }
