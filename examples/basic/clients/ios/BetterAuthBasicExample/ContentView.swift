@@ -12,11 +12,18 @@ struct ContentView: View {
     @State private var rbOutput = ""
     @State private var rsOutput = ""
     @State private var tsOutput = ""
+    @State private var identityValue = ""
+    private var identity: String {
+        identityValue.count > 0 ?
+            identityValue.substring(from: String.Index(encodedOffset: 36)) :
+            identityValue
+    }
 
     // Create shared verification key store
     private let verificationKeyStore = VerificationKeyStore()
     private let authenticationKeyStore = ClientRotatingKeyStore(prefix: "authentication")
     private let accessKeyStore = ClientRotatingKeyStore(prefix: "access")
+    private let identityValueStore = ClientValueStore(suffix: "identity")
 
     // Create the BetterAuthClient with real implementations
     private let betterAuthClient: BetterAuthClient
@@ -28,9 +35,11 @@ struct ContentView: View {
 
         if hasAccess {
             state = .authenticated
+            identityValue = try! identityValueStore.getSync()
             statusMessage = "Authenticated"
         } else if hasAuthentication {
             state = .created
+            identityValue = try! identityValueStore.getSync()
             statusMessage = "Account created"
         } else {
             state = .ready
@@ -45,7 +54,7 @@ struct ContentView: View {
             network: Network(),
             paths: createDefaultPaths(),
             deviceIdentifierStore: ClientValueStore(suffix: "device"),
-            identityIdentifierStore: ClientValueStore(suffix: "identity"),
+            identityIdentifierStore: identityValueStore,
             accessKeyStore: accessKeyStore,
             authenticationKeyStore: authenticationKeyStore,
             accessTokenStore: ClientValueStore(suffix: "token")
@@ -57,6 +66,9 @@ struct ContentView: View {
             Text("Better Auth Example")
                 .font(.largeTitle)
                 .fontWeight(.bold)
+
+            Text("identity: ...\(identity)")
+                .font(.subheadline)
 
             Text(statusMessage)
                 .font(.body)
@@ -248,6 +260,7 @@ struct ContentView: View {
             // Call the createAccount function
             try await betterAuthClient.createAccount(recoveryHash)
             statusMessage = "Account created successfully!"
+            identityValue = try identityValueStore.getSync()
             state = AppState.created
         } catch {
             statusMessage = "Error: \(error.localizedDescription)"
@@ -264,6 +277,7 @@ struct ContentView: View {
             try await betterAuthClient.deleteAccount()
             authenticationKeyStore.reset()
             state = AppState.ready
+            identityValue = ""
             statusMessage = "Account deleted."
         } catch {
             statusMessage = "Error: \(error.localizedDescription)"

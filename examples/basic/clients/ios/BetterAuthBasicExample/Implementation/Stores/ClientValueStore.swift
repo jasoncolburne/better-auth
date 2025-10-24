@@ -16,6 +16,10 @@ class ClientValueStore: IClientValueStore {
     }
 
     func get() async throws -> String {
+        return try self.getSync()
+    }
+
+    func getSync() throws -> String {
         if let value = try? self.keychainHelper.loadString(withKey: currentValue) {
             return value
         }
