@@ -10,6 +10,11 @@ class Secp256r1: ISigningKey {
         keyPair = P256.Signing.PrivateKey()
     }
 
+    func seed(_ seedBytes: [UInt8]) async {
+        let seedData = Data(seedBytes)
+        keyPair = try? P256.Signing.PrivateKey(rawRepresentation: seedData)
+    }
+
     func sign(_ message: String) async throws -> String {
         guard let keyPair else {
             throw BetterAuthError.keypairNotGenerated

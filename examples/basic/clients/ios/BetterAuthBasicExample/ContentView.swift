@@ -22,7 +22,6 @@ struct ContentView: View {
         let accessKeyStore = ClientRotatingKeyStore(prefix: "access")
         let identityValueStore = ClientValueStore(suffix: "identity")
         let deviceValueStore = ClientValueStore(suffix: "device")
-        let recoveryKey = Secp256r1()
 
         let betterAuthClient = BetterAuthClient(
             hasher: Hasher(),
@@ -71,11 +70,11 @@ struct ContentView: View {
             identityValueStore: identityValueStore,
             deviceValueStore: deviceValueStore,
             verificationKeyStore: verificationKeyStore,
-            recoveryKey: recoveryKey,
             initialState: initialState,
             initialStatusMessage: initialStatusMessage,
             initialIdentityValue: initialIdentityValue,
             initialDeviceValue: initialDeviceValue,
+            initialPassphraseValue: ""
         )
     }
 
@@ -112,8 +111,10 @@ struct ContentView: View {
                     ReadyStateView(
                         isLoading: $logic.isLoading,
                         identityValue: $logic.identityValue,
+                        passphraseValue: $logic.passphraseValue,
                         onCreateAccount: { await logic.handleCreateAccount() },
-                        onGenerateLinkContainer: { await logic.handleGenerateLinkContainer() }
+                        onGenerateLinkContainer: { await logic.handleGenerateLinkContainer() },
+                        onRecoverAccount: { await logic.handleRecoverAccount() }
                     )
                 case AppState.created:
                     CreatedStateView(
@@ -122,8 +123,10 @@ struct ContentView: View {
                         deviceValue: $logic.otherDeviceValue,
                         onCreateSession: { await logic.handleCreateSession() },
                         onUnlinkDevice: { await logic.handleUnlinkDevice() },
-                        onDeleteAccount: { await logic.handleDeleteAccount() },
-                        onEraseCredentials: { await logic.handleEraseCredentials() }
+                        onRotateDevice: { await logic.handleRotateDevice() },
+                        onChangeRecoveryPassphrase: { await logic.handleChangeRecoveryPassphrase() },
+                        onEraseCredentials: { await logic.handleEraseCredentials() },
+                        onDeleteAccount: { await logic.handleDeleteAccount() }
                     )
                 case AppState.authenticated:
                     AuthenticatedStateView(
