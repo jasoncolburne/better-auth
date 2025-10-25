@@ -73,6 +73,7 @@ class ContentViewLogic {
             deviceValue = try deviceValueStore.getSync()
             state = AppState.created
         } catch {
+            authenticationKeyStore.reset()
             statusMessage = "Error: \(error.localizedDescription)"
         }
 
@@ -127,6 +128,34 @@ class ContentViewLogic {
             UIPasteboard.general.string = nextPassphrase
             
             statusMessage = "Account recovered! Next recovery passphrase in clipboard. Other devices unlinked."
+        } catch {
+            statusMessage = "Error: \(error.localizedDescription)"
+        }
+
+        isLoading = false
+    }
+
+    func handleChangeRecoveryPassphrase() async {
+        isLoading = true
+        statusMessage = "Changing recovery passphrase..."
+
+        do {
+            let newPassphrase = await Passphrase.generate()
+            let seed = try await Argon2.deriveBytes(passphrase: newPassphrase, byteCount: 32)
+
+            let newRecoveryKey = Secp256r1()
+            await newRecoveryKey.seed(seed)
+
+            let newPublicKey = try await newRecoveryKey.public()
+            let hasher = Hasher()
+            let newRecoveryHash = try await hasher.sum(newPublicKey)
+
+            try await betterAuthClient.changeRecoveryKey(newRecoveryHash)
+
+            // Copy passphrase to clipboard
+            UIPasteboard.general.string = newPassphrase
+
+            statusMessage = "Recovery passphrase changed. New passphrase in clipboard."
         } catch {
             statusMessage = "Error: \(error.localizedDescription)"
         }
@@ -206,6 +235,8 @@ class ContentViewLogic {
         do {
             try await betterAuthClient.unlinkDevice(otherDeviceValue)
             if (otherDeviceValue == deviceValue) {
+                identityValue = ""
+                deviceValue = ""
                 try? await authenticationKeyStore.reset()
                 state = AppState.ready
             }
@@ -227,6 +258,7 @@ class ContentViewLogic {
             statusMessage = "Signed in!"
             state = AppState.authenticated
         } catch {
+            accessKeyStore.reset()
             statusMessage = "Error: \(error.localizedDescription)"
         }
 

@@ -12,6 +12,8 @@ struct AuthenticatedStateView: View {
     let onEndSession: () async -> Void
     let onTestAppServers: () async -> Void
 
+    @State private var showTestAppServersSheet = false
+
     var body: some View {
         Group {
             Button(action: {
@@ -60,18 +62,8 @@ struct AuthenticatedStateView: View {
             .disabled(isLoading)
             .padding(.horizontal)
 
-            TextField("Foo", text: $foo)
-                .textFieldStyle(RoundedBorderTextFieldStyle())
-                .padding(.horizontal)
-
-            TextField("Bar", text: $bar)
-                .textFieldStyle(RoundedBorderTextFieldStyle())
-                .padding(.horizontal)
-
             Button(action: {
-                Task {
-                    await onTestAppServers()
-                }
+                showTestAppServersSheet = true
             }) {
                 HStack {
                     if isLoading {
@@ -90,6 +82,18 @@ struct AuthenticatedStateView: View {
             }
             .disabled(isLoading)
             .padding(.horizontal)
+            .sheet(isPresented: $showTestAppServersSheet) {
+                BottomSheetInputView(
+                    title: "Test App Servers",
+                    fields: [
+                        ("Foo", $foo),
+                        ("Bar", $bar)
+                    ],
+                    actionTitle: "Test",
+                    isLoading: isLoading,
+                    onSubmit: onTestAppServers
+                )
+            }
 
             VStack(alignment: .leading, spacing: 8) {
                 Text("py: \(pyOutput)")

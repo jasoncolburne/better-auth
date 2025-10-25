@@ -8,8 +8,11 @@ struct CreatedStateView: View {
     let onCreateSession: () async -> Void
     let onUnlinkDevice: () async -> Void
     let onRotateDevice: () async -> Void
+    let onChangeRecoveryPassphrase: () async -> Void
     let onEraseCredentials: () async -> Void
     let onDeleteAccount: () async -> Void
+
+    @State private var showUnlinkDeviceSheet = false
 
     var body: some View {
         Group {
@@ -59,14 +62,8 @@ struct CreatedStateView: View {
             .disabled(isLoading)
             .padding(.horizontal)
 
-            TextField("Device to unlink", text: $deviceValue)
-                .textFieldStyle(RoundedBorderTextFieldStyle())
-                .padding(.horizontal)
-
             Button(action: {
-                Task {
-                    await onUnlinkDevice()
-                }
+                showUnlinkDeviceSheet = true
             }) {
                 HStack {
                     if isLoading {
@@ -85,6 +82,15 @@ struct CreatedStateView: View {
             }
             .disabled(isLoading)
             .padding(.horizontal)
+            .sheet(isPresented: $showUnlinkDeviceSheet) {
+                BottomSheetInputView(
+                    title: "Unlink Device",
+                    fields: [("Device to unlink", $deviceValue)],
+                    actionTitle: "Unlink",
+                    isLoading: isLoading,
+                    onSubmit: onUnlinkDevice
+                )
+            }
 
             Button(action: {
                 Task {
@@ -98,6 +104,29 @@ struct CreatedStateView: View {
                             .frame(width: 20, height: 20)
                     }
                     Text("Rotate device credentials")
+                        .fontWeight(.semibold)
+                }
+                .frame(maxWidth: .infinity)
+                .padding()
+                .background(isLoading ? Color.gray : Color.blue)
+                .foregroundColor(.white)
+                .cornerRadius(10)
+            }
+            .disabled(isLoading)
+            .padding(.horizontal)
+
+            Button(action: {
+                Task {
+                    await onChangeRecoveryPassphrase()
+                }
+            }) {
+                HStack {
+                    if isLoading {
+                        ProgressView()
+                            .progressViewStyle(CircularProgressViewStyle(tint: .white))
+                            .frame(width: 20, height: 20)
+                    }
+                    Text("Change recovery passphrase")
                         .fontWeight(.semibold)
                 }
                 .frame(maxWidth: .infinity)

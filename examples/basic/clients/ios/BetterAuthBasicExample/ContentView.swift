@@ -124,6 +124,7 @@ struct ContentView: View {
                         onCreateSession: { await logic.handleCreateSession() },
                         onUnlinkDevice: { await logic.handleUnlinkDevice() },
                         onRotateDevice: { await logic.handleRotateDevice() },
+                        onChangeRecoveryPassphrase: { await logic.handleChangeRecoveryPassphrase() },
                         onEraseCredentials: { await logic.handleEraseCredentials() },
                         onDeleteAccount: { await logic.handleDeleteAccount() }
                     )

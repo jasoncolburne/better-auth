@@ -12,6 +12,7 @@
 		4129B8DC0D8D39CBA89CE0F8 /* ref.c in Sources */ = {isa = PBXBuildFile; fileRef = 9339E2540298D1ACC6FE73C0 /* ref.c */; };
 		7F61FD3DCE5BFF76CD617340 /* thread.c in Sources */ = {isa = PBXBuildFile; fileRef = F9E4E0523778EAA7AEB80378 /* thread.c */; };
 		88A0648FDB6F152FC64D8599 /* blake2b.c in Sources */ = {isa = PBXBuildFile; fileRef = AF0911053AAF74E13BE27DAB /* blake2b.c */; };
+		8E2DB00C13DC3C7D5EABA06A /* BottomSheetInputView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 827AB8A23425BD56E9040B4C /* BottomSheetInputView.swift */; };
 		BA000001 /* BetterAuthBasicExampleApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = BA000002 /* BetterAuthBasicExampleApp.swift */; };
 		BA000003 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BA000004 /* ContentView.swift */; };
 		BA000005 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = BA000006 /* Assets.xcassets */; };
@@ -52,6 +53,7 @@
 		0C80B950950068E3561260AD /* core.c */ = {isa = PBXFileReference; includeInIndex = 1; path = "vendor/phc-winner-argon2/src/core.c"; sourceTree = SOURCE_ROOT; };
 		45C605F9CFB9C93E890F0D15 /* argon2.c */ = {isa = PBXFileReference; includeInIndex = 1; path = "vendor/phc-winner-argon2/src/argon2.c"; sourceTree = SOURCE_ROOT; };
 		6EAEA8BC6FA0081778D5796B /* Passphrase.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = Passphrase.swift; sourceTree = "<group>"; };
+		827AB8A23425BD56E9040B4C /* BottomSheetInputView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = BottomSheetInputView.swift; sourceTree = "<group>"; };
 		9339E2540298D1ACC6FE73C0 /* ref.c */ = {isa = PBXFileReference; includeInIndex = 1; path = "vendor/phc-winner-argon2/src/ref.c"; sourceTree = SOURCE_ROOT; };
 		AF0911053AAF74E13BE27DAB /* blake2b.c */ = {isa = PBXFileReference; includeInIndex = 1; path = "vendor/phc-winner-argon2/src/blake2/blake2b.c"; sourceTree = SOURCE_ROOT; };
 		B7E65B5D1F1F9C172CEBA28C /* encoding.c */ = {isa = PBXFileReference; includeInIndex = 1; path = "vendor/phc-winner-argon2/src/encoding.c"; sourceTree = SOURCE_ROOT; };
@@ -247,6 +249,7 @@
 				BAVIEW08 /* AuthenticatedStateView.swift */,
 				BAVIEW06 /* CreatedStateView.swift */,
 				BAVIEW04 /* ReadyStateView.swift */,
+				827AB8A23425BD56E9040B4C /* BottomSheetInputView.swift */,
 			);
 			path = Views;
 			sourceTree = "<group>";
@@ -365,6 +368,7 @@
 				88A0648FDB6F152FC64D8599 /* blake2b.c in Sources */,
 				E03CF89C3F96379D6BEA0599 /* Argon2.swift in Sources */,
 				268AC4AB8F40046D08F8BD0C /* Passphrase.swift in Sources */,
+				8E2DB00C13DC3C7D5EABA06A /* BottomSheetInputView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
