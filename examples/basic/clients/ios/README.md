@@ -9,8 +9,35 @@ BetterAuthBasicExample/
 ├── BetterAuthBasicExampleApp.swift   # App entry point
 ├── ContentView.swift                  # Main UI with state management
 ├── Implementation/
-│   ├── PlaceholderImplementations.swift  # Complete interface implementations
-│   └── Views/
+│   ├── Crypto/                        # Cryptographic implementations
+│   │   ├── Argon2.swift                  # Argon2id password hashing
+│   │   ├── Blake3.swift                  # BLAKE3 hashing
+│   │   ├── Entropy.swift                 # Secure random generation
+│   │   ├── HardwareSecp256r1.swift       # Hardware-backed P-256 signing (Secure Enclave)
+│   │   ├── Secp256r1.swift               # Software P-256 signing (for recovery keys)
+│   │   ├── Secp256r1Verifier.swift       # P-256 signature verification
+│   │   ├── Hasher.swift                  # IHasher implementation
+│   │   └── Noncer.swift                  # INoncer implementation
+│   ├── Stores/                        # Storage implementations
+│   │   ├── ClientRotatingKeyStore.swift  # Rotating key storage with forward secrecy
+│   │   ├── ClientValueStore.swift        # Generic keychain storage
+│   │   └── VerificationKeyStore.swift    # Server verification key storage
+│   ├── Network/
+│   │   └── Network.swift                 # URLSession-based HTTP client
+│   ├── Time/
+│   │   └── Rfc3339Nano.swift             # ISO8601 timestamper
+│   ├── Protocol/
+│   │   └── DefaultPaths.swift            # Default API paths
+│   ├── Models/
+│   │   ├── AppState.swift                # App state enum
+│   │   ├── FakeResponse.swift            # Test response models
+│   │   └── FakeResponseMessage.swift
+│   ├── Utilities/
+│   │   ├── Base64.swift                  # Base64 encoding/decoding
+│   │   ├── KeychainHelper.swift          # Keychain access wrapper
+│   │   ├── Passphrase.swift              # 24-word passphrase generation
+│   │   └── Debug.swift                   # Debug utilities
+│   └── Views/                         # UI components
 │       ├── Logic.swift                   # Business logic and API interactions
 │       ├── ReadyStateView.swift          # UI for ready state (create/link/recover)
 │       ├── CreatedStateView.swift        # UI for created state (session/device mgmt)
@@ -178,10 +205,9 @@ The network implementation assumes the existence of the basic example Better Aut
 
 ## Next Steps
 
-1. Fix the xcodebuild plugin issue on your system
-2. Start a Better Auth server (Go, Ruby, TypeScript, Python, or Rust)
-3. Update `PlaceholderNetwork` baseURL if needed
-4. Run the app and test account creation
+1. Start the basic example deployment in garden
+2. Build in two simulators
+3. Play
 
 ## Makefile Targets
 
