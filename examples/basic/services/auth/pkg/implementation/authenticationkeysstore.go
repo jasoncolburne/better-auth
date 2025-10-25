@@ -259,3 +259,39 @@ func (s AuthenticationKeyStore) DeleteIdentity(ctx context.Context, identity str
 
 	return nil
 }
+
+func (s AuthenticationKeyStore) EnsureActive(ctx context.Context, identity, device string) error {
+	identityRecord := &models.Identity{}
+	if err := s.identityRepository.Get(
+		ctx,
+		identityRecord,
+		expressions.Equal("identity", identity),
+		orderings.Descending("sequence_number"),
+	); err != nil {
+		return err
+	}
+
+	if identityRecord.Deleted {
+		return fmt.Errorf("identity deleted")
+	}
+
+	keysRecord := &models.AuthenticationKeys{}
+
+	if err := s.authenticationKeysRepository.Get(
+		ctx,
+		keysRecord,
+		clauses.And([]data.ClauseOrExpression{
+			expressions.Equal("identity", identity),
+			expressions.Equal("device", device),
+		}),
+		orderings.Descending("sequence_number"),
+	); err != nil {
+		return err
+	}
+
+	if keysRecord.Revoked {
+		return fmt.Errorf("device revoked")
+	}
+
+	return nil
+}
