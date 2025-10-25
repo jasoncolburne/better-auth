@@ -123,8 +123,9 @@ struct ContentView: View {
                         deviceValue: $logic.otherDeviceValue,
                         onCreateSession: { await logic.handleCreateSession() },
                         onUnlinkDevice: { await logic.handleUnlinkDevice() },
-                        onDeleteAccount: { await logic.handleDeleteAccount() },
-                        onEraseCredentials: { await logic.handleEraseCredentials() }
+                        onRotateDevice: { await logic.handleRotateDevice() },
+                        onEraseCredentials: { await logic.handleEraseCredentials() },
+                        onDeleteAccount: { await logic.handleDeleteAccount() }
                     )
                 case AppState.authenticated:
                     AuthenticatedStateView(

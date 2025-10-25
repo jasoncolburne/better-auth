@@ -7,8 +7,9 @@ struct CreatedStateView: View {
 
     let onCreateSession: () async -> Void
     let onUnlinkDevice: () async -> Void
-    let onDeleteAccount: () async -> Void
+    let onRotateDevice: () async -> Void
     let onEraseCredentials: () async -> Void
+    let onDeleteAccount: () async -> Void
 
     var body: some View {
         Group {
@@ -87,7 +88,7 @@ struct CreatedStateView: View {
 
             Button(action: {
                 Task {
-                    await onDeleteAccount()
+                    await onRotateDevice()
                 }
             }) {
                 HStack {
@@ -96,7 +97,7 @@ struct CreatedStateView: View {
                             .progressViewStyle(CircularProgressViewStyle(tint: .white))
                             .frame(width: 20, height: 20)
                     }
-                    Text("Delete account")
+                    Text("Rotate device credentials")
                         .fontWeight(.semibold)
                 }
                 .frame(maxWidth: .infinity)
@@ -120,6 +121,29 @@ struct CreatedStateView: View {
                             .frame(width: 20, height: 20)
                     }
                     Text("Erase credentials")
+                        .fontWeight(.semibold)
+                }
+                .frame(maxWidth: .infinity)
+                .padding()
+                .background(isLoading ? Color.gray : Color.blue)
+                .foregroundColor(.white)
+                .cornerRadius(10)
+            }
+            .disabled(isLoading)
+            .padding(.horizontal)
+
+            Button(action: {
+                Task {
+                    await onDeleteAccount()
+                }
+            }) {
+                HStack {
+                    if isLoading {
+                        ProgressView()
+                            .progressViewStyle(CircularProgressViewStyle(tint: .white))
+                            .frame(width: 20, height: 20)
+                    }
+                    Text("Delete account")
                         .fontWeight(.semibold)
                 }
                 .frame(maxWidth: .infinity)

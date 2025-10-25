@@ -49,7 +49,7 @@ class ContentViewLogic {
 
     func handleCreateAccount() async {
         isLoading = true
-        statusMessage = "Creating account..."
+        statusMessage = "Creating account. Deriving recovery key..."
 
         do {
             let passphrase = await Passphrase.generate()
@@ -68,7 +68,7 @@ class ContentViewLogic {
             // Copy passphrase to clipboard
             UIPasteboard.general.string = passphrase
 
-            statusMessage = "Recovery passphrase in clipboard!"
+            statusMessage = "Account created! Recovery passphrase in clipboard."
             identityValue = try identityValueStore.getSync()
             deviceValue = try deviceValueStore.getSync()
             state = AppState.created
@@ -100,7 +100,7 @@ class ContentViewLogic {
 
     func handleRecoverAccount() async {
         isLoading = true
-        statusMessage = "Recovering account..."
+        statusMessage = "Recovering account. Deriving recovery keys..."
 
         do {
             let seed = try await Argon2.deriveBytes(passphrase: passphraseValue, byteCount: 32)
@@ -126,7 +126,7 @@ class ContentViewLogic {
             // Copy passphrase to clipboard
             UIPasteboard.general.string = nextPassphrase
             
-            statusMessage = "Account recovered. Next passphrase in clipboard."
+            statusMessage = "Account recovered! Next recovery passphrase in clipboard. Other devices unlinked."
         } catch {
             statusMessage = "Error: \(error.localizedDescription)"
         }
@@ -147,6 +147,20 @@ class ContentViewLogic {
             deviceValue = ""
 
             statusMessage = "Credentials erased."
+        } catch {
+            statusMessage = "Error: \(error.localizedDescription)"
+        }
+
+        isLoading = false
+    }
+
+    func handleRotateDevice() async {
+        isLoading = true
+        statusMessage = "Rotating device key..."
+
+        do {
+            try await betterAuthClient.rotateDevice()
+            statusMessage = "Rotated device key."
         } catch {
             statusMessage = "Error: \(error.localizedDescription)"
         }
