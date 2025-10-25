@@ -9,7 +9,6 @@ class ContentViewLogic {
     let identityValueStore: ClientValueStore
     let deviceValueStore: ClientValueStore
     let verificationKeyStore: VerificationKeyStore
-    let recoveryKey: Secp256r1
 
     var isLoading = false
     var statusMessage = ""
@@ -17,6 +16,7 @@ class ContentViewLogic {
     var identityValue = ""
     var deviceValue = ""
     var otherDeviceValue = ""
+    var passphraseValue = ""
     var pyOutput = ""
     var rbOutput = ""
     var rsOutput = ""
@@ -29,11 +29,11 @@ class ContentViewLogic {
         identityValueStore: ClientValueStore,
         deviceValueStore: ClientValueStore,
         verificationKeyStore: VerificationKeyStore,
-        recoveryKey: Secp256r1,
         initialState: AppState,
         initialStatusMessage: String,
         initialIdentityValue: String,
         initialDeviceValue: String,
+        initialPassphraseValue: String,
     ) {
         self.betterAuthClient = betterAuthClient
         self.authenticationKeyStore = authenticationKeyStore
@@ -41,7 +41,6 @@ class ContentViewLogic {
         self.identityValueStore = identityValueStore
         self.deviceValueStore = deviceValueStore
         self.verificationKeyStore = verificationKeyStore
-        self.recoveryKey = recoveryKey
         self.state = initialState
         self.statusMessage = initialStatusMessage
         self.identityValue = initialIdentityValue
@@ -53,15 +52,23 @@ class ContentViewLogic {
         statusMessage = "Creating account..."
 
         do {
+            let passphrase = await Passphrase.generate()
+            let seed = try await Argon2.deriveBytes(passphrase: passphrase, byteCount: 32)
+
             // Generate a recovery key and hash
-            await recoveryKey.generate()
+            let recoveryKey = Secp256r1()
+            await recoveryKey.seed(seed)
             let recoveryPublicKey = try await recoveryKey.public()
             let hasher = Hasher()
             let recoveryHash = try await hasher.sum(recoveryPublicKey)
 
             // Call the createAccount function
             try await betterAuthClient.createAccount(recoveryHash)
-            statusMessage = "Account created successfully!"
+
+            // Copy passphrase to clipboard
+            UIPasteboard.general.string = passphrase
+
+            statusMessage = "Recovery passphrase in clipboard!"
             identityValue = try identityValueStore.getSync()
             deviceValue = try deviceValueStore.getSync()
             state = AppState.created
@@ -84,6 +91,42 @@ class ContentViewLogic {
             identityValue = ""
             deviceValue = ""
             statusMessage = "Account deleted."
+        } catch {
+            statusMessage = "Error: \(error.localizedDescription)"
+        }
+
+        isLoading = false
+    }
+
+    func handleRecoverAccount() async {
+        isLoading = true
+        statusMessage = "Recovering account..."
+
+        do {
+            let seed = try await Argon2.deriveBytes(passphrase: passphraseValue, byteCount: 32)
+
+            let recoveryKey = Secp256r1()
+            await recoveryKey.seed(seed)
+
+            let nextPassphrase = await Passphrase.generate()
+            let nextSeed = try await Argon2.deriveBytes(passphrase: nextPassphrase, byteCount: 32)
+
+            let nextRecoveryKey = Secp256r1()
+            await nextRecoveryKey.seed(nextSeed)
+
+            let nextPublicKey = try await nextRecoveryKey.public()
+            let hasher = Hasher()
+            let nextRecoveryHash = try await hasher.sum(nextPublicKey)
+
+            try await betterAuthClient.recoverAccount(identityValue, recoveryKey, nextRecoveryHash)
+
+            deviceValue = try await deviceValueStore.get()
+            state = AppState.created
+
+            // Copy passphrase to clipboard
+            UIPasteboard.general.string = nextPassphrase
+            
+            statusMessage = "Account recovered. Next passphrase in clipboard."
         } catch {
             statusMessage = "Error: \(error.localizedDescription)"
         }

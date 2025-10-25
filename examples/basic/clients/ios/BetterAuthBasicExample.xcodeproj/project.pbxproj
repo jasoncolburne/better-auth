@@ -7,6 +7,11 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		268AC4AB8F40046D08F8BD0C /* Passphrase.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6EAEA8BC6FA0081778D5796B /* Passphrase.swift */; };
+		2B28450343763450E3E9CCB2 /* encoding.c in Sources */ = {isa = PBXBuildFile; fileRef = B7E65B5D1F1F9C172CEBA28C /* encoding.c */; };
+		4129B8DC0D8D39CBA89CE0F8 /* ref.c in Sources */ = {isa = PBXBuildFile; fileRef = 9339E2540298D1ACC6FE73C0 /* ref.c */; };
+		7F61FD3DCE5BFF76CD617340 /* thread.c in Sources */ = {isa = PBXBuildFile; fileRef = F9E4E0523778EAA7AEB80378 /* thread.c */; };
+		88A0648FDB6F152FC64D8599 /* blake2b.c in Sources */ = {isa = PBXBuildFile; fileRef = AF0911053AAF74E13BE27DAB /* blake2b.c */; };
 		BA000001 /* BetterAuthBasicExampleApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = BA000002 /* BetterAuthBasicExampleApp.swift */; };
 		BA000003 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BA000004 /* ContentView.swift */; };
 		BA000005 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = BA000006 /* Assets.xcassets */; };
@@ -21,11 +26,6 @@
 		BA000031 /* Secp256r1VerificationKey.swift in Sources */ = {isa = PBXBuildFile; fileRef = BA000032 /* Secp256r1VerificationKey.swift */; };
 		BA000033 /* Secp256r1Verifier.swift in Sources */ = {isa = PBXBuildFile; fileRef = BA000034 /* Secp256r1Verifier.swift */; };
 		BA000035 /* AppState.swift in Sources */ = {isa = PBXBuildFile; fileRef = BA000036 /* AppState.swift */; };
-		BAVIEW02 /* LinkDevicePromptView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BAVIEW01 /* LinkDevicePromptView.swift */; };
-		BAVIEW11 /* Logic.swift in Sources */ = {isa = PBXBuildFile; fileRef = BAVIEW10 /* Logic.swift */; };
-		BAVIEW09 /* AuthenticatedStateView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BAVIEW08 /* AuthenticatedStateView.swift */; };
-		BAVIEW07 /* CreatedStateView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BAVIEW06 /* CreatedStateView.swift */; };
-		BAVIEW05 /* ReadyStateView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BAVIEW04 /* ReadyStateView.swift */; };
 		BA000037 /* FakeResponse.swift in Sources */ = {isa = PBXBuildFile; fileRef = BA000038 /* FakeResponse.swift */; };
 		BA000039 /* FakeResponseMessage.swift in Sources */ = {isa = PBXBuildFile; fileRef = BA00003A /* FakeResponseMessage.swift */; };
 		BA00003B /* Network.swift in Sources */ = {isa = PBXBuildFile; fileRef = BA00003C /* Network.swift */; };
@@ -36,11 +36,25 @@
 		BA000045 /* Rfc3339Nano.swift in Sources */ = {isa = PBXBuildFile; fileRef = BA000046 /* Rfc3339Nano.swift */; };
 		BA000047 /* Base64.swift in Sources */ = {isa = PBXBuildFile; fileRef = BA000048 /* Base64.swift */; };
 		BA000049 /* Debug.swift in Sources */ = {isa = PBXBuildFile; fileRef = BA00004A /* Debug.swift */; };
-	BA000053 /* KeychainHelper.swift in Sources */ = {isa = PBXBuildFile; fileRef = BA000054 /* KeychainHelper.swift */; };
-	BA000055 /* HardwareSecp256r1.swift in Sources */ = {isa = PBXBuildFile; fileRef = BA000056 /* HardwareSecp256r1.swift */; };
+		BA000053 /* KeychainHelper.swift in Sources */ = {isa = PBXBuildFile; fileRef = BA000054 /* KeychainHelper.swift */; };
+		BA000055 /* HardwareSecp256r1.swift in Sources */ = {isa = PBXBuildFile; fileRef = BA000056 /* HardwareSecp256r1.swift */; };
+		BAVIEW02 /* LinkDevicePromptView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BAVIEW01 /* LinkDevicePromptView.swift */; };
+		BAVIEW05 /* ReadyStateView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BAVIEW04 /* ReadyStateView.swift */; };
+		BAVIEW07 /* CreatedStateView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BAVIEW06 /* CreatedStateView.swift */; };
+		BAVIEW09 /* AuthenticatedStateView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BAVIEW08 /* AuthenticatedStateView.swift */; };
+		BAVIEW11 /* Logic.swift in Sources */ = {isa = PBXBuildFile; fileRef = BAVIEW10 /* Logic.swift */; };
+		E03CF89C3F96379D6BEA0599 /* Argon2.swift in Sources */ = {isa = PBXBuildFile; fileRef = C25DE101F4C356F43B430EC8 /* Argon2.swift */; };
+		E5A8F1DC79724AD75085A6E3 /* argon2.c in Sources */ = {isa = PBXBuildFile; fileRef = 45C605F9CFB9C93E890F0D15 /* argon2.c */; };
+		E9F781FBDAF5FC441781637E /* core.c in Sources */ = {isa = PBXBuildFile; fileRef = 0C80B950950068E3561260AD /* core.c */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		0C80B950950068E3561260AD /* core.c */ = {isa = PBXFileReference; includeInIndex = 1; path = "vendor/phc-winner-argon2/src/core.c"; sourceTree = SOURCE_ROOT; };
+		45C605F9CFB9C93E890F0D15 /* argon2.c */ = {isa = PBXFileReference; includeInIndex = 1; path = "vendor/phc-winner-argon2/src/argon2.c"; sourceTree = SOURCE_ROOT; };
+		6EAEA8BC6FA0081778D5796B /* Passphrase.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = Passphrase.swift; sourceTree = "<group>"; };
+		9339E2540298D1ACC6FE73C0 /* ref.c */ = {isa = PBXFileReference; includeInIndex = 1; path = "vendor/phc-winner-argon2/src/ref.c"; sourceTree = SOURCE_ROOT; };
+		AF0911053AAF74E13BE27DAB /* blake2b.c */ = {isa = PBXFileReference; includeInIndex = 1; path = "vendor/phc-winner-argon2/src/blake2/blake2b.c"; sourceTree = SOURCE_ROOT; };
+		B7E65B5D1F1F9C172CEBA28C /* encoding.c */ = {isa = PBXFileReference; includeInIndex = 1; path = "vendor/phc-winner-argon2/src/encoding.c"; sourceTree = SOURCE_ROOT; };
 		BA000002 /* BetterAuthBasicExampleApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BetterAuthBasicExampleApp.swift; sourceTree = "<group>"; };
 		BA000004 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
 		BA000006 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
@@ -53,11 +67,6 @@
 		BA000032 /* Secp256r1VerificationKey.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Secp256r1VerificationKey.swift; sourceTree = "<group>"; };
 		BA000034 /* Secp256r1Verifier.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Secp256r1Verifier.swift; sourceTree = "<group>"; };
 		BA000036 /* AppState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppState.swift; sourceTree = "<group>"; };
-		BAVIEW01 /* LinkDevicePromptView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LinkDevicePromptView.swift; sourceTree = "<group>"; };
-		BAVIEW10 /* Logic.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Logic.swift; sourceTree = "<group>"; };
-		BAVIEW08 /* AuthenticatedStateView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthenticatedStateView.swift; sourceTree = "<group>"; };
-		BAVIEW06 /* CreatedStateView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CreatedStateView.swift; sourceTree = "<group>"; };
-		BAVIEW04 /* ReadyStateView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReadyStateView.swift; sourceTree = "<group>"; };
 		BA000038 /* FakeResponse.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FakeResponse.swift; sourceTree = "<group>"; };
 		BA00003A /* FakeResponseMessage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FakeResponseMessage.swift; sourceTree = "<group>"; };
 		BA00003C /* Network.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Network.swift; sourceTree = "<group>"; };
@@ -68,8 +77,16 @@
 		BA000046 /* Rfc3339Nano.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Rfc3339Nano.swift; sourceTree = "<group>"; };
 		BA000048 /* Base64.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Base64.swift; sourceTree = "<group>"; };
 		BA00004A /* Debug.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Debug.swift; sourceTree = "<group>"; };
-	BA000054 /* KeychainHelper.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeychainHelper.swift; sourceTree = "<group>"; };
-	BA000056 /* HardwareSecp256r1.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HardwareSecp256r1.swift; sourceTree = "<group>"; };
+		BA000054 /* KeychainHelper.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeychainHelper.swift; sourceTree = "<group>"; };
+		BA000056 /* HardwareSecp256r1.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HardwareSecp256r1.swift; sourceTree = "<group>"; };
+		BAVIEW01 /* LinkDevicePromptView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LinkDevicePromptView.swift; sourceTree = "<group>"; };
+		BAVIEW04 /* ReadyStateView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReadyStateView.swift; sourceTree = "<group>"; };
+		BAVIEW06 /* CreatedStateView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CreatedStateView.swift; sourceTree = "<group>"; };
+		BAVIEW08 /* AuthenticatedStateView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthenticatedStateView.swift; sourceTree = "<group>"; };
+		BAVIEW10 /* Logic.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Logic.swift; sourceTree = "<group>"; };
+		BB96EFD037159F92AAAD1102 /* Argon2-Bridging-Header.h */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.c.h; path = "Argon2-Bridging-Header.h"; sourceTree = "<group>"; };
+		C25DE101F4C356F43B430EC8 /* Argon2.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = Argon2.swift; sourceTree = "<group>"; };
+		F9E4E0523778EAA7AEB80378 /* thread.c */ = {isa = PBXFileReference; includeInIndex = 1; path = "vendor/phc-winner-argon2/src/thread.c"; sourceTree = SOURCE_ROOT; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -86,6 +103,27 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		0FAF91F7D4D8BFD3C37472CB /* vendor */ = {
+			isa = PBXGroup;
+			children = (
+				B121695AC13D96AE1DE48634 /* argon2 */,
+			);
+			name = vendor;
+			sourceTree = "<group>";
+		};
+		B121695AC13D96AE1DE48634 /* argon2 */ = {
+			isa = PBXGroup;
+			children = (
+				45C605F9CFB9C93E890F0D15 /* argon2.c */,
+				0C80B950950068E3561260AD /* core.c */,
+				B7E65B5D1F1F9C172CEBA28C /* encoding.c */,
+				9339E2540298D1ACC6FE73C0 /* ref.c */,
+				F9E4E0523778EAA7AEB80378 /* thread.c */,
+				AF0911053AAF74E13BE27DAB /* blake2b.c */,
+			);
+			name = argon2;
+			sourceTree = "<group>";
+		};
 		BA00000D /* BetterAuthBasicExample */ = {
 			isa = PBXGroup;
 			children = (
@@ -93,6 +131,7 @@
 				BA000004 /* ContentView.swift */,
 				BA00004B /* Implementation */,
 				BA000006 /* Assets.xcassets */,
+				BB96EFD037159F92AAAD1102 /* Argon2-Bridging-Header.h */,
 			);
 			path = BetterAuthBasicExample;
 			sourceTree = "<group>";
@@ -102,6 +141,7 @@
 			children = (
 				BA00000D /* BetterAuthBasicExample */,
 				BA00000F /* Products */,
+				0FAF91F7D4D8BFD3C37472CB /* vendor */,
 			);
 			sourceTree = "<group>";
 		};
@@ -128,18 +168,6 @@
 			path = Implementation;
 			sourceTree = "<group>";
 		};
-		BAVIEW03 /* Views */ = {
-			isa = PBXGroup;
-			children = (
-				BAVIEW01 /* LinkDevicePromptView.swift */,
-				BAVIEW10 /* Logic.swift */,
-				BAVIEW08 /* AuthenticatedStateView.swift */,
-				BAVIEW06 /* CreatedStateView.swift */,
-				BAVIEW04 /* ReadyStateView.swift */,
-			);
-			path = Views;
-			sourceTree = "<group>";
-		};
 		BA00004C /* Crypto */ = {
 			isa = PBXGroup;
 			children = (
@@ -151,6 +179,7 @@
 				BA000030 /* Secp256r1.swift */,
 				BA000032 /* Secp256r1VerificationKey.swift */,
 				BA000034 /* Secp256r1Verifier.swift */,
+				C25DE101F4C356F43B430EC8 /* Argon2.swift */,
 			);
 			path = Crypto;
 			sourceTree = "<group>";
@@ -205,8 +234,21 @@
 				BA000048 /* Base64.swift */,
 				BA00004A /* Debug.swift */,
 				BA000054 /* KeychainHelper.swift */,
+				6EAEA8BC6FA0081778D5796B /* Passphrase.swift */,
 			);
 			path = Utilities;
+			sourceTree = "<group>";
+		};
+		BAVIEW03 /* Views */ = {
+			isa = PBXGroup;
+			children = (
+				BAVIEW01 /* LinkDevicePromptView.swift */,
+				BAVIEW10 /* Logic.swift */,
+				BAVIEW08 /* AuthenticatedStateView.swift */,
+				BAVIEW06 /* CreatedStateView.swift */,
+				BAVIEW04 /* ReadyStateView.swift */,
+			);
+			path = Views;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -259,7 +301,7 @@
 			);
 			mainGroup = BA00000E;
 			packageReferences = (
-				BA000016 /* XCLocalSwiftPackageReference "../../../../implementations/better-auth-swift" */,
+				BA000016 /* XCLocalSwiftPackageReference "better-auth-swift" */,
 				BA000023 /* XCRemoteSwiftPackageReference "blake3-swift" */,
 				BA000024 /* XCRemoteSwiftPackageReference "swift-crypto" */,
 			);
@@ -315,6 +357,14 @@
 				BAVIEW09 /* AuthenticatedStateView.swift in Sources */,
 				BAVIEW07 /* CreatedStateView.swift in Sources */,
 				BAVIEW05 /* ReadyStateView.swift in Sources */,
+				E5A8F1DC79724AD75085A6E3 /* argon2.c in Sources */,
+				E9F781FBDAF5FC441781637E /* core.c in Sources */,
+				2B28450343763450E3E9CCB2 /* encoding.c in Sources */,
+				4129B8DC0D8D39CBA89CE0F8 /* ref.c in Sources */,
+				7F61FD3DCE5BFF76CD617340 /* thread.c in Sources */,
+				88A0648FDB6F152FC64D8599 /* blake2b.c in Sources */,
+				E03CF89C3F96379D6BEA0599 /* Argon2.swift in Sources */,
+				268AC4AB8F40046D08F8BD0C /* Passphrase.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -449,7 +499,17 @@
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_ASSET_PATHS = "";
 				ENABLE_PREVIEWS = YES;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"$(inherited)",
+					"ARGON2_NO_THREADS=1",
+				);
 				GENERATE_INFOPLIST_FILE = YES;
+				HEADER_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(PROJECT_DIR)/vendor/phc-winner-argon2/include",
+					"$(PROJECT_DIR)/vendor/phc-winner-argon2/src",
+					"$(PROJECT_DIR)/vendor/phc-winner-argon2/src/blake2",
+				);
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
@@ -465,6 +525,7 @@
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
 				SUPPORTS_MACCATALYST = NO;
 				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_OBJC_BRIDGING_HEADER = "BetterAuthBasicExample/Argon2-Bridging-Header.h";
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
 			};
@@ -479,7 +540,17 @@
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_ASSET_PATHS = "";
 				ENABLE_PREVIEWS = YES;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"$(inherited)",
+					"ARGON2_NO_THREADS=1",
+				);
 				GENERATE_INFOPLIST_FILE = YES;
+				HEADER_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(PROJECT_DIR)/vendor/phc-winner-argon2/include",
+					"$(PROJECT_DIR)/vendor/phc-winner-argon2/src",
+					"$(PROJECT_DIR)/vendor/phc-winner-argon2/src/blake2",
+				);
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
@@ -495,6 +566,7 @@
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
 				SUPPORTS_MACCATALYST = NO;
 				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_OBJC_BRIDGING_HEADER = "BetterAuthBasicExample/Argon2-Bridging-Header.h";
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
 			};
@@ -524,9 +596,9 @@
 /* End XCConfigurationList section */
 
 /* Begin XCLocalSwiftPackageReference section */
-		BA000016 /* XCLocalSwiftPackageReference "../../../../implementations/better-auth-swift" */ = {
+		BA000016 /* XCLocalSwiftPackageReference "better-auth-swift" */ = {
 			isa = XCLocalSwiftPackageReference;
-			relativePath = ../../../../implementations/better-auth-swift;
+			relativePath = "../../../../implementations/better-auth-swift";
 		};
 /* End XCLocalSwiftPackageReference section */
 
@@ -552,7 +624,7 @@
 /* Begin XCSwiftPackageProductDependency section */
 		BA000008 /* BetterAuth */ = {
 			isa = XCSwiftPackageProductDependency;
-			package = BA000016 /* XCLocalSwiftPackageReference "../../../../implementations/better-auth-swift" */;
+			package = BA000016 /* XCLocalSwiftPackageReference "better-auth-swift" */;
 			productName = BetterAuth;
 		};
 		BA000020 /* BLAKE3 */ = {
