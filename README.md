@@ -131,6 +131,10 @@ Each implementation has standardized Makefile targets:
 Check `examples/basic` for a multi-service Kubernetes deployment. Follow instructions in
 `examples/basic/README.md` and then run `npm run test:k8s` from the typescript implementation.
 
+Additionally, **there is also an iOS app that exhibits the functionality of these protocols**.
+Start two simulators against the k8s deployment, and you can perform linking, unlinking and
+recovery - as well as the independent operations.
+
 ## Design Principles
 
 1. All actions except authentication to acquire an access session are gated by a rotation operation.
