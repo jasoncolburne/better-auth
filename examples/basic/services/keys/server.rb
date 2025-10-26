@@ -72,6 +72,28 @@ class KeysServer < Sinatra::Base
     end
   end
 
+  # Get a key by identity
+  get '/keys/:identity' do
+    begin
+      identity = params['identity']
+
+      # Fetch the value from Redis
+      value = settings.redis.get(identity)
+
+      if value.nil?
+        status 404
+        { error: 'Key not found', identity: identity }.to_json
+      else
+        # Return the raw value (which is already JSON)
+        content_type :json
+        value
+      end
+    rescue => e
+      status 500
+      { error: 'Failed to fetch key', message: e.message }.to_json
+    end
+  end
+
   # Root endpoint
   get '/' do
     {
@@ -79,7 +101,8 @@ class KeysServer < Sinatra::Base
       version: '1.0.0',
       endpoints: {
         health: '/health',
-        keys: '/keys'
+        keys: '/keys',
+        key_by_identity: '/keys/:identity'
       }
     }.to_json
   end

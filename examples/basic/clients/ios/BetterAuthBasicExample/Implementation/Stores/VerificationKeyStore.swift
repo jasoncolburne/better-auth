@@ -2,7 +2,7 @@ import Foundation
 import BetterAuth
 
 public enum VerificationError: Error {
-    case expired
+    case expiredKey
 }
 
 let HSM_PUBLIC_KEY = "1AAIAjIhd42fcH957TzvXeMbgX4AftiTT7lKmkJ7yHy3dph9"
@@ -26,20 +26,23 @@ struct Key: Codable {
 typealias Response = [String: Key]
 
 class VerificationKeyStore: IVerificationKeyStore {
-    private var cache: [String: Secp256r1VerificationKey] = [:]
+    private var cache: [String: (Secp256r1VerificationKey, Date)] = [:]
     private var verifier = Secp256r1Verifier()
     private var timestamper = Rfc3339Nano()
 
     func get(identity: String) async throws -> any IVerificationKey {
-        // TODO purge expired identities
-
         // Check cache first
-        if let cachedKey = cache[identity] {
+        if let (cachedKey, expiration) = cache[identity] {
+            if (timestamper.now() > expiration) {
+                cache.removeValue(forKey: identity)
+                throw VerificationError.expiredKey
+            }
+
             return cachedKey
         }
 
         // Fetch from server
-        let url = URL(string: "http://keys.better-auth.local/keys")!
+        let url = URL(string: "http://keys.better-auth.local/keys/\(identity)")!
         var request = URLRequest(url: url)
         request.httpMethod = "GET"
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
@@ -51,17 +54,8 @@ class VerificationKeyStore: IVerificationKeyStore {
             throw BetterAuthError.invalidData
         }
 
-        // Parse response as dictionary to preserve raw JSON
-        guard let responseDict = try JSONSerialization.jsonObject(with: data) as? [String: Any],
-              let hsmResponseObj = responseDict[identity] else {
-            throw BetterAuthError.invalidData
-        }
-
-        // Serialize the HSM response entry to get its raw JSON
-        let hsmResponseData = try JSONSerialization.data(withJSONObject: hsmResponseObj)
-
         // Parse the HSM response to extract body and signature
-        guard let hsmResponse = try JSONSerialization.jsonObject(with: hsmResponseData) as? [String: Any],
+        guard let hsmResponse = try JSONSerialization.jsonObject(with: data) as? [String: Any],
               let bodyObj = hsmResponse["body"],
               let signature = hsmResponse["signature"] as? String else {
             throw BetterAuthError.invalidData
@@ -89,14 +83,13 @@ class VerificationKeyStore: IVerificationKeyStore {
 
         let expirationTimestamp = try timestamper.parse(decodedBody.payload.expiration)
         if (timestamper.now() > expirationTimestamp) {
-            throw VerificationError.expired
+            throw VerificationError.expiredKey
         }
 
         // Create verification key and cache it
         let verificationKey = Secp256r1VerificationKey(publicKey: decodedBody.payload.publicKey)
-        cache[identity] = verificationKey
-        
-        // TODO cache expiration
+        cache[identity] = (verificationKey, expirationTimestamp)
+
         return verificationKey
     }
 }
