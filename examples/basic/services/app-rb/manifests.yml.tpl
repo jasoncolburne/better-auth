@@ -62,6 +62,8 @@ metadata:
   namespace: ${environment.namespace}
 spec:
   schedule: "0 */12 * * *"
+  successfulJobsHistoryLimit: 0
+  failedJobsHistoryLimit: 2
   concurrencyPolicy: Forbid
   jobTemplate:
     spec:
