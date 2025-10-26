@@ -10,6 +10,7 @@ import (
 	"math/big"
 	"net/http"
 	"os"
+	"sync"
 
 	"github.com/miekg/pkcs11"
 )
@@ -27,6 +28,7 @@ type HSMServer struct {
 	session       pkcs11.SessionHandle
 	privateKey    pkcs11.ObjectHandle
 	cesrPublicKey string
+	mu            sync.Mutex // Protects PKCS#11 operations from concurrent access
 }
 
 type SignRequest struct {
@@ -196,6 +198,11 @@ func (s *HSMServer) Close() {
 }
 
 func (s *HSMServer) Sign(data []byte) (string, error) {
+	// Lock to prevent concurrent PKCS#11 operations
+	// PKCS#11 sessions are not thread-safe and will segfault if used concurrently
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
 	// Hash the data
 	hash := sha256.Sum256(data)
 

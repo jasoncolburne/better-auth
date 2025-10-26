@@ -33,11 +33,18 @@ This example consists of multiple services:
      would allow rotation
    - HSM public key (`1AAIAjIhd42fcH957TzvXeMbgX4AftiTT7lKmkJ7yHy3dph9`) is hardcoded in clients
 
-5. **Redis**: Backing store for HSM-signed keys
+5. **Redis**: Backing store for HSM-signed keys and session key hashes
+   - Uses persistent storage (64Mi PersistentVolumeClaim with AOF)
+   - Data survives pod restarts and redeployments
    - DB 0: HSM-signed access keys (from auth service, verified by app services)
    - DB 1: HSM-signed response keys (from auth and app services, verified by clients)
    - DB 2: AccessKey hashes, for rejecting refreshes of public access keys that have already been
      refreshed
+
+6. **PostgreSQL**: Database for auth service
+   - Uses persistent storage (256Mi PersistentVolumeClaim)
+   - Stores accounts, devices, and authentication state
+   - Data survives pod restarts and redeployments
 
 ## Prerequisites
 
@@ -533,9 +540,49 @@ garden util clean
 brew upgrade garden-cli  # macOS
 ```
 
+### Persistent data survives deployments
+
+Both Redis and Postgres now use persistent storage. If you need to start completely fresh:
+
+```bash
+# Delete deployment and both PVCs
+garden delete deploy
+kubectl delete pvc redis-data postgres-data -n better-auth-basic-example-dev
+
+# Redeploy (creates new PVCs)
+garden deploy
+```
+
+### Resetting specific databases
+
+```bash
+# Reset Redis only (flush all data)
+kubectl exec -it -n better-auth-basic-example-dev deployment/redis -- redis-cli FLUSHALL
+
+# Reset Postgres only (drop and recreate database)
+kubectl exec -it -n better-auth-basic-example-dev deployment/postgres -- psql -U postgres -c "DROP DATABASE better_auth;"
+kubectl exec -it -n better-auth-basic-example-dev deployment/postgres -- psql -U postgres -c "CREATE DATABASE better_auth;"
+kubectl rollout restart deployment/auth -n better-auth-basic-example-dev
+```
+
+### PVC stuck in pending state
+
+```bash
+# Check PVC status
+kubectl get pvc -n better-auth-basic-example-dev
+
+# Describe PVC to see events
+kubectl describe pvc redis-data -n better-auth-basic-example-dev
+kubectl describe pvc postgres-data -n better-auth-basic-example-dev
+
+# Common causes:
+# - No storage class available (Docker Desktop should provide one automatically)
+# - Insufficient disk space
+# - PVC already exists and is bound to different pod
+```
+
 ## Next Steps
 
-- Add database persistence (PostgreSQL)
 - Add more complex authentication flows
 - Add monitoring and observability (Prometheus, Grafana)
 - Add client implementations for Swift, Dart, and Kotlin
