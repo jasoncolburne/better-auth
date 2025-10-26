@@ -34,7 +34,7 @@ This example consists of multiple services:
    - HSM public key (`1AAIAjIhd42fcH957TzvXeMbgX4AftiTT7lKmkJ7yHy3dph9`) is hardcoded in clients
 
 5. **Redis**: Backing store for HSM-signed keys
-   - Uses persistent storage (256Mi PersistentVolumeClaim with AOF)
+   - Uses persistent storage (64Mi PersistentVolumeClaim with AOF)
    - Data survives pod restarts and redeployments
    - DB 0: HSM-signed access keys (from auth service, verified by app services)
    - DB 1: HSM-signed response keys (from auth and app services, verified by clients)
@@ -42,7 +42,7 @@ This example consists of multiple services:
      refreshed
 
 6. **PostgreSQL**: Database for auth service
-   - Uses persistent storage (1Gi PersistentVolumeClaim)
+   - Uses persistent storage (256Mi PersistentVolumeClaim)
    - Stores accounts, devices, and authentication state
    - Data survives pod restarts and redeployments
 
