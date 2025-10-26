@@ -29,6 +29,10 @@ spec:
               value: "${variables.redisDbResponseKeys}"
             - name: APP_ENV
               value: "dev"
+            - name: HSM_HOST
+              value: "${variables.hsmHost}"
+            - name: HSM_PORT
+              value: "${variables.hsmPort}"
           livenessProbe:
             httpGet:
               path: /health

@@ -1,6 +1,9 @@
 require 'sinatra'
 require 'redis'
 require 'json'
+require 'net/http'
+require 'uri'
+require 'base64'
 require 'better_auth'
 require 'better_auth/api/access'
 require 'better_auth/messages/common'
@@ -93,10 +96,46 @@ class ApplicationServer < Sinatra::Base
       app_response_key = Crypto::Secp256r1.new
       app_response_public_key = app_response_key.public
 
-      # Store response key in Redis DB 1 with 12 hour 1 minute TTL
-      ttl = 12 * 60 * 60 + 60
-      response_client.set(app_response_public_key, app_response_public_key, ex: ttl)
-      puts "#{Time.now}: Registered app response key in Redis DB 1 (TTL: 12 hours): #{app_response_public_key[0..19]}..."
+      # Sign response key with HSM
+      hsm_host = ENV['HSM_HOST'] || 'hsm'
+      hsm_port = ENV['HSM_PORT'] || '11111'
+      hsm_url = "http://#{hsm_host}:#{hsm_port}"
+
+      ttl = 12 * 60 * 60 + 60 # 12 hours + 1 minute in seconds
+      response_expiration = (Time.now + ttl).utc.iso8601(9)
+      response_payload = {
+        purpose: 'response',
+        publicKey: app_response_public_key,
+        expiration: response_expiration
+      }
+
+      authorization = nil
+      begin
+        uri = URI("#{hsm_url}/sign")
+        http = Net::HTTP.new(uri.host, uri.port)
+        request = Net::HTTP::Post.new(uri.path, 'Content-Type' => 'application/json')
+        request.body = {
+          payload: response_payload
+        }.to_json
+
+        response = http.request(request)
+        if response.is_a?(Net::HTTPSuccess)
+          authorization = response.body.chomp
+          puts "#{Time.now}: Response key HSM authorization: #{authorization}"
+        else
+          puts "#{Time.now}: Warning: Failed to sign response key with HSM: #{response.code}"
+        end
+      rescue => e
+        puts "#{Time.now}: Warning: Failed to contact HSM: #{e.message}"
+      end
+
+      # Store the full HSM authorization in Redis DB 1 with 12 hour 1 minute TTL
+      if authorization
+        response_client.set(app_response_public_key, authorization, ex: ttl)
+        puts "#{Time.now}: Registered app response key in Redis DB 1 (TTL: 12 hours): #{app_response_public_key[0..19]}..."
+      else
+        puts "#{Time.now}: Warning: No HSM authorization to store in Redis"
+      end
 
       set :response_key, app_response_key
     ensure

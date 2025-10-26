@@ -27,6 +27,10 @@ spec:
               value: "${variables.redisDbAccessKeys}"
             - name: REDIS_DB_RESPONSE_KEYS
               value: "${variables.redisDbResponseKeys}"
+            - name: HSM_HOST
+              value: "${variables.hsmHost}"
+            - name: HSM_PORT
+              value: "${variables.hsmPort}"
           livenessProbe:
             httpGet:
               path: /health

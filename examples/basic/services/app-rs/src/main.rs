@@ -5,6 +5,7 @@ use axum::{
     Router,
 };
 use serde::{Deserialize, Serialize};
+use serde_json::json;
 use std::collections::HashMap;
 use std::sync::Arc;
 use tower_http::cors::CorsLayer;
@@ -167,21 +168,75 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     response_key.generate()?;
     let response_public_key = response_key.public().await?;
 
-    // Store response key in Redis DB 1 with 12 hour 1 minute TTL
-    let ttl_seconds = 12 * 60 * 60 + 60; // 43260 seconds
-    redis::cmd("SET")
-        .arg(&response_public_key)
-        .arg(&response_public_key)
-        .arg("EX")
-        .arg(ttl_seconds)
-        .query::<()>(&mut response_conn)
-        .map_err(|e| format!("Failed to register response key: {}", e))?;
+    // Sign response key with HSM
+    let hsm_host = std::env::var("HSM_HOST").unwrap_or_else(|_| "hsm".to_string());
+    let hsm_port = std::env::var("HSM_PORT").unwrap_or_else(|_| "11111".to_string());
+    let hsm_url = format!("http://{}:{}", hsm_host, hsm_port);
 
-    println!(
-        "Registered app response key in Redis DB {} (TTL: 12 hours): {}...",
-        redis_db_response_keys,
-        &response_public_key[..20]
+    let ttl_seconds = 12 * 60 * 60 + 60; // 43260 seconds
+    let response_expiration = chrono::Utc::now() + chrono::Duration::seconds(ttl_seconds as i64);
+    let expiration_str = response_expiration.to_rfc3339_opts(chrono::SecondsFormat::Nanos, true);
+
+    // Build JSON manually for deterministic ordering: purpose, publicKey, expiration
+    let response_payload_json = format!(
+        r#"{{"purpose":"response","publicKey":"{}","expiration":"{}"}}"#,
+        response_public_key, expiration_str
     );
+
+    let hsm_request_json = format!(r#"{{"payload":{}}}"#, response_payload_json);
+
+    let client = reqwest::Client::new();
+    let authorization = match client
+        .post(format!("{}/sign", hsm_url))
+        .header("Content-Type", "application/json")
+        .body(hsm_request_json)
+        .send()
+        .await
+    {
+        Ok(resp) if resp.status().is_success() => {
+            match resp.text().await {
+                Ok(text) => {
+                    let trimmed = text.trim_end().to_string();
+                    println!("Response key HSM authorization: {}", trimmed);
+                    Some(trimmed)
+                }
+                Err(e) => {
+                    println!("Warning: Failed to read HSM response: {}", e);
+                    None
+                }
+            }
+        }
+        Ok(resp) => {
+            println!(
+                "Warning: Failed to sign response key with HSM: {}",
+                resp.status()
+            );
+            None
+        }
+        Err(e) => {
+            println!("Warning: Failed to contact HSM: {}", e);
+            None
+        }
+    };
+
+    // Store the full HSM authorization in Redis DB 1 with 12 hour 1 minute TTL
+    if let Some(auth) = authorization {
+        redis::cmd("SET")
+            .arg(&response_public_key)
+            .arg(&auth)
+            .arg("EX")
+            .arg(ttl_seconds)
+            .query::<()>(&mut response_conn)
+            .map_err(|e| format!("Failed to register response key: {}", e))?;
+
+        println!(
+            "Registered app response key in Redis DB {} (TTL: 12 hours): {}...",
+            redis_db_response_keys,
+            &response_public_key[..20]
+        );
+    } else {
+        println!("Warning: No HSM authorization to store in Redis");
+    }
 
     // Drop response connection (we don't need it anymore)
     drop(response_conn);

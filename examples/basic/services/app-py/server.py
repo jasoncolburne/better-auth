@@ -6,6 +6,7 @@ to verify authenticated access requests.
 """
 
 import asyncio
+import base64
 import json
 import logging
 import os
@@ -13,9 +14,10 @@ import signal
 import sys
 import threading
 from concurrent.futures import Future
-from datetime import datetime
+from datetime import datetime, timedelta, timezone
 from typing import Any, Dict, Optional
 
+import httpx
 import redis.asyncio as aioredis
 from flask import Flask, request, Response
 
@@ -76,21 +78,82 @@ class VerificationKey(IVerificationKey):
 class RedisVerificationKeyStore(IVerificationKeyStore):
     """Redis-backed verification key store."""
 
+    HSM_PUBLIC_KEY = "1AAIAjIhd42fcH957TzvXeMbgX4AftiTT7lKmkJ7yHy3dph9"
+
     def __init__(self, redis_client: aioredis.Redis):
         self.redis_client = redis_client
         self.verifier = Secp256r1Verifier()
 
     async def get(self, identity: str) -> IVerificationKey:
         """Get a verification key from Redis."""
-        key = await self.redis_client.get(identity)
-        if key is None:
+        value = await self.redis_client.get(identity)
+        if value is None:
             raise ValueError(f"Key not found for identity: {identity}")
 
         # Decode bytes to string if necessary
-        if isinstance(key, bytes):
-            key = key.decode('utf-8')
+        if isinstance(value, bytes):
+            value = value.decode('utf-8')
 
-        return VerificationKey(key, self.verifier)
+        # Extract the raw body JSON substring without re-encoding
+        body_start = value.find('"body":') + len('"body":')
+        if body_start == -1 + len('"body":'):
+            raise ValueError("missing body in HSM response")
+
+        brace_count = 0
+        in_body = False
+        body_end = -1
+
+        for i in range(body_start, len(value)):
+            char = value[i]
+            if char == '{':
+                in_body = True
+                brace_count += 1
+            elif char == '}':
+                brace_count -= 1
+                if in_body and brace_count == 0:
+                    body_end = i + 1
+                    break
+
+        if body_end == -1:
+            raise ValueError("failed to extract body from HSM response")
+
+        body_json = value[body_start:body_end]
+
+        # Parse the full response to get signature
+        hsm_response = json.loads(value)
+        signature = hsm_response.get('signature')
+        if not signature:
+            raise ValueError("missing signature in HSM response")
+
+        # Parse body to validate contents
+        body = json.loads(body_json)
+
+        # Verify HSM identity
+        if body.get('hsmIdentity') != self.HSM_PUBLIC_KEY:
+            raise ValueError("invalid HSM identity")
+
+        # Verify the signature over the raw body JSON
+        await self.verifier.verify(body_json, signature, self.HSM_PUBLIC_KEY)
+
+        # Validate purpose
+        payload = body.get('payload', {})
+        if payload.get('purpose') != 'access':
+            raise ValueError(f"invalid purpose: expected access, got {payload.get('purpose')}")
+
+        # Check expiration
+        expiration_str = payload.get('expiration')
+        if expiration_str:
+            from datetime import datetime
+            expiration = datetime.fromisoformat(expiration_str.replace('Z', '+00:00'))
+            if expiration <= datetime.now(expiration.tzinfo):
+                raise ValueError("key expired")
+
+        # Return the public key from the payload
+        public_key = payload.get('publicKey')
+        if not public_key:
+            raise ValueError("missing publicKey in payload")
+
+        return VerificationKey(public_key, self.verifier)
 
 
 class InMemoryTimeLockStore(IServerTimeLockStore):
@@ -192,10 +255,40 @@ class ApplicationServer:
             await app_response_key.generate()
             app_response_public_key = await app_response_key.public()
 
-            # Store response key in Redis DB 1 with 12 hour 1 minute TTL
-            ttl = 12 * 60 * 60 + 60
-            await response_client.set(app_response_public_key, app_response_public_key, ex=ttl)
-            logger.info(f"Registered app response key in Redis DB 1 (TTL: 12 hours): {app_response_public_key[:20]}...")
+            # Sign response key with HSM
+            hsm_host = os.environ.get('HSM_HOST', 'hsm')
+            hsm_port = os.environ.get('HSM_PORT', '11111')
+            hsm_url = f"http://{hsm_host}:{hsm_port}"
+
+            ttl = 12 * 60 * 60 + 60  # 12 hours + 1 minute in seconds
+            response_expiration = (datetime.now(timezone.utc) + timedelta(seconds=ttl)).isoformat()
+            response_payload = {
+                "purpose": "response",
+                "publicKey": app_response_public_key,
+                "expiration": response_expiration
+            }
+
+            authorization = None
+            try:
+                async with httpx.AsyncClient() as client:
+                    sign_response = await client.post(
+                        f"{hsm_url}/sign",
+                        json={"payload": response_payload}
+                    )
+                    if sign_response.status_code == 200:
+                        authorization = sign_response.text.rstrip()
+                        logger.info(f"Response key HSM authorization: {authorization}")
+                    else:
+                        logger.warning(f"Failed to sign response key with HSM: {sign_response.status_code}")
+            except Exception as e:
+                logger.warning(f"Failed to contact HSM: {e}")
+
+            # Store the full HSM authorization in Redis DB 1 with 12 hour 1 minute TTL
+            if authorization:
+                await response_client.set(app_response_public_key, authorization, ex=ttl)
+                logger.info(f"Registered app response key in Redis DB 1 (TTL: 12 hours): {app_response_public_key[:20]}...")
+            else:
+                logger.error("No HSM authorization to store in Redis")
 
             self.response_key = app_response_key
         finally:

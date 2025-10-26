@@ -56,9 +56,15 @@ class KeysServer < Sinatra::Base
           keys.each { |key| pipeline.get(key) }
         end
 
+        entries = []
+
         # Build key-value map
         key_value_map = keys.zip(values).to_h
-        key_value_map.to_json
+        key_value_map.each_pair do |key, value|
+          entries << "\"#{key}\":#{value}"
+        end
+
+        return "{#{entries.join(",")}}"
       end
     rescue => e
       status 500

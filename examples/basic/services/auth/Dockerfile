@@ -20,7 +20,7 @@ RUN CGO_ENABLED=0 GOOS=linux go build -o auth .
 # Final stage
 FROM debian:bookworm-slim
 
-RUN apt-get update && apt-get install -y ca-certificates && rm -rf /var/lib/apt/lists/*
+RUN apt-get update && apt-get install -y ca-certificates curl && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /root/
 
