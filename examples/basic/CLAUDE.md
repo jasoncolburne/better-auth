@@ -662,14 +662,38 @@ nc -zv redis 6379
 # Check HSM pod
 kubectl get pods -n better-auth-basic-example-dev | grep hsm
 
-# Check HSM logs
+# Check HSM logs (current pod)
 kubectl logs -n better-auth-basic-example-dev deployment/hsm
+
+# Check logs from previous crashed pod
+kubectl logs -n better-auth-basic-example-dev deployment/hsm --previous
 
 # Test HSM endpoint from auth pod
 kubectl exec -it -n better-auth-basic-example-dev deployment/auth -- sh
 # Inside container:
 curl http://hsm:80/health
 ```
+
+**HSM Segfault (SIGSEGV) During Rolling Restarts**:
+
+If you see a segfault in HSM logs during rolling restarts with stack traces mentioning `pkcs11.(*Ctx).SignInit`, this indicates concurrent PKCS#11 operations. The HSM uses a mutex to serialize signing operations, but if you're modifying the HSM code, be aware:
+
+- PKCS#11 sessions are **not thread-safe**
+- Multiple concurrent `/sign` requests will cause segfaults without proper locking
+- The `HSMServer.Sign()` method uses `sync.Mutex` to prevent this
+- If you see this crash, ensure all PKCS#11 operations are protected by the mutex
+
+To diagnose:
+```bash
+# Get logs from crashed pod
+kubectl logs -n better-auth-basic-example-dev deployment/hsm --previous | grep -A20 "SIGSEGV"
+
+# Look for this pattern in stack trace:
+# github.com/miekg/pkcs11.(*Ctx).SignInit
+# main.(*HSMServer).Sign
+```
+
+This typically happens when services restart simultaneously and make concurrent requests to HSM at startup.
 
 ### Integration Tests Failing
 
