@@ -34,6 +34,8 @@ This example consists of multiple services:
    - HSM public key (`1AAIAjIhd42fcH957TzvXeMbgX4AftiTT7lKmkJ7yHy3dph9`) is hardcoded in clients
 
 5. **Redis**: Backing store for HSM-signed keys
+   - Uses persistent storage (256Mi PersistentVolumeClaim with AOF)
+   - Data survives pod restarts and redeployments
    - DB 0: HSM-signed access keys (from auth service, verified by app services)
    - DB 1: HSM-signed response keys (from auth and app services, verified by clients)
    - DB 2: AccessKey hashes, for rejecting refreshes of public access keys that have already been
@@ -531,6 +533,34 @@ garden util clean
 
 # Update Garden CLI
 brew upgrade garden-cli  # macOS
+```
+
+### Redis data persists across deployments
+
+Redis now uses persistent storage. If you need to start completely fresh:
+
+```bash
+# Delete deployment and PVC
+garden delete deploy
+kubectl delete pvc redis-data -n better-auth-basic-example-dev
+
+# Redeploy (creates new PVC)
+garden deploy
+```
+
+### PVC stuck in pending state
+
+```bash
+# Check PVC status
+kubectl get pvc -n better-auth-basic-example-dev
+
+# Describe PVC to see events
+kubectl describe pvc redis-data -n better-auth-basic-example-dev
+
+# Common causes:
+# - No storage class available (Docker Desktop should provide one automatically)
+# - Insufficient disk space
+# - PVC already exists and is bound to different pod
 ```
 
 ## Next Steps
