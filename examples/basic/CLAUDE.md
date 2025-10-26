@@ -675,6 +675,14 @@ kubectl exec -it -n better-auth-basic-example-dev deployment/app-ts -- sh
 nc -zv redis 6379
 ```
 
+**Redis Restart Recovery**:
+
+Services handle Redis restarts with automatic reconnection:
+- **Rust (app-rs)**: Uses retry logic with exponential backoff (3 attempts: 100ms, 200ms, 400ms)
+- **TypeScript, Python, Ruby**: Connection libraries handle reconnection automatically
+
+If you restart Redis (`kubectl delete pod -l app=redis`), services may show "broken pipe" or "connection refused" errors for 1-2 requests, then automatically recover. No service restart needed.
+
 ### HSM Service Not Responding
 
 ```bash

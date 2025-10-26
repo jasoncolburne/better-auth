@@ -5,7 +5,6 @@ use axum::{
     Router,
 };
 use serde::{Deserialize, Serialize};
-use serde_json::json;
 use std::collections::HashMap;
 use std::sync::Arc;
 use tower_http::cors::CorsLayer;

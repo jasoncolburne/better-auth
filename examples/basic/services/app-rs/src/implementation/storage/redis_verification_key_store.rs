@@ -46,14 +46,43 @@ impl RedisVerificationKeyStore {
 #[async_trait]
 impl VerificationKeyStoreTrait for RedisVerificationKeyStore {
     async fn get(&self, identity: &str) -> Result<Box<dyn VerificationKey>, String> {
-        let mut conn = self.connection.lock().await;
+        // Retry logic to handle Redis reconnection after restart
+        const MAX_RETRIES: u32 = 3;
+        const INITIAL_BACKOFF_MS: u64 = 100;
 
-        // Get the HSM response from Redis
-        let value: String = conn
-            .get(identity)
-            .await
-            .map_err(|e: RedisError| format!("Redis error: {}", e))?;
+        let mut last_error = None;
 
+        for attempt in 0..MAX_RETRIES {
+            if attempt > 0 {
+                // Exponential backoff
+                let backoff_ms = INITIAL_BACKOFF_MS * 2_u64.pow(attempt - 1);
+                tokio::time::sleep(tokio::time::Duration::from_millis(backoff_ms)).await;
+            }
+
+            let mut conn = self.connection.lock().await;
+
+            // Get the HSM response from Redis
+            let result: Result<String, RedisError> = conn.get(identity).await;
+            match result {
+                Ok(value) => {
+                    // Successfully got value, continue with processing
+                    return Self::process_hsm_response(&value).await;
+                }
+                Err(e) => {
+                    last_error = Some(format!("Redis error: {}", e));
+                    // Drop the lock before retrying to allow reconnection
+                    drop(conn);
+                    continue;
+                }
+            }
+        }
+
+        Err(last_error.unwrap_or_else(|| "Redis connection failed after retries".to_string()))
+    }
+}
+
+impl RedisVerificationKeyStore {
+    async fn process_hsm_response(value: &str) -> Result<Box<dyn VerificationKey>, String> {
         // Extract the raw body JSON substring without re-encoding
         let body_start = value.find("\"body\":").ok_or("missing body in HSM response")?
             + "\"body\":".len();
