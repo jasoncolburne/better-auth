@@ -236,6 +236,43 @@ garden deploy --log-level=verbose  # Creates new PVC
 
 **Note**: The PVC survives `garden delete deploy` - you must manually delete it if you want to start completely fresh.
 
+### Debugging Postgres State
+
+Postgres also uses persistent storage (1Gi PersistentVolumeClaim), so database contents survive pod restarts and redeployments.
+
+```bash
+# Shell into Postgres
+kubectl exec -it -n better-auth-basic-example-dev deployment/postgres -- psql -U postgres -d better_auth
+
+# Inside psql:
+# \dt              # List tables
+# \d accounts      # Describe accounts table
+# SELECT * FROM accounts;
+# SELECT * FROM devices;
+# \q               # Quit
+```
+
+**Clearing Persistent Database**:
+
+If you need to reset the database:
+
+```bash
+# Option 1: Drop and recreate database (from within postgres)
+kubectl exec -it -n better-auth-basic-example-dev deployment/postgres -- psql -U postgres
+# Inside psql:
+DROP DATABASE better_auth;
+CREATE DATABASE better_auth;
+# Restart auth service to recreate tables
+kubectl rollout restart deployment/auth -n better-auth-basic-example-dev
+
+# Option 2: Delete the PVC (data is permanently lost)
+garden delete deploy --log-level=verbose
+kubectl delete pvc postgres-data -n better-auth-basic-example-dev
+garden deploy --log-level=verbose  # Creates new PVC
+```
+
+**Note**: Like Redis, the Postgres PVC survives `garden delete deploy` - you must manually delete it if you want to start completely fresh.
+
 ### Debugging Build Failures
 
 ```bash
@@ -418,6 +455,24 @@ garden deploy --log-level=verbose
 
 **Important**: The PVC survives `garden delete deploy`. If you're troubleshooting and want truly fresh state, you must manually delete the PVC.
 
+### Resetting Postgres State
+
+Postgres data is now persistent (survives pod restarts and redeployments). To reset:
+
+```bash
+# Option 1: Drop and recreate database (quick, keeps PVC)
+kubectl exec -it -n better-auth-basic-example-dev deployment/postgres -- psql -U postgres -c "DROP DATABASE better_auth;"
+kubectl exec -it -n better-auth-basic-example-dev deployment/postgres -- psql -U postgres -c "CREATE DATABASE better_auth;"
+kubectl rollout restart deployment/auth -n better-auth-basic-example-dev
+
+# Option 2: Delete PVC and start completely fresh
+garden delete deploy --log-level=verbose
+kubectl delete pvc postgres-data -n better-auth-basic-example-dev
+garden deploy --log-level=verbose
+```
+
+**Important**: Like Redis, the Postgres PVC survives `garden delete deploy`. If you're troubleshooting and want truly fresh state, you must manually delete the PVC.
+
 ### Regenerating HSM Keys
 
 ```bash
@@ -453,29 +508,13 @@ kubectl rollout restart deployment/app-ts -n better-auth-basic-example-dev
 garden deploy app-ts app-rb app-rs app-py --log-level=verbose
 
 # Watch logs from all app services
-garden logs app-ts app-rb app-rs app-py --follow --log-level=verbose
+garden logs app-ts app-rb app-rs app-py --follow
 
 # Test each implementation
 curl http://app-ts.better-auth.local/health
 curl http://app-rb.better-auth.local/health
 curl http://app-rs.better-auth.local/health
 curl http://app-py.better-auth.local/health
-```
-
-### Hot Reload vs Full Rebuild
-
-Garden watches for file changes, but sometimes you need to force:
-
-```bash
-# Let Garden detect changes (fastest)
-garden deploy app-ts --log-level=verbose
-
-# Force rebuild (when Garden misses changes)
-garden deploy app-ts --force --log-level=verbose
-
-# Clear cache and rebuild everything (slowest, most thorough)
-garden util mutagen reset
-garden deploy --force --log-level=verbose
 ```
 
 ## iOS App Development
@@ -536,23 +575,7 @@ BetterAuthBasicExample/
     └── Views/                       # SwiftUI views
 ```
 
-## Performance Testing
-
-### Benchmarking Individual Services
-
-```bash
-# Install hey (HTTP load generator)
-brew install hey
-
-# Test auth service
-hey -n 10000 -c 100 http://auth.better-auth.local/health
-
-# Test app service with authentication
-# (requires valid token in request body)
-hey -n 1000 -c 10 -m POST -D request.json http://app-ts.better-auth.local/foo/bar
-```
-
-### Monitoring Resource Usage
+## Monitoring Resource Usage
 
 ```bash
 # Watch pod resource usage
@@ -563,24 +586,6 @@ kubectl top nodes --watch
 
 # View resource limits/requests
 kubectl describe deployment app-ts -n better-auth-basic-example-dev | grep -A5 Limits
-```
-
-### Profiling Services
-
-Each language has different profiling tools:
-
-**TypeScript (Node.js)**:
-```bash
-# Add --inspect flag to node in Dockerfile
-# kubectl port-forward to debugging port
-# Use Chrome DevTools for profiling
-```
-
-**Go**:
-```bash
-# Add pprof endpoints to auth/hsm services
-# kubectl port-forward to pprof port
-# Use go tool pprof http://localhost:6060/debug/pprof/profile
 ```
 
 ## Troubleshooting Development Issues

@@ -41,6 +41,11 @@ This example consists of multiple services:
    - DB 2: AccessKey hashes, for rejecting refreshes of public access keys that have already been
      refreshed
 
+6. **PostgreSQL**: Database for auth service
+   - Uses persistent storage (1Gi PersistentVolumeClaim)
+   - Stores accounts, devices, and authentication state
+   - Data survives pod restarts and redeployments
+
 ## Prerequisites
 
 ### Required
@@ -535,17 +540,29 @@ garden util clean
 brew upgrade garden-cli  # macOS
 ```
 
-### Redis data persists across deployments
+### Persistent data survives deployments
 
-Redis now uses persistent storage. If you need to start completely fresh:
+Both Redis and Postgres now use persistent storage. If you need to start completely fresh:
 
 ```bash
-# Delete deployment and PVC
+# Delete deployment and both PVCs
 garden delete deploy
-kubectl delete pvc redis-data -n better-auth-basic-example-dev
+kubectl delete pvc redis-data postgres-data -n better-auth-basic-example-dev
 
-# Redeploy (creates new PVC)
+# Redeploy (creates new PVCs)
 garden deploy
+```
+
+### Resetting specific databases
+
+```bash
+# Reset Redis only (flush all data)
+kubectl exec -it -n better-auth-basic-example-dev deployment/redis -- redis-cli FLUSHALL
+
+# Reset Postgres only (drop and recreate database)
+kubectl exec -it -n better-auth-basic-example-dev deployment/postgres -- psql -U postgres -c "DROP DATABASE better_auth;"
+kubectl exec -it -n better-auth-basic-example-dev deployment/postgres -- psql -U postgres -c "CREATE DATABASE better_auth;"
+kubectl rollout restart deployment/auth -n better-auth-basic-example-dev
 ```
 
 ### PVC stuck in pending state
@@ -556,6 +573,7 @@ kubectl get pvc -n better-auth-basic-example-dev
 
 # Describe PVC to see events
 kubectl describe pvc redis-data -n better-auth-basic-example-dev
+kubectl describe pvc postgres-data -n better-auth-basic-example-dev
 
 # Common causes:
 # - No storage class available (Docker Desktop should provide one automatically)
@@ -565,7 +583,6 @@ kubectl describe pvc redis-data -n better-auth-basic-example-dev
 
 ## Next Steps
 
-- Add database persistence (PostgreSQL)
 - Add more complex authentication flows
 - Add monitoring and observability (Prometheus, Grafana)
 - Add client implementations for Swift, Dart, and Kotlin
