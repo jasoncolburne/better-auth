@@ -56,13 +56,41 @@ class KeysServer < Sinatra::Base
           keys.each { |key| pipeline.get(key) }
         end
 
+        entries = []
+
         # Build key-value map
         key_value_map = keys.zip(values).to_h
-        key_value_map.to_json
+        key_value_map.each_pair do |key, value|
+          entries << "\"#{key}\":#{value}"
+        end
+
+        return "{#{entries.join(",")}}"
       end
     rescue => e
       status 500
       { error: 'Failed to fetch keys', message: e.message }.to_json
+    end
+  end
+
+  # Get a key by identity
+  get '/keys/:identity' do
+    begin
+      identity = params['identity']
+
+      # Fetch the value from Redis
+      value = settings.redis.get(identity)
+
+      if value.nil?
+        status 404
+        { error: 'Key not found', identity: identity }.to_json
+      else
+        # Return the raw value (which is already JSON)
+        content_type :json
+        value
+      end
+    rescue => e
+      status 500
+      { error: 'Failed to fetch key', message: e.message }.to_json
     end
   end
 
@@ -73,7 +101,8 @@ class KeysServer < Sinatra::Base
       version: '1.0.0',
       endpoints: {
         health: '/health',
-        keys: '/keys'
+        keys: '/keys',
+        key_by_identity: '/keys/:identity'
       }
     }.to_json
   end

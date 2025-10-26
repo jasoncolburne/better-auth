@@ -62,47 +62,73 @@ class ApplicationServer {
     // Connect to Redis DB 1 to write/read response keys
     const responseClient = new Redis(redisHost, { db: redisDbResponseKeys })
 
-    try {
-      // Create verification key store and add all access keys
-      const verifier = new Secp256r1Verifier()
-      const verificationKeyStore = new VerificationKeyStore(accessClient)
+    // Create verification key store and add all access keys
+    const verifier = new Secp256r1Verifier()
+    const verificationKeyStore = new VerificationKeyStore(accessClient)
 
-      // Create an in-memory nonce store with 30 second window
-      const accessNonceStore = new ServerTimeLockStore(30000)
+    // Create an in-memory nonce store with 30 second window
+    const accessNonceStore = new ServerTimeLockStore(30000)
 
-      // Create AccessVerifier
-      this.state.verifier = new AccessVerifier({
-        crypto: {
-          verifier,
+    // Create AccessVerifier
+    this.state.verifier = new AccessVerifier({
+      crypto: {
+        verifier,
+      },
+      encoding: {
+        tokenEncoder: new TokenEncoder(),
+        timestamper: new Rfc3339Nano(),
+      },
+      store: {
+        access: {
+          nonce: accessNonceStore,
+          key: verificationKeyStore,
         },
-        encoding: {
-          tokenEncoder: new TokenEncoder(),
-          timestamper: new Rfc3339Nano(),
-        },
-        store: {
-          access: {
-            nonce: accessNonceStore,
-            key: verificationKeyStore,
-          },
-        },
-      })
+      },
+    })
 
-      Logger.log('AccessVerifier initialized')
+    Logger.log('AccessVerifier initialized')
 
-      // Generate app response key
-      const appResponseKey = new Secp256r1()
-      await appResponseKey.generate()
-      const appResponsePublicKey = await appResponseKey.public()
+    // Generate app response key
+    const appResponseKey = new Secp256r1()
+    await appResponseKey.generate()
+    const appResponsePublicKey = await appResponseKey.public()
 
-      // Store response key in Redis DB 1 with 12 hour 1 minute TTL: SET <publicKey> <publicKey> EX 43260
-      await responseClient.set(appResponsePublicKey, appResponsePublicKey, 'EX', 12 * 60 * 60 + 60)
-      Logger.log(`Registered app response key in Redis DB 1 (TTL: 12 hours): ${appResponsePublicKey.substring(0, 20)}...`)
+    // Sign response key with HSM
+    const hsmHost = process.env.HSM_HOST || 'hsm'
+    const hsmPort = process.env.HSM_PORT || '11111'
+    const hsmURL = `http://${hsmHost}:${hsmPort}`
 
-      this.state.responseKey = appResponseKey
-    } finally {
-      await responseClient.quit()
-      this.state.accessClient = accessClient
+    const responseTTL = 12 * 60 * 60 + 60 // 12 hours + 1 minute in seconds
+    const responseExpiration = new Date(Date.now() + responseTTL * 1000).toISOString()
+    const responsePayload = {
+      purpose: 'response',
+      publicKey: appResponsePublicKey,
+      expiration: responseExpiration
     }
+
+    var authorization: string
+    const signResponse = await fetch(`${hsmURL}/sign`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        payload: responsePayload
+      })
+    })
+
+    if (signResponse.ok) {
+      authorization = (await signResponse.text()).trimEnd()
+      Logger.log(`Response key HSM authorization (CESR): ${authorization}`)
+    } else {
+      throw 'hsm response not ok'
+    }
+
+    // Store response key in Redis DB 1 with 12 hour 1 minute TTL: SET <publicKey> <publicKey> EX 43260
+    await responseClient.set(appResponsePublicKey, authorization, 'EX', responseTTL)
+    Logger.log(`Registered app response key in Redis DB 1 (TTL: 12 hours): ${appResponsePublicKey.substring(0, 20)}...`)
+
+    this.state.responseKey = appResponseKey
+    await responseClient.quit()
+    this.state.accessClient = accessClient
 
     Logger.log('Application server initialized')
   }

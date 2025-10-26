@@ -32,3 +32,5 @@ variables:
   postgresDatabase: better_auth
   postgresUser: postgres
   postgresPassword: postgres
+  hsmHost: hsm
+  hsmPort: "11111"

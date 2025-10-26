@@ -1,7 +1,9 @@
 package main
 
 import (
+	"bytes"
 	"context"
+	"encoding/json"
 	"fmt"
 	"io"
 	"log"
@@ -9,6 +11,7 @@ import (
 	"os"
 	"os/signal"
 	"strconv"
+	"strings"
 	"syscall"
 	"time"
 
@@ -275,6 +278,47 @@ func (s *Server) StopServer() error {
 	return s.server.Shutdown(ctx)
 }
 
+// signWithHSM signs a payload using the HSM service
+func signWithHSM(hsmURL string, payload implementation.KeySigningPayload) (string, error) {
+	// Create request
+	reqBody := struct {
+		Payload implementation.KeySigningPayload `json:"payload"`
+	}{
+		Payload: payload,
+	}
+	reqJSON, err := json.Marshal(reqBody)
+	if err != nil {
+		return "", fmt.Errorf("failed to marshal request: %w", err)
+	}
+
+	// POST to HSM
+	resp, err := http.Post(hsmURL+"/sign", "application/json", bytes.NewBuffer(reqJSON))
+	if err != nil {
+		return "", fmt.Errorf("failed to POST to HSM: %w", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return "", fmt.Errorf("HSM returned status %d", resp.StatusCode)
+	}
+
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return "", fmt.Errorf("failed to read response")
+	}
+
+	// Parse response
+	var signResp struct {
+		Body      implementation.KeySigningBody `json:"body"`
+		Signature string                        `json:"signature"`
+	}
+	if err := json.Unmarshal(body, &signResp); err != nil {
+		return "", fmt.Errorf("failed to decode HSM response: %w", err)
+	}
+
+	return strings.TrimSpace(string(body)), nil
+}
+
 // registerKeysInRedis writes the server's access and response public keys to Redis
 func registerKeysInRedis(accessKey, responseKey cryptointerfaces.SigningKey) error {
 	redisHost := os.Getenv("REDIS_HOST")
@@ -308,6 +352,49 @@ func registerKeysInRedis(accessKey, responseKey cryptointerfaces.SigningKey) err
 		return fmt.Errorf("failed to get response public key: %w", err)
 	}
 
+	// TTL constants
+	accessTTL := 24 * time.Hour
+	responseTTL := 12*time.Hour + time.Minute
+
+	// Sign keys with HSM
+	hsmHost := os.Getenv("HSM_HOST")
+	if hsmHost == "" {
+		hsmHost = "hsm"
+	}
+	hsmPort := os.Getenv("HSM_PORT")
+	if hsmPort == "" {
+		hsmPort = "11111"
+	}
+	hsmURL := fmt.Sprintf("http://%s:%s", hsmHost, hsmPort)
+
+	// Sign access key (expires in 24 hours to match Redis TTL)
+	accessExpiration := time.Now().Add(accessTTL).Format(time.RFC3339Nano)
+	accessPayload := implementation.KeySigningPayload{
+		Purpose:    "access",
+		PublicKey:  accessPublicKey,
+		Expiration: accessExpiration,
+	}
+	accessAuthorization, err := signWithHSM(hsmURL, accessPayload)
+	if err != nil {
+		log.Printf("Warning: Failed to sign access key with HSM: %v", err)
+	} else {
+		log.Printf("Access key HSM authorization (CESR): %s", accessAuthorization)
+	}
+
+	// Sign response key (expires in 12 hours + 1 minute to match Redis TTL)
+	responseExpiration := time.Now().Add(responseTTL).Format(time.RFC3339Nano)
+	responsePayload := implementation.KeySigningPayload{
+		Purpose:    "response",
+		PublicKey:  responsePublicKey,
+		Expiration: responseExpiration,
+	}
+	responseAuthorization, err := signWithHSM(hsmURL, responsePayload)
+	if err != nil {
+		log.Printf("Warning: Failed to sign response key with HSM: %v", err)
+	} else {
+		log.Printf("Response key HSM authorization (CESR): %s", responseAuthorization)
+	}
+
 	accessClient := redis.NewClient(&redis.Options{
 		Addr: redisHost,
 		DB:   redisDbAccessKeys,
@@ -315,7 +402,7 @@ func registerKeysInRedis(accessKey, responseKey cryptointerfaces.SigningKey) err
 	defer accessClient.Close()
 
 	// Write access key with 24 hour TTL: SET <public_key> <public_key> EX 86400
-	if err := accessClient.Set(ctx, accessPublicKey, accessPublicKey, 24*time.Hour).Err(); err != nil {
+	if err := accessClient.Set(ctx, accessPublicKey, accessAuthorization, accessTTL).Err(); err != nil {
 		return fmt.Errorf("failed to write access key to Redis: %w", err)
 	}
 	log.Printf("Registered access key in Redis DB 0 (TTL: 24 hours)")
@@ -327,7 +414,7 @@ func registerKeysInRedis(accessKey, responseKey cryptointerfaces.SigningKey) err
 	defer responseClient.Close()
 
 	// Write response key with 12 hour 1 minute TTL: SET <public_key> <public_key> EX 43260
-	if err := responseClient.Set(ctx, responsePublicKey, responsePublicKey, 12*time.Hour+time.Minute).Err(); err != nil {
+	if err := responseClient.Set(ctx, responsePublicKey, responseAuthorization, responseTTL).Err(); err != nil {
 		return fmt.Errorf("failed to write response key to Redis: %w", err)
 	}
 	log.Printf("Registered response key in Redis DB 1 (TTL: 12 hours)")

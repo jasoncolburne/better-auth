@@ -23,6 +23,7 @@ dependencies:
   - build.app-ts
   - deploy.redis
   - deploy.restart-controller
+  - deploy.hsm
 
 spec:
   manifestTemplates:

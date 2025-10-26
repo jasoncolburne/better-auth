@@ -6,13 +6,13 @@ This example demonstrates a production-like Better Auth deployment using Garden.
 
 This example consists of multiple services:
 
-1. **Auth Server (Go)**: Provides authentication services using the `better-auth-go` library
+1. **Auth Service (Go)**: Provides authentication services using the `better-auth-go` library
    - Handles account creation, recovery, deletion
    - Device linking/unlinking and rotation
    - Session management (request, create, refresh)
    - Issues and validates access tokens
 
-2. **Application Servers** (4 language implementations): Example applications that use auth tokens
+2. **Application Services** (4 language implementations): Example applications that use auth tokens
    - **app-ts (TypeScript)**: Uses the `better-auth-ts` access verifier
    - **app-rb (Ruby)**: Uses the `better-auth-rb` access verifier
    - **app-rs (Rust)**: Uses the `better-auth-rs` access verifier
@@ -21,20 +21,23 @@ This example consists of multiple services:
    - Each provides the same protected `/foo/bar` endpoint
    - Each returns a unique `serverName` field to identify which implementation handled the request
 
-3. **Keys Server (Ruby)**: Example key service that provides a set of valid response keys from redis
-   - Exposes response public keys for client side verification
-   - We should probably sign these keys and bake a rotating verification key into the client. Then,
-     an attacker must compromise both the signing key and the data source of public keys to mount a
-     successful attack. This set of signing keys should probably live in an HSM. One could put two
-     hashes in the client, for the current and next public keys. The client could request the
-     current public key from the server and ensure it matches one of the hashes, and use it to
-     verify the signature on the response keys. After rotating the backend key, one would simply
-     need to roll out new clients with the previous next hash moved to the new current, while the
-     new next hash is computed as a hash of a new public key to be used in the future.
+3. **Keys Service (Ruby)**: Serves HSM-signed keys to clients
+   - Fetches HSM-signed keys from Redis
+   - Returns signed keys directly (clients verify HSM signatures)
+   - Provides `/keys` endpoint for all keys or `/keys/:identity` for specific keys
 
-4. **Redis**: Backing store for current public keys
-   - Access keys are in DB 0
-   - Response keys are in DB 1
+4. **HSM Service (Go)**: Hardware Security Module simulator for centralized key signing
+   - Signs all public keys (access and response) when services start
+   - Provides `/sign` endpoint that signs arbitrary payloads with a fixed HSM key
+   - In production, this would be backed by a real HSM with secure key storage, and hopefully,
+     would allow rotation
+   - HSM public key (`1AAIAjIhd42fcH957TzvXeMbgX4AftiTT7lKmkJ7yHy3dph9`) is hardcoded in clients
+
+5. **Redis**: Backing store for HSM-signed keys
+   - DB 0: HSM-signed access keys (from auth service, verified by app services)
+   - DB 1: HSM-signed response keys (from auth and app services, verified by clients)
+   - DB 2: AccessKey hashes, for rejecting refreshes of public access keys that have already been
+     refreshed
 
 ## Prerequisites
 
@@ -244,6 +247,7 @@ garden deploy app-rb
 garden deploy app-rs
 garden deploy app-py
 garden deploy keys
+garden deploy hsm
 
 # View logs
 garden logs auth
@@ -252,6 +256,7 @@ garden logs app-rb
 garden logs app-rs
 garden logs app-py
 garden logs keys
+garden logs hsm
 garden logs --follow  # Follow all logs
 
 # Get service status
@@ -272,6 +277,33 @@ kubectl exec -it -n better-auth-basic-example-dev deployment/app-rb -- sh
 kubectl exec -it -n better-auth-basic-example-dev deployment/app-rs -- sh
 kubectl exec -it -n better-auth-basic-example-dev deployment/app-py -- sh
 kubectl exec -it -n better-auth-basic-example-dev deployment/keys -- sh
+kubectl exec -it -n better-auth-basic-example-dev deployment/hsm -- sh
+```
+
+### Extracting HSM Keys
+
+```bash
+# Export HSM public key (CESR format) to test-fixtures/hsm-authorization-key.cesr
+# Use this to hardcode the HSM verification key in clients
+garden run export-hsm-public-key
+
+# Export HSM private key (PEM format) to test-fixtures/hsm-authorization-key.pem
+# This persists the HSM key across restarts - without it, HSM generates a new key on each restart
+garden run export-hsm-private-key
+```
+
+**Note**: To generate new HSM keys, delete the private key from `test-fixtures/` before deploying:
+
+```bash
+# Delete existing private key
+rm test-fixtures/hsm-authorization-key.pem
+
+# Redeploy HSM (will generate new key)
+garden deploy hsm
+
+# Extract the newly generated keys
+garden run export-hsm-private-key  # Persist for future restarts
+garden run export-hsm-public-key   # Update clients with new verification key
 ```
 
 ## Project Structure
@@ -324,17 +356,37 @@ examples/basic/
     │   ├── Gemfile                 # Dependencies
     │   ├── config.ru               # Rack config
     │   └── server.rb               # Keys server implementation
+    ├── hsm/                        # Go HSM simulator
+    │   ├── Dockerfile              # Multi-stage build (Debian-based)
+    │   ├── garden.yml              # Service-specific Garden config
+    │   ├── manifests.yml.tpl       # Kubernetes manifests (no Ingress)
+    │   ├── go.mod                  # With replace directive for local lib
+    │   └── main.go                 # HSM service implementation
     ├── redis/                      # Redis deployment
     │   ├── garden.yml              # Service-specific Garden config
     │   └── manifests.yml           # Kubernetes manifests
     ├── restart-controller/         # Service account for rolling restarts
     │   ├── garden.yml              # Service-specific Garden config
     │   └── manifests.yml.tpl       # Kubernetes manifests
-    └── dependencies/               # Symlinks to implementations
-        ├── better-auth-ts -> ../../../../implementations/better-auth-ts
-        ├── better-auth-rb -> ../../../../implementations/better-auth-rb
-        ├── better-auth-rs -> ../../../../implementations/better-auth-rs
-        └── better-auth-py -> ../../../../implementations/better-auth-py
+    ├── dependencies/               # Symlinks to implementations
+    │   ├── better-auth-ts -> ../../../../implementations/better-auth-ts
+    │   ├── better-auth-rb -> ../../../../implementations/better-auth-rb
+    │   ├── better-auth-rs -> ../../../../implementations/better-auth-rs
+    │   └── better-auth-py -> ../../../../implementations/better-auth-py
+    └── clients/
+        └── ios/                    # iOS client app
+            └── BetterAuthBasicExample/
+                ├── BetterAuthBasicExampleApp.swift
+                ├── ContentView.swift
+                └── Implementation/
+                    ├── Crypto/     # Secp256r1, Blake3, Argon2 implementations
+                    ├── Models/     # AppState and response models
+                    ├── Network/    # HTTP client
+                    ├── Protocol/   # Better Auth protocol defaults
+                    ├── Stores/     # Key stores (includes HSM verification)
+                    ├── Time/       # RFC3339 timestamper
+                    ├── Utilities/  # Base64, Keychain, etc.
+                    └── Views/      # SwiftUI views for auth flow
 ```
 
 ## How It Works
@@ -366,6 +418,28 @@ image: ${actions.build.auth.outputs.deployment-image-id}
 ### Service Communication
 
 Services synchronize keys in redis, they don't communicate for auth. This is by design.
+
+### HSM Key Signing Flow
+
+The HSM service provides centralized key signing to prevent unauthorized keys from being used:
+
+1. **Key Registration** (on service startup):
+   - Auth service generates access and response key pairs
+   - App services generate response key pairs
+   - Each service creates a payload: `{purpose, publicKey, expiration}`
+   - Services POST payload to HSM `/sign` endpoint
+   - HSM signs the payload and returns `{body: {payload, hsmIdentity}, signature}`
+   - Services store the complete HSM response in Redis
+
+2. **Key Verification** (on every access request):
+   - App services fetch keys from Redis DB 0 (access keys)
+   - Clients fetch keys from keys service which reads Redis DB 1 (response keys)
+   - Verifiers extract the body JSON and signature from HSM response
+   - Verifiers verify signature using hardcoded HSM public key
+   - Verifiers check: HSM identity matches, purpose is correct, key not expired
+   - Only after verification passes is the public key extracted and used
+
+This ensures that even if Redis is compromised, attackers cannot inject unauthorized keys without the HSM private key.
 
 ## Customization
 

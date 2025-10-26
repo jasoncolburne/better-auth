@@ -71,13 +71,13 @@ class ContentViewLogic {
             statusMessage = "Account created! Recovery passphrase in clipboard."
             identityValue = try identityValueStore.getSync()
             deviceValue = try deviceValueStore.getSync()
+            isLoading = false
             state = AppState.created
         } catch {
             authenticationKeyStore.reset()
             statusMessage = "Error: \(error.localizedDescription)"
+            isLoading = false
         }
-
-        isLoading = false
     }
 
     func handleDeleteAccount() async {
@@ -88,15 +88,15 @@ class ContentViewLogic {
             try await betterAuthClient.deleteAccount()
 
             authenticationKeyStore.reset()
-            state = AppState.ready
             identityValue = ""
             deviceValue = ""
             statusMessage = "Account deleted."
+            isLoading = false
+            state = AppState.ready
         } catch {
             statusMessage = "Error: \(error.localizedDescription)"
+            isLoading = false
         }
-
-        isLoading = false
     }
 
     func handleRecoverAccount() async {
@@ -122,17 +122,17 @@ class ContentViewLogic {
             try await betterAuthClient.recoverAccount(identityValue, recoveryKey, nextRecoveryHash)
 
             deviceValue = try await deviceValueStore.get()
-            state = AppState.created
 
             // Copy passphrase to clipboard
             UIPasteboard.general.string = nextPassphrase
-            
+
             statusMessage = "Account recovered! Next recovery passphrase in clipboard. Other devices unlinked."
+            isLoading = false
+            state = AppState.created
         } catch {
             statusMessage = "Error: \(error.localizedDescription)"
+            isLoading = false
         }
-
-        isLoading = false
     }
 
     func handleChangeRecoveryPassphrase() async {
@@ -171,16 +171,16 @@ class ContentViewLogic {
             authenticationKeyStore.reset()
             try? await identityValueStore.store("")
             try? await deviceValueStore.store("")
-            state = AppState.ready
             identityValue = ""
             deviceValue = ""
 
             statusMessage = "Credentials erased."
+            isLoading = false
+            state = AppState.ready
         } catch {
             statusMessage = "Error: \(error.localizedDescription)"
+            isLoading = false
         }
-
-        isLoading = false
     }
 
     func handleRotateDevice() async {
@@ -203,15 +203,15 @@ class ContentViewLogic {
 
         do {
             UIPasteboard.general.string = try await betterAuthClient.generateLinkContainer(identityValue)
-            state = AppState.created
             deviceValue = try await deviceValueStore.get()
             statusMessage = "Link data copied to clipboard."
+            isLoading = false
+            state = AppState.created
         } catch {
             identityValue = ""
             statusMessage = "Error: \(error.localizedDescription)"
+            isLoading = false
         }
-
-        isLoading = false
     }
 
     func handleLinkDevice(linkContainer: String) async {
@@ -234,19 +234,20 @@ class ContentViewLogic {
 
         do {
             try await betterAuthClient.unlinkDevice(otherDeviceValue)
-            if (otherDeviceValue == deviceValue) {
+            let wasCurrentDevice = (otherDeviceValue == deviceValue)
+            otherDeviceValue = ""
+            statusMessage = "Device unlinked."
+            isLoading = false
+            if wasCurrentDevice {
                 identityValue = ""
                 deviceValue = ""
                 try? await authenticationKeyStore.reset()
                 state = AppState.ready
             }
-            otherDeviceValue = ""
-            statusMessage = "Device unlinked."
         } catch {
             statusMessage = "Error: \(error.localizedDescription)"
+            isLoading = false
         }
-
-        isLoading = false
     }
 
     func handleCreateSession() async {
@@ -256,13 +257,13 @@ class ContentViewLogic {
         do {
             try await betterAuthClient.createSession()
             statusMessage = "Signed in!"
+            isLoading = false
             state = AppState.authenticated
         } catch {
             accessKeyStore.reset()
             statusMessage = "Error: \(error.localizedDescription)"
+            isLoading = false
         }
-
-        isLoading = false
     }
 
     func handleRefreshSession() async {
@@ -285,9 +286,8 @@ class ContentViewLogic {
 
         accessKeyStore.reset()
         statusMessage = "Session ended."
-        state = AppState.created
-
         isLoading = false
+        state = AppState.created
     }
 
     func handleTestAppServers(foo: String, bar: String) async {

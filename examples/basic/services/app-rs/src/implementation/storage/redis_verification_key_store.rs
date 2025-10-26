@@ -1,10 +1,34 @@
 use super::super::crypto::Secp256r1;
 use async_trait::async_trait;
-use better_auth::interfaces::{VerificationKey, VerificationKeyStore as VerificationKeyStoreTrait};
+use better_auth::interfaces::{Verifier, VerificationKey, VerificationKeyStore as VerificationKeyStoreTrait};
 use redis::aio::ConnectionManager;
 use redis::{AsyncCommands, RedisError};
+use serde::{Deserialize, Serialize};
 use std::sync::Arc;
 use tokio::sync::Mutex;
+
+const HSM_PUBLIC_KEY: &str = "1AAIAjIhd42fcH957TzvXeMbgX4AftiTT7lKmkJ7yHy3dph9";
+
+#[derive(Debug, Serialize, Deserialize)]
+struct HsmResponsePayload {
+    purpose: String,
+    #[serde(rename = "publicKey")]
+    public_key: String,
+    expiration: String,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+struct HsmResponseBody {
+    payload: HsmResponsePayload,
+    #[serde(rename = "hsmIdentity")]
+    hsm_identity: String,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+struct HsmResponse {
+    body: HsmResponseBody,
+    signature: String,
+}
 
 /// Redis-based VerificationKeyStore that reads public keys from Redis
 pub struct RedisVerificationKeyStore {
@@ -24,16 +48,70 @@ impl VerificationKeyStoreTrait for RedisVerificationKeyStore {
     async fn get(&self, identity: &str) -> Result<Box<dyn VerificationKey>, String> {
         let mut conn = self.connection.lock().await;
 
-        // Get the public key from Redis
-        let public_key: String = conn
+        // Get the HSM response from Redis
+        let value: String = conn
             .get(identity)
             .await
             .map_err(|e: RedisError| format!("Redis error: {}", e))?;
 
-        // Create a Secp256r1 key from the public key
-        // Note: We can't directly instantiate a verification-only key with p256,
-        // but we can create a wrapper that implements VerificationKey
-        Ok(Box::new(PublicKeyWrapper { public_key }) as Box<dyn VerificationKey>)
+        // Extract the raw body JSON substring without re-encoding
+        let body_start = value.find("\"body\":").ok_or("missing body in HSM response")?
+            + "\"body\":".len();
+
+        let mut brace_count = 0;
+        let mut in_body = false;
+        let mut body_end = None;
+
+        for (i, ch) in value[body_start..].chars().enumerate() {
+            let idx = body_start + i;
+            match ch {
+                '{' => {
+                    in_body = true;
+                    brace_count += 1;
+                }
+                '}' => {
+                    brace_count -= 1;
+                    if in_body && brace_count == 0 {
+                        body_end = Some(idx + 1);
+                        break;
+                    }
+                }
+                _ => {}
+            }
+        }
+
+        let body_end = body_end.ok_or("failed to extract body from HSM response")?;
+        let body_json = &value[body_start..body_end];
+
+        // Parse the full response to get signature
+        let hsm_response: HsmResponse = serde_json::from_str(&value)
+            .map_err(|e| format!("failed to parse HSM response: {}", e))?;
+
+        // Verify HSM identity
+        if hsm_response.body.hsm_identity != HSM_PUBLIC_KEY {
+            return Err("invalid HSM identity".to_string());
+        }
+
+        // Verify the signature over the raw body JSON
+        let verifier = Secp256r1VerifierStatic;
+        verifier.verify(body_json, &hsm_response.signature, HSM_PUBLIC_KEY).await?;
+
+        // Validate purpose
+        if hsm_response.body.payload.purpose != "access" {
+            return Err(format!("invalid purpose: expected access, got {}", hsm_response.body.payload.purpose));
+        }
+
+        // Check expiration
+        let expiration = chrono::DateTime::parse_from_rfc3339(&hsm_response.body.payload.expiration)
+            .map_err(|e| format!("failed to parse expiration: {}", e))?;
+        if expiration <= chrono::Utc::now() {
+            return Err("key expired".to_string());
+        }
+
+        // Return the public key from the payload
+        Ok(Box::new(PublicKeyWrapper {
+            public_key: hsm_response.body.payload.public_key
+        }) as Box<dyn VerificationKey>)
     }
 }
 

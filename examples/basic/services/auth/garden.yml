@@ -25,6 +25,7 @@ dependencies:
   - deploy.postgres
   - deploy.redis
   - deploy.restart-controller
+  - deploy.hsm
 
 spec:
   manifestTemplates:

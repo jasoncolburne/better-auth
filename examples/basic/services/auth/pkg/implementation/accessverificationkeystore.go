@@ -2,15 +2,37 @@ package implementation
 
 import (
 	"context"
+	"encoding/json"
+	"fmt"
 	"os"
 	"strconv"
+	"strings"
+	"time"
 
+	"github.com/jasoncolburne/better-auth-go/examples/crypto"
+	"github.com/jasoncolburne/better-auth-go/examples/encoding"
 	"github.com/jasoncolburne/better-auth-go/pkg/cryptointerfaces"
+	"github.com/jasoncolburne/better-auth-go/pkg/encodinginterfaces"
 	"github.com/redis/go-redis/v9"
 )
 
+const HSM_PUBLIC_KEY = "1AAIAjIhd42fcH957TzvXeMbgX4AftiTT7lKmkJ7yHy3dph9"
+
+type KeySigningBody struct {
+	Payload     KeySigningPayload `json:"payload"`
+	HsmIdentity string            `json:"hsmIdentity"`
+}
+
+type KeySigningPayload struct {
+	Purpose    string `json:"purpose"`
+	PublicKey  string `json:"publicKey"`
+	Expiration string `json:"expiration"`
+}
+
 type AccessVerificationKeyStore struct {
-	client *redis.Client
+	client      *redis.Client
+	verifier    cryptointerfaces.Verifier
+	timestamper encodinginterfaces.Timestamper
 }
 
 func NewAccessVerificationKeyStore() (*AccessVerificationKeyStore, error) {
@@ -31,18 +53,62 @@ func NewAccessVerificationKeyStore() (*AccessVerificationKeyStore, error) {
 		DB:   redisDbAccessKeys,
 	})
 
+	verifier := crypto.NewSecp256r1Verifier()
+	timestamper := encoding.NewRfc3339Nano()
+
 	return &AccessVerificationKeyStore{
-		client: accessClient,
+		client:      accessClient,
+		verifier:    verifier,
+		timestamper: timestamper,
 	}, nil
 }
 
 func (s AccessVerificationKeyStore) Get(ctx context.Context, identity string) (cryptointerfaces.VerificationKey, error) {
-	verificationKeyString, err := s.client.Get(ctx, identity).Result()
+	verificationAuthorization, err := s.client.Get(ctx, identity).Result()
 	if err != nil {
 		return nil, err
 	}
 
-	verificationKey := NewVerificationKey(verificationKeyString)
+	responseStruct := struct {
+		Body      KeySigningBody `json:"body"`
+		Signature string         `json:"signature"`
+	}{}
+
+	if err := json.Unmarshal([]byte(verificationAuthorization), &responseStruct); err != nil {
+		return nil, err
+	}
+
+	verificationStruct := struct {
+		Body      json.RawMessage `json:"body"`
+		Signature string          `json:"signature"`
+	}{}
+
+	if err := json.Unmarshal([]byte(verificationAuthorization), &verificationStruct); err != nil {
+		return nil, err
+	}
+
+	if err := s.verifier.Verify(verificationStruct.Signature, HSM_PUBLIC_KEY, verificationStruct.Body); err != nil {
+		return nil, err
+	}
+
+	if !strings.EqualFold(responseStruct.Body.HsmIdentity, HSM_PUBLIC_KEY) {
+		return nil, fmt.Errorf("unknown hsm key")
+	}
+
+	if !strings.EqualFold(responseStruct.Body.Payload.Purpose, "access") {
+		return nil, fmt.Errorf("incorrect purpose")
+	}
+
+	expiration, err := s.timestamper.Parse(responseStruct.Body.Payload.Expiration)
+	if err != nil {
+		return nil, fmt.Errorf("invalid timestamp")
+	}
+
+	if time.Now().After(expiration) {
+		return nil, fmt.Errorf("expired key")
+	}
+
+	verificationKey := NewVerificationKey(responseStruct.Body.Payload.PublicKey)
 
 	return verificationKey, nil
 }

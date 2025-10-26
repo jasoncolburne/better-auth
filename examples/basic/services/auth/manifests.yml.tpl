@@ -39,6 +39,10 @@ spec:
               value: "${variables.postgresUser}"
             - name: POSTGRES_PASSWORD
               value: "${variables.postgresPassword}"
+            - name: HSM_HOST
+              value: "${variables.hsmHost}"
+            - name: HSM_PORT
+              value: "${variables.hsmPort}"
           livenessProbe:
             httpGet:
               path: /health
