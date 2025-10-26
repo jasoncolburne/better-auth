@@ -490,14 +490,33 @@ garden run export-hsm-public-key --log-level=verbose
 # (hardcoded in iOS app and integration tests)
 ```
 
-### Restarting All Services
+### Restarting Services
 
 ```bash
 # Delete and redeploy everything
 garden delete deploy --log-level=verbose
 garden deploy --log-level=verbose
 
-# Or restart specific service
+# Restart stateless services (app-ts, app-rb, app-rs, app-py, auth, hsm, keys)
+kubectl rollout restart deployment/app-ts -n better-auth-basic-example-dev
+
+# Restart services with PVCs (postgres, redis) - DELETE POD INSTEAD
+# Rolling restart causes issues with ReadWriteOnce PVCs
+kubectl delete pod -n better-auth-basic-example-dev -l app=postgres
+kubectl delete pod -n better-auth-basic-example-dev -l app=redis
+```
+
+**Important**: For Postgres and Redis (which use PersistentVolumeClaims), **delete the pod** rather than using `rollout restart`. The PVC can only be mounted by one pod at a time (ReadWriteOnce), so rolling restart will cause the new pod to wait for the old pod to release the volume.
+
+**Simulating crashes**:
+```bash
+# Simulate postgres crash
+kubectl delete pod -n better-auth-basic-example-dev -l app=postgres
+
+# Simulate redis crash
+kubectl delete pod -n better-auth-basic-example-dev -l app=redis
+
+# Simulate stateless service crash (these handle rolling restart fine)
 kubectl rollout restart deployment/app-ts -n better-auth-basic-example-dev
 ```
 
