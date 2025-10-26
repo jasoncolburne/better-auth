@@ -415,6 +415,30 @@ Garden injects the built Docker image reference using template variables:
 image: ${actions.build.auth.outputs.deployment-image-id}
 ```
 
+### Rolling Restart CronJobs
+
+Each service (auth, app-ts, app-rb, app-rs, app-py) includes a CronJob that performs rolling restarts every 12 hours. This ensures:
+- Fresh keys are rotated regularly (keys expire after 12 hours by default)
+- Memory leaks or resource drift don't accumulate over time
+- Services pick up any configuration changes from ConfigMaps/Secrets
+
+**CronJob Configuration**:
+```yaml
+spec:
+  schedule: "0 */12 * * *"           # Every 12 hours (midnight and noon UTC)
+  successfulJobsHistoryLimit: 0     # Clean up successful jobs immediately
+  failedJobsHistoryLimit: 2         # Keep last 2 failed jobs for debugging
+  concurrencyPolicy: Forbid          # Prevent overlapping restarts
+```
+
+The history limits ensure that `kubectl get jobs` output remains clean - you'll only see failed jobs (if any) rather than having successful job completions pile up. This configuration prioritizes operational clarity while retaining failed job history for troubleshooting.
+
+**Why Rolling Restarts?**:
+- Services generate cryptographic keys with 12-hour expiration
+- Rolling restarts ensure services regenerate keys before expiration
+- Zero-downtime: Kubernetes performs gradual pod replacement
+- The restart controller uses a ServiceAccount with RBAC permissions to execute `kubectl rollout restart`
+
 ### Service Communication
 
 Services synchronize keys in redis, they don't communicate for auth. This is by design.
