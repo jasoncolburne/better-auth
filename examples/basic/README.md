@@ -6,13 +6,13 @@ This example demonstrates a production-like Better Auth deployment using Garden.
 
 This example consists of multiple services:
 
-1. **Auth Server (Go)**: Provides authentication services using the `better-auth-go` library
+1. **Auth Service (Go)**: Provides authentication services using the `better-auth-go` library
    - Handles account creation, recovery, deletion
    - Device linking/unlinking and rotation
    - Session management (request, create, refresh)
    - Issues and validates access tokens
 
-2. **Application Servers** (4 language implementations): Example applications that use auth tokens
+2. **Application Services** (4 language implementations): Example applications that use auth tokens
    - **app-ts (TypeScript)**: Uses the `better-auth-ts` access verifier
    - **app-rb (Ruby)**: Uses the `better-auth-rb` access verifier
    - **app-rs (Rust)**: Uses the `better-auth-rs` access verifier
@@ -21,20 +21,15 @@ This example consists of multiple services:
    - Each provides the same protected `/foo/bar` endpoint
    - Each returns a unique `serverName` field to identify which implementation handled the request
 
-3. **Keys Server (Ruby)**: Example key service that provides a set of valid response keys from redis
-   - Exposes response public keys for client side verification
-   - We should probably sign these keys and bake a rotating verification key into the client. Then,
-     an attacker must compromise both the signing key and the data source of public keys to mount a
-     successful attack. This set of signing keys should probably live in an HSM. One could put two
-     hashes in the client, for the current and next public keys. The client could request the
-     current public key from the server and ensure it matches one of the hashes, and use it to
-     verify the signature on the response keys. After rotating the backend key, one would simply
-     need to roll out new clients with the previous next hash moved to the new current, while the
-     new next hash is computed as a hash of a new public key to be used in the future.
+3. **Keys Service (Ruby)**: Example key service that provides a set of authorized keys from redis
+   - Exposes response public keys for client side verification, signed by the HSM service
+   - The HSM key should be easier to rotate
 
 4. **Redis**: Backing store for current public keys
    - Access keys are in DB 0
    - Response keys are in DB 1
+
+5. **HSM**: A fake hsm loaded with a fixed key.
 
 ## Prerequisites
 
