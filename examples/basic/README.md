@@ -33,7 +33,7 @@ This example consists of multiple services:
      would allow rotation
    - HSM public key (`1AAIAjIhd42fcH957TzvXeMbgX4AftiTT7lKmkJ7yHy3dph9`) is hardcoded in clients
 
-5. **Redis**: Backing store for HSM-signed keys
+5. **Redis**: Backing store for HSM-signed keys and session key hashes
    - Uses persistent storage (64Mi PersistentVolumeClaim with AOF)
    - Data survives pod restarts and redeployments
    - DB 0: HSM-signed access keys (from auth service, verified by app services)
