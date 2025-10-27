@@ -64,7 +64,10 @@ func NewAccessVerificationKeyStore() (*AccessVerificationKeyStore, error) {
 }
 
 func (s AccessVerificationKeyStore) Get(ctx context.Context, identity string) (cryptointerfaces.VerificationKey, error) {
-	verificationAuthorization, err := s.client.Get(ctx, identity).Result()
+	// Retry Redis Get operation to handle connection drops gracefully
+	verificationAuthorization, err := retryRedisOperation(ctx, func() (string, error) {
+		return s.client.Get(ctx, identity).Result()
+	})
 	if err != nil {
 		return nil, err
 	}

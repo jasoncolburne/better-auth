@@ -44,7 +44,10 @@ func (s AccessKeyHashStore) Lifetime() time.Duration {
 }
 
 func (s AccessKeyHashStore) Reserve(ctx context.Context, keyHash string) error {
-	exists, err := s.client.Exists(ctx, keyHash).Result()
+	// Retry Redis Exists operation to handle connection drops gracefully
+	exists, err := retryRedisOperation(ctx, func() (int64, error) {
+		return s.client.Exists(ctx, keyHash).Result()
+	})
 	if err != nil {
 		return err
 	}
@@ -53,7 +56,11 @@ func (s AccessKeyHashStore) Reserve(ctx context.Context, keyHash string) error {
 		return fmt.Errorf("already exists")
 	}
 
-	if err := s.client.Set(ctx, keyHash, true, s.lifetime).Err(); err != nil {
+	// Retry Redis Set operation to handle connection drops gracefully
+	_, err = retryRedisOperation(ctx, func() (struct{}, error) {
+		return struct{}{}, s.client.Set(ctx, keyHash, true, s.lifetime).Err()
+	})
+	if err != nil {
 		return err
 	}
 
