@@ -3,7 +3,10 @@ package implementation
 import (
 	"context"
 	"fmt"
+	"os"
+	"strconv"
 	"strings"
+	"time"
 
 	"github.com/jasoncolburne/better-auth-go/examples/crypto"
 	"github.com/jasoncolburne/better-auth-go/pkg/cryptointerfaces"
@@ -13,17 +16,21 @@ import (
 	"github.com/jasoncolburne/verifiable-storage-go/pkg/data/expressions"
 	"github.com/jasoncolburne/verifiable-storage-go/pkg/data/orderings"
 	"github.com/jasoncolburne/verifiable-storage-go/pkg/repository"
+	"github.com/redis/go-redis/v9"
 )
 
 type AuthenticationKeyStore struct {
-	store  data.Store
-	hasher cryptointerfaces.Hasher
+	store                data.Store
+	revokedDevicesClient *redis.Client
+	hasher               cryptointerfaces.Hasher
+
+	revocationStoreLifetime time.Duration
 
 	identityRepository           repository.Repository[*models.Identity]
 	authenticationKeysRepository repository.Repository[*models.AuthenticationKeys]
 }
 
-func NewAuthenticationKeyStore(store data.Store) (*AuthenticationKeyStore, error) {
+func NewAuthenticationKeyStore(store data.Store, revocationStoreLifetime time.Duration) (*AuthenticationKeyStore, error) {
 	hasher := crypto.NewBlake3()
 
 	identityRepository := repository.NewVerifiableRepository[*models.Identity](
@@ -40,9 +47,27 @@ func NewAuthenticationKeyStore(store data.Store) (*AuthenticationKeyStore, error
 		nil, // nil for determinism
 	)
 
+	redisHost := os.Getenv("REDIS_HOST")
+	if redisHost == "" {
+		redisHost = "redis:6379"
+	}
+
+	redisDbRevokedDevicesString := os.Getenv("REDIS_DB_REVOKED_DEVICES")
+	redisDbRevokedDevices, err := strconv.Atoi(redisDbRevokedDevicesString)
+	if err != nil {
+		return nil, err
+	}
+
+	revokedDevicesClient := redis.NewClient(&redis.Options{
+		Addr: redisHost,
+		DB:   redisDbRevokedDevices,
+	})
+
 	return &AuthenticationKeyStore{
 		store:                        store,
 		hasher:                       hasher,
+		revokedDevicesClient:         revokedDevicesClient,
+		revocationStoreLifetime:      revocationStoreLifetime,
 		identityRepository:           identityRepository,
 		authenticationKeysRepository: authenticationKeysRepository,
 	}, nil
@@ -207,6 +232,14 @@ func (s AuthenticationKeyStore) RevokeDevice(ctx context.Context, identity, devi
 		return err
 	}
 
+	// Retry Redis Set operation to handle connection drops gracefully
+	_, err := retryRedisOperation(ctx, func() (struct{}, error) {
+		return struct{}{}, s.revokedDevicesClient.Set(ctx, device, true, s.revocationStoreLifetime).Err()
+	})
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
 
@@ -228,6 +261,14 @@ func (s AuthenticationKeyStore) RevokeDevices(ctx context.Context, identity stri
 		record.Revoked = true
 
 		if err := s.authenticationKeysRepository.CreateVersion(ctx, record); err != nil {
+			return err
+		}
+
+		// Retry Redis Set operation to handle connection drops gracefully
+		_, err := retryRedisOperation(ctx, func() (struct{}, error) {
+			return struct{}{}, s.revokedDevicesClient.Set(ctx, record.Device, true, s.revocationStoreLifetime).Err()
+		})
+		if err != nil {
 			return err
 		}
 	}
@@ -294,4 +335,8 @@ func (s AuthenticationKeyStore) EnsureActive(ctx context.Context, identity, devi
 	}
 
 	return nil
+}
+
+func (s AuthenticationKeyStore) CloseRevokedDevicesClient() error {
+	return s.revokedDevicesClient.Close()
 }

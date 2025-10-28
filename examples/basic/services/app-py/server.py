@@ -188,6 +188,7 @@ class ApplicationServer:
         self.verifier: Optional[AccessVerifier] = None
         self.response_key: Optional[ISigningKey] = None
         self.access_client: Optional[aioredis.Redis] = None
+        self.revoked_devices_client: Optional[aioredis.Redis] = None
 
     async def initialize(self) -> None:
         """Initialize the application server."""
@@ -196,6 +197,7 @@ class ApplicationServer:
 
         redis_db_access_keys = int(os.environ.get('REDIS_DB_ACCESS_KEYS', '0'))
         redis_db_response_keys = int(os.environ.get('REDIS_DB_RESPONSE_KEYS', '1'))
+        redis_db_revoked_devices = int(os.environ.get('REDIS_DB_REVOKED_DEVICES', '3'))
 
         # Parse Redis host and port
         if ':' in redis_host:
@@ -211,6 +213,14 @@ class ApplicationServer:
             port=port,
             db=redis_db_access_keys,
             decode_responses=False  # We'll handle decoding ourselves
+        )
+
+        # Connect to Redis DB 3 to check revoked devices
+        self.revoked_devices_client = aioredis.Redis(
+            host=host,
+            port=port,
+            db=redis_db_revoked_devices,
+            decode_responses=False
         )
 
         # Connect to Redis DB 1 to write/read response keys
@@ -300,6 +310,8 @@ class ApplicationServer:
         """Clean up resources."""
         if self.access_client:
             await self.access_client.close()
+        if self.revoked_devices_client:
+            await self.revoked_devices_client.close()
 
 
 # Global server instance
@@ -356,6 +368,11 @@ async def _handle_foo_bar_async(message: str) -> str:
     # Verify access request
     request_payload, token, nonce = await server_instance.verifier.verify(message)
 
+    # Check if device is revoked
+    is_revoked = await server_instance.revoked_devices_client.exists(token.device)
+    if is_revoked:
+        raise ValueError('device revoked')
+
     # Check permissions
     permissions_by_role = token.attributes.get('permissionsByRole', {})
     user_permissions = permissions_by_role.get('user', [])
@@ -393,6 +410,8 @@ def foo_bar():
     except ValueError as e:
         if str(e) == 'unauthorized':
             return {'error': 'unauthorized'}, 401
+        if str(e) == 'device revoked':
+            return {'error': 'device revoked'}, 403
         raise
     except Exception as e:
         logger.error(f"Error handling request: {e}", exc_info=True)
