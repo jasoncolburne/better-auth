@@ -27,6 +27,7 @@ interface AppState {
   authenticated: boolean
   responseKey?: ISigningKey
   accessClient?: Redis
+  revokedDevicesClient?: Redis
   server?: http.Server
 }
 
@@ -43,6 +44,7 @@ class ApplicationServer {
 
   async quitAccessClient() {
     await this.state.accessClient?.quit()
+    await this.state.revokedDevicesClient?.quit()
   }
 
   terminate(callback: () => void) {
@@ -55,9 +57,13 @@ class ApplicationServer {
 
     const redisDbAccessKeys = parseInt(process.env.REDIS_DB_ACCESS_KEYS || '0')
     const redisDbResponseKeys = parseInt(process.env.REDIS_DB_RESPONSE_KEYS || '1')
+    const redisDbRevokedDevices = parseInt(process.env.REDIS_DB_REVOKED_DEVICES || '3')
 
     // Connect to Redis DB 0 to read access keys
     const accessClient = new Redis(redisHost, { db: redisDbAccessKeys })
+
+    // Connect to Redis DB 3 to check revoked devices
+    const revokedDevicesClient = new Redis(redisHost, { db: redisDbRevokedDevices })
 
     // Connect to Redis DB 1 to write/read response keys
     const responseClient = new Redis(redisHost, { db: redisDbResponseKeys })
@@ -129,6 +135,7 @@ class ApplicationServer {
     this.state.responseKey = appResponseKey
     await responseClient.quit()
     this.state.accessClient = accessClient
+    this.state.revokedDevicesClient = revokedDevicesClient
 
     Logger.log('Application server initialized')
   }
@@ -167,11 +174,19 @@ class ApplicationServer {
       TokenAttributes
     >(message)
 
+    // Check if device is revoked
+    const isRevoked = await this.state.revokedDevicesClient!.exists(token.device)
+    if (isRevoked) {
+      res.writeHead(403, { 'Content-Type': 'application/json' })
+      res.end('{"error":"device revoked"}')
+      return
+    }
+
     const userPermissions = token.attributes.permissionsByRole['user']
     if (typeof userPermissions === 'undefined' || !userPermissions.includes('read')) {
       res.writeHead(401, { 'Content-Type': 'application/json' })
       res.end('{"error":"unauthorized"}')
-      return      
+      return
     }
 
     const serverIdentity = await this.state.responseKey!.identity()

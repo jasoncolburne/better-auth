@@ -27,6 +27,8 @@ spec:
               value: "${variables.redisDbAccessKeys}"
             - name: REDIS_DB_RESPONSE_KEYS
               value: "${variables.redisDbResponseKeys}"
+            - name: REDIS_DB_REVOKED_DEVICES
+              value: "${variables.redisDbRevokedDevices}"
             - name: APP_ENV
               value: "dev"
             - name: HSM_HOST

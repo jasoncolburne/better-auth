@@ -29,6 +29,8 @@ spec:
               value: "${variables.redisDbResponseKeys}"
             - name: REDIS_DB_ACCESS_KEYHASH
               value: "${variables.redisDbAccessKeyHash}"
+            - name: REDIS_DB_REVOKED_DEVICES
+              value: "${variables.redisDbRevokedDevices}"
             - name: POSTGRES_HOST
               value: "postgres"
             - name: POSTGRES_PORT

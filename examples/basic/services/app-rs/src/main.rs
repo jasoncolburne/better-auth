@@ -55,6 +55,7 @@ struct HealthResponse {
 struct AppState {
     av: Arc<AccessVerifier>,
     response_key: Arc<Secp256r1>,
+    revoked_devices_client: redis::aio::ConnectionManager,
 }
 
 async fn health() -> (StatusCode, axum::Json<HealthResponse>) {
@@ -83,6 +84,18 @@ async fn handle_foo_bar(state: &AppState, message: String) -> Result<String, Str
     // Verify the access request
     let (request, token, nonce): (RequestPayload, AccessToken<TokenAttributes>, String) =
         state.av.verify(&message).await?;
+
+    // Check if device is revoked
+    use redis::AsyncCommands;
+    let mut conn = state.revoked_devices_client.clone();
+    let is_revoked: bool = conn
+        .exists(&token.device)
+        .await
+        .map_err(|e| format!("Failed to check revoked devices: {}", e))?;
+
+    if is_revoked {
+        return Err("device revoked".to_string());
+    }
 
     // Check permissions
     if let Some(user_permissions) = token.attributes.permissions_by_role.get("user") {
@@ -128,22 +141,33 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .unwrap_or_else(|_| "1".to_string())
         .parse()
         .unwrap_or(1);
+    let redis_db_revoked_devices: u32 = std::env::var("REDIS_DB_REVOKED_DEVICES")
+        .unwrap_or_else(|_| "3".to_string())
+        .parse()
+        .unwrap_or(3);
 
     println!("Connecting to Redis at {}", redis_host);
     println!("Access keys DB: {}", redis_db_access_keys);
     println!("Response keys DB: {}", redis_db_response_keys);
+    println!("Revoked devices DB: {}", redis_db_revoked_devices);
 
     // Create Redis clients
     let access_redis_url = format!("redis://{}/{}", redis_host, redis_db_access_keys);
     let response_redis_url = format!("redis://{}/{}", redis_host, redis_db_response_keys);
+    let revoked_devices_redis_url = format!("redis://{}/{}", redis_host, redis_db_revoked_devices);
 
     let access_client = redis::Client::open(access_redis_url.as_str())?;
     let response_client = redis::Client::open(response_redis_url.as_str())?;
+    let revoked_devices_client = redis::Client::open(revoked_devices_redis_url.as_str())?;
 
     let access_conn = access_client
         .get_connection_manager()
         .await
         .map_err(|e| format!("Failed to connect to Redis (access): {}", e))?;
+    let revoked_devices_conn = revoked_devices_client
+        .get_connection_manager()
+        .await
+        .map_err(|e| format!("Failed to connect to Redis (revoked devices): {}", e))?;
     let mut response_conn = response_client
         .get_connection()
         .map_err(|e| format!("Failed to connect to Redis (response): {}", e))?;
@@ -262,6 +286,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let state = AppState {
         av: Arc::new(av),
         response_key: Arc::new(response_key),
+        revoked_devices_client: revoked_devices_conn,
     };
 
     println!("Application server initialized");

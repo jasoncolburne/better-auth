@@ -59,11 +59,15 @@ class ApplicationServer < Sinatra::Base
     host, port = redis_host.split(':')
     redis_db_access_keys = (ENV['REDIS_DB_ACCESS_KEYS'] || '0').to_i
     redis_db_response_keys = (ENV['REDIS_DB_RESPONSE_KEYS'] || '1').to_i
+    redis_db_revoked_devices = (ENV['REDIS_DB_REVOKED_DEVICES'] || '3').to_i
 
     puts "#{Time.now}: Connecting to Redis at #{redis_host}"
 
     # Connect to Redis DB 0 to read access keys
     access_client = Redis.new(host: host, port: port.to_i, db: redis_db_access_keys)
+
+    # Connect to Redis DB 3 to check revoked devices
+    revoked_devices_client = Redis.new(host: host, port: port.to_i, db: redis_db_revoked_devices)
 
     # Connect to Redis DB 1 to write/read response keys
     response_client = Redis.new(host: host, port: port.to_i, db: redis_db_response_keys)
@@ -143,6 +147,7 @@ class ApplicationServer < Sinatra::Base
     end
 
     set :access_client, access_client
+    set :revoked_devices_client, revoked_devices_client
     puts "#{Time.now}: Application server initialized"
   end
 
@@ -175,6 +180,12 @@ class ApplicationServer < Sinatra::Base
 
       # Verify access request
       request_payload, token, nonce = settings.verifier.verify(message, TokenAttributes.new)
+
+      # Check if device is revoked
+      is_revoked = settings.revoked_devices_client.exists?(token.device)
+      if is_revoked
+        halt 403, { error: 'device revoked' }.to_json
+      end
 
       # Check permissions
       user_permissions = token.attributes[:permissionsByRole][:user]

@@ -29,6 +29,7 @@ variables:
   redisDbAccessKeys: 0
   redisDbResponseKeys: 1
   redisDbAccessKeyHash: 2
+  redisDbRevokedDevices: 3
   postgresDatabase: better_auth
   postgresUser: postgres
   postgresPassword: postgres

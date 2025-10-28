@@ -34,12 +34,17 @@ type Server struct {
 	serverAccessKey            cryptointerfaces.SigningKey
 	serverResponseKey          cryptointerfaces.SigningKey
 	accessVerificationKeyStore *implementation.AccessVerificationKeyStore
+	authenticationKeyStore     *implementation.AuthenticationKeyStore
 	server                     http.Server
 }
 
-func (s *Server) CloseAccessClient() {
+func (s *Server) CloseClients() {
 	if s.accessVerificationKeyStore != nil {
 		_ = s.accessVerificationKeyStore.CloseClient()
+	}
+
+	if s.authenticationKeyStore != nil {
+		_ = s.authenticationKeyStore.CloseRevokedDevicesClient()
 	}
 }
 
@@ -89,7 +94,7 @@ func NewServer() (*Server, error) {
 		return nil, err
 	}
 
-	authenticationKeyStore, err := implementation.NewAuthenticationKeyStore(store)
+	authenticationKeyStore, err := implementation.NewAuthenticationKeyStore(store, accessLifetime)
 	if err != nil {
 		return nil, err
 	}
@@ -151,6 +156,7 @@ func NewServer() (*Server, error) {
 		serverAccessKey:            serverAccessKey,
 		serverResponseKey:          serverResponseKey,
 		accessVerificationKeyStore: accessVerificationKeyStore,
+		authenticationKeyStore:     authenticationKeyStore,
 	}, nil
 }
 
@@ -427,6 +433,7 @@ func main() {
 	if err != nil {
 		log.Fatalf("Failed to create server: %v", err)
 	}
+	defer server.CloseClients()
 
 	// Register keys in Redis
 	if err := registerKeysInRedis(server.serverAccessKey, server.serverResponseKey); err != nil {
