@@ -527,9 +527,42 @@ This triggers HSM key rotation and displays the new public key. Services will au
 **When to use:**
 - Testing key rotation logic
 - Manual key rotation as part of planned rotation
-- Manual key rotation as part of security response (should be coupled with other procedures)
 
 **Note**: This rotates the signing key within the existing HSM key chain. The HSM identity (prefix) stays the same. All rotation is currently manual.
+
+### Emergency Key Rotation (Red Button)
+
+For emergency situations requiring immediate key rotation and service restart:
+
+```bash
+./scripts/red-button.sh
+```
+
+This script performs a complete emergency rotation sequence:
+1. Rotates the HSM signing key
+2. Flushes Redis DB 0 (access keys) and DB 1 (response keys)
+3. Restarts auth and all app services to regenerate and re-sign keys
+
+**When to use:**
+- Security incident response (suspected key compromise)
+- Testing disaster recovery procedures
+- Simulating emergency key rotation scenarios
+
+**What happens:**
+- All existing tokens become invalid immediately
+- Services restart and generate new keys signed with the rotated HSM key
+- Clients will need to re-authenticate
+- Takes ~30 seconds for services to become ready
+
+**What's preserved:**
+- Redis DB 2 (access key hashes for refresh prevention)
+- Redis DB 3 (revoked devices cache)
+- Redis DB 4 (HSM keys - includes the newly rotated key)
+- HSM identity (prefix) - remains the same
+- User accounts and devices in Postgres - unchanged
+
+**Known limitation:**
+- The current iOS client implementation caches keys, so clients may continue using old keys until the cache is cleared or expires. For a complete emergency rotation, client key caching would need to be addressed (keys should be re-fetched on authentication failure or have shorter TTLs). Alternatively, another key could be introduced that, if used, informs clients to disregard previous generations of keys.
 
 ### Regenerating HSM Keys (Nuclear Reset)
 
