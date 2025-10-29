@@ -514,6 +514,23 @@ garden delete deploy && garden deploy hsm keys && ./scripts/export-hsm-identity.
 
 **Important**: Like Redis, the Postgres PVC survives `garden delete deploy`. If you're troubleshooting and want truly fresh state, you must manually delete the PVC or use nuclear reset.
 
+### Rotating HSM Keys Manually
+
+To manually rotate the HSM signing key without restarting anything:
+
+```bash
+./scripts/rotate-hsm-key.sh
+```
+
+This triggers HSM key rotation and displays the new public key. Services will automatically pick up the new key on their next HSM interaction. The HSM identity (prefix) remains unchanged, so you don't need to re-export `hsm.id` or rebuild services.
+
+**When to use:**
+- Testing key rotation logic
+- Manual key rotation as part of planned rotation
+- Manual key rotation as part of security response (should be coupled with other procedures)
+
+**Note**: This rotates the signing key within the existing HSM key chain. The HSM identity (prefix) stays the same. All rotation is currently manual.
+
 ### Regenerating HSM Keys (Nuclear Reset)
 
 The cleanest way to regenerate HSM keys and reset everything is the nuclear reset:
@@ -526,7 +543,7 @@ garden delete deploy && garden deploy hsm keys && ./scripts/export-hsm-identity.
 This ensures:
 - All deployments are removed cleanly
 - PVCs are deleted automatically by Garden
-- Fresh HSM keys are generated
+- Fresh HSM keys are generated with a new identity (new key chain)
 - New HSM identity is exported to `test-fixtures/hsm.id`
 - All services are redeployed with the new identity
 
