@@ -562,7 +562,7 @@ This script performs a complete emergency rotation sequence:
 - User accounts and devices in Postgres - unchanged
 
 **Known limitation:**
-- The current iOS client implementation caches keys, so clients may continue using old keys until the cache is cleared or expires. For a complete emergency rotation, client key caching would need to be addressed (keys should be re-fetched on authentication failure or have shorter TTLs). Alternatively, another key could be introduced that, if used, informs clients to disregard previous generations of keys.
+- The current iOS client implementation caches keys, so clients may continue using old keys until the app is restarted. A better implementation would be to clear the cache any time authentication fails, since that happens during this procedure.
 
 ### Regenerating HSM Keys (Nuclear Reset)
 
