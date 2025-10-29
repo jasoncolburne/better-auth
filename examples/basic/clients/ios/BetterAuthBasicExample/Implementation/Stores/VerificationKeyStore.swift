@@ -5,7 +5,7 @@ public enum VerificationError: Error {
     case expiredKey
 }
 
-let twelveHours: TimeInterval = 12 * 3600
+let twelveHoursFifteenMinutes: TimeInterval = 12 * 3600 + 15 * 60
 
 func extractJSONValues(from jsonString: String, forKey key: String) throws -> [String] {
     var values: [String] = []
@@ -163,7 +163,7 @@ class KeyVerifier {
             for entry in prefixedEntries.reversed() {
                 let payload = entry.payload
                 self.cache[payload.id] = entry
-                if payload.createdAt + twelveHours < Date() {
+                if payload.createdAt + twelveHoursFifteenMinutes < Date() {
                     break
                 }
             }
