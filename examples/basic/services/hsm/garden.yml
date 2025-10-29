@@ -7,7 +7,6 @@ source:
 
 include:
   - examples/basic/services/hsm/**/*
-  - examples/basic/test-fixtures/hsm-authorization-key.pem
 
 spec:
   # Build the Docker image for the HSM service
@@ -22,42 +21,8 @@ type: kubernetes
 # Build dependencies
 dependencies:
   - build.hsm
+  - deploy.postgres
 
 spec:
   manifestTemplates:
     - manifests.yml.tpl
-
----
-
-kind: Run
-name: export-hsm-private-key
-type: exec
-dependencies:
-  - deploy.hsm
-
-spec:
-  command:
-    - /bin/sh
-    - -c
-    - |
-      kubectl exec -n ${environment.namespace} deployment/hsm -- /export-key.sh > ../../test-fixtures/hsm-authorization-key.pem
-      echo "Exported private key to test-fixtures/hsm-authorization-key.pem"
-
----
-
-kind: Run
-name: export-hsm-public-key
-type: exec
-dependencies:
-  - deploy.hsm
-
-spec:
-  command:
-    - /bin/sh
-    - -c
-    - |
-      kubectl exec -n ${environment.namespace} deployment/hsm -- \
-        curl -s http://localhost:11111/public-key | \
-        jq -r '.publicKey' > ../../test-fixtures/hsm-authorization-key.cesr
-      echo "Exported public key to test-fixtures/hsm-authorization-key.cesr"
-      cat ../../test-fixtures/hsm-authorization-key.cesr

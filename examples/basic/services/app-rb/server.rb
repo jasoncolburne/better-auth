@@ -60,6 +60,7 @@ class ApplicationServer < Sinatra::Base
     redis_db_access_keys = (ENV['REDIS_DB_ACCESS_KEYS'] || '0').to_i
     redis_db_response_keys = (ENV['REDIS_DB_RESPONSE_KEYS'] || '1').to_i
     redis_db_revoked_devices = (ENV['REDIS_DB_REVOKED_DEVICES'] || '3').to_i
+    redis_db_hsm_keys = (ENV['REDIS_DB_HSM_KEYS'] || '4').to_i
 
     puts "#{Time.now}: Connecting to Redis at #{redis_host}"
 
@@ -75,7 +76,9 @@ class ApplicationServer < Sinatra::Base
     begin
       # Create verification key store
       verifier = Crypto::Secp256r1Verifier.new
-      verification_key_store = Storage::VerificationKeyStore.new(access_client)
+      verification_key_store = Storage::VerificationKeyStore.new(
+        access_client, redis_host, redis_db_hsm_keys
+      )
 
       # Create an in-memory nonce store with 30 second window (in seconds)
       access_nonce_store = Storage::InMemoryTimeLockStore.new(30)

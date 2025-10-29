@@ -40,7 +40,7 @@ type Server struct {
 
 func (s *Server) CloseClients() {
 	if s.accessVerificationKeyStore != nil {
-		_ = s.accessVerificationKeyStore.CloseClient()
+		_ = s.accessVerificationKeyStore.CloseClients()
 	}
 
 	if s.authenticationKeyStore != nil {
@@ -62,7 +62,7 @@ func NewServer() (*Server, error) {
 		return nil, err
 	}
 
-	accessVerificationKeyStore, err := implementation.NewAccessVerificationKeyStore()
+	accessVerificationKeyStore, err := implementation.NewAccessVerificationKeyStore(accessLifetime)
 	if err != nil {
 		return nil, err
 	}

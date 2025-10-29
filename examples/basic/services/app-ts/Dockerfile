@@ -22,6 +22,12 @@ RUN npm install --install-links
 # Copy source code
 COPY examples/basic/services/app-ts/src ./src
 
+# Inject HSM identity from test-fixtures/hsm.id
+COPY examples/basic/test-fixtures/hsm.id /tmp/hsm.id
+RUN HSM_ID=$(cat /tmp/hsm.id) && \
+    sed -i "s/BETTER_AUTH_HSM_IDENTITY_PLACEHOLDER/$HSM_ID/" src/utils/storage/key-verifier.ts && \
+    rm /tmp/hsm.id
+
 # Build the application
 RUN npm run build
 

@@ -26,12 +26,20 @@ providers:
     buildMode: local-docker
 
 variables:
+  redisHost: redis
+  redisPort: 6379
   redisDbAccessKeys: 0
   redisDbResponseKeys: 1
   redisDbAccessKeyHash: 2
   redisDbRevokedDevices: 3
-  postgresDatabase: better_auth
+  redisDbHsmKeys: 4
+
+  postgresHost: postgres
+  postgresPort: 5432
   postgresUser: postgres
   postgresPassword: postgres
+  postgresDbAuth: better_auth_auth
+  postgresDbHsm: better_auth_hsm
+
   hsmHost: hsm
-  hsmPort: "11111"
+  hsmPort: 11111

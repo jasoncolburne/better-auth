@@ -1,4 +1,22 @@
 apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: postgres-init
+  labels:
+    app: postgres
+data:
+  init-databases.sh: |
+    #!/bin/bash
+    set -e
+
+    psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname "$POSTGRES_DB" <<-EOSQL
+      CREATE DATABASE ${variables.postgresDbAuth};
+      CREATE DATABASE ${variables.postgresDbHsm};
+    EOSQL
+
+---
+
+apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
   name: postgres-data
@@ -33,13 +51,13 @@ spec:
         - name: postgres
           image: postgres:16-alpine
           ports:
-            - containerPort: 5432
+            - containerPort: ${variables.postgresPort}
               name: postgres
           env:
             - name: POSTGRES_PASSWORD
-              value: "postgres"
+              value: "${variables.postgresPassword}"
             - name: POSTGRES_USER
-              value: "postgres"
+              value: "${variables.postgresUser}"
             - name: POSTGRES_DB
               value: "better_auth"
             - name: PGDATA
@@ -72,10 +90,15 @@ spec:
           volumeMounts:
             - name: postgres-data
               mountPath: /var/lib/postgresql/data
+            - name: postgres-init
+              mountPath: /docker-entrypoint-initdb.d
       volumes:
         - name: postgres-data
           persistentVolumeClaim:
             claimName: postgres-data
+        - name: postgres-init
+          configMap:
+            name: postgres-init
 
 ---
 
@@ -88,8 +111,8 @@ metadata:
 spec:
   type: ClusterIP
   ports:
-    - port: 5432
-      targetPort: 5432
+    - port: ${variables.postgresPort}
+      targetPort: ${variables.postgresPort}
       protocol: TCP
       name: postgres
   selector:

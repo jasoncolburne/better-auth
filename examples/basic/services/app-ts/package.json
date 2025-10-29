@@ -10,6 +10,7 @@
     "start": "node dist/server.js"
   },
   "dependencies": {
+    "@noble/hashes": "^2.0.0",
     "better-auth-ts": "file:../dependencies/better-auth-ts",
     "ioredis": "^5.3.2",
     "pako": "^2.1.0"

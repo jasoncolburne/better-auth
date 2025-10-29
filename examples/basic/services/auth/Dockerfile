@@ -14,6 +14,12 @@ RUN go mod download
 # Copy source code
 COPY examples/basic/services/auth/ .
 
+# Inject HSM identity from test-fixtures/hsm.id
+COPY examples/basic/test-fixtures/hsm.id /tmp/hsm.id
+RUN HSM_ID=$(cat /tmp/hsm.id) && \
+    sed -i "s/BETTER_AUTH_HSM_IDENTITY_PLACEHOLDER/$HSM_ID/" pkg/implementation/accessverificationkeystore.go && \
+    rm /tmp/hsm.id
+
 # Build the application
 RUN CGO_ENABLED=0 GOOS=linux go build -o auth .
 

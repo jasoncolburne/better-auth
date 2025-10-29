@@ -55,9 +55,12 @@ class ApplicationServer {
     const redisHost = process.env.REDIS_HOST || 'redis:6379'
     Logger.log(`Connecting to Redis at ${redisHost}`)
 
+    const accessLifetimeInMinutes = 15
+
     const redisDbAccessKeys = parseInt(process.env.REDIS_DB_ACCESS_KEYS || '0')
     const redisDbResponseKeys = parseInt(process.env.REDIS_DB_RESPONSE_KEYS || '1')
     const redisDbRevokedDevices = parseInt(process.env.REDIS_DB_REVOKED_DEVICES || '3')
+    const redisDbHsmKeys = parseInt(process.env.REDIS_DB_HSM_KEYS || '4')
 
     // Connect to Redis DB 0 to read access keys
     const accessClient = new Redis(redisHost, { db: redisDbAccessKeys })
@@ -70,7 +73,12 @@ class ApplicationServer {
 
     // Create verification key store and add all access keys
     const verifier = new Secp256r1Verifier()
-    const verificationKeyStore = new VerificationKeyStore(accessClient)
+    const verificationKeyStore = new VerificationKeyStore(
+      accessClient,
+      redisHost,
+      redisDbHsmKeys,
+      accessLifetimeInMinutes
+    )
 
     // Create an in-memory nonce store with 30 second window
     const accessNonceStore = new ServerTimeLockStore(30000)

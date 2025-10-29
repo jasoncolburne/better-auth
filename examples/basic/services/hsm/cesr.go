@@ -6,6 +6,8 @@ import (
 	"encoding/base64"
 	"fmt"
 	"math/big"
+
+	"github.com/zeebo/blake3"
 )
 
 // CESR encoding utilities copied from better-auth-go
@@ -96,4 +98,16 @@ func ParseASN1Signature(asn1Sig []byte) (*big.Int, *big.Int, error) {
 	}
 
 	return sig.R, sig.S, nil
+}
+
+func CESRBlake3Sum(message string) string {
+	buffer := [33]byte{}
+	sum := blake3.Sum256([]byte(message))
+	copy(buffer[1:], sum[:])
+
+	base64Sum := base64.URLEncoding.EncodeToString(buffer[:])
+	runes := []rune(base64Sum)
+	runes[0] = 'E'
+
+	return string(runes)
 }

@@ -37,3 +37,5 @@ Pods/
 
 # Carthage
 Carthage/Build/
+BetterAuthBasicExample.xcconfig
+BetterAuthBasicExample/Generated.swift

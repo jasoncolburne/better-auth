@@ -287,31 +287,26 @@ kubectl exec -it -n better-auth-basic-example-dev deployment/keys -- sh
 kubectl exec -it -n better-auth-basic-example-dev deployment/hsm -- sh
 ```
 
-### Extracting HSM Keys
+### HSM Identity Setup
+
+After deploying HSM and keys services, export the HSM identity for use by auth and app services:
 
 ```bash
-# Export HSM public key (CESR format) to test-fixtures/hsm-authorization-key.cesr
-# Use this to hardcode the HSM verification key in clients
-garden run export-hsm-public-key
+# Deploy HSM and keys services first
+garden deploy hsm keys
 
-# Export HSM private key (PEM format) to test-fixtures/hsm-authorization-key.pem
-# This persists the HSM key across restarts - without it, HSM generates a new key on each restart
-garden run export-hsm-private-key
+# Export HSM identity to test-fixtures/hsm.id
+./scripts/export-hsm-identity.sh
 ```
 
-**Note**: To generate new HSM keys, delete the private key from `test-fixtures/` before deploying:
+The HSM identity is required by auth and app services to verify the chain of trust for keys published by the keys service. The exported identity is stored in `test-fixtures/hsm.id` (gitignored) and is injected into service code at build time.
 
-```bash
-# Delete existing private key
-rm test-fixtures/hsm-authorization-key.pem
+**When to re-export:**
+- After initial HSM deployment
+- Before building/deploying auth or app services if `test-fixtures/hsm.id` doesn't exist
+- After regenerating HSM keys (see nuclear reset below)
 
-# Redeploy HSM (will generate new key)
-garden deploy hsm
-
-# Extract the newly generated keys
-garden run export-hsm-private-key  # Persist for future restarts
-garden run export-hsm-public-key   # Update clients with new verification key
-```
+**Note:** The HSM identity (prefix) does not change during key rotation, so you only need to export it once per deployment environment unless you regenerate the HSM keys.
 
 ## Project Structure
 
@@ -540,16 +535,38 @@ garden util clean
 brew upgrade garden-cli  # macOS
 ```
 
-### Persistent data survives deployments
+### Nuclear Reset (Complete Fresh Start)
 
-Both Redis and Postgres now use persistent storage. If you need to start completely fresh:
+If you need to completely reset the environment including HSM identity, PVCs, and all state:
 
 ```bash
-# Delete deployment and both PVCs
+# Delete everything, redeploy HSM and keys, export new identity, then deploy all services
+garden delete deploy && garden deploy hsm keys && ./scripts/export-hsm-identity.sh && garden deploy
+```
+
+This will:
+1. Delete all deployments and clean up resources
+2. Automatically delete both Redis and Postgres PVCs (Garden handles this)
+3. Deploy HSM and keys services with fresh keys
+4. Export the new HSM identity to `test-fixtures/hsm.id`
+5. Deploy all remaining services with the new HSM identity
+
+**When to use nuclear reset:**
+- Starting completely fresh with new HSM keys
+- PVCs are corrupted or in a bad state
+- Need to test a clean deployment from scratch
+- Troubleshooting complex state issues across multiple services
+
+### Persistent data survives deployments
+
+Both Redis and Postgres use persistent storage. If you need to reset data but keep the same HSM identity:
+
+```bash
+# Delete deployment and both PVCs (but keep test-fixtures/hsm.id)
 garden delete deploy
 kubectl delete pvc redis-data postgres-data -n better-auth-basic-example-dev
 
-# Redeploy (creates new PVCs)
+# Redeploy (creates new PVCs, reuses existing HSM identity)
 garden deploy
 ```
 

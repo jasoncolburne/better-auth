@@ -1,30 +1,35 @@
 import { IVerificationKey, IVerificationKeyStore, IVerifier } from 'better-auth-ts'
 import { Redis } from 'ioredis'
 import { Secp256r1Verifier, VerificationKey } from '../crypto/secp256r1.js'
+import { KeyVerifier } from './key-verifier.js'
+import { getSubJson } from './utils.js'
 
-const HSM_PUBLIC_KEY = '1AAIAjIhd42fcH957TzvXeMbgX4AftiTT7lKmkJ7yHy3dph9'
+const HSM_IDENTITY = 'BETTER_AUTH_HSM_IDENTITY_PLACEHOLDER'
 
-interface HsmResponseBody {
+interface KeySigningBody {
   payload: {
     purpose: string
     publicKey: string
     expiration: string
   }
-  hsmIdentity: string
+  hsm: {
+    identity: string
+    generationId: string
+  }
 }
 
-interface HsmResponse {
-  body: HsmResponseBody
+interface KeySigningResponse {
+  body: KeySigningBody
   signature: string
 }
 
 export class VerificationKeyStore implements IVerificationKeyStore {
   private readonly client: Redis
-  private readonly verifier: IVerifier
+  private readonly verifier: KeyVerifier
 
-  constructor(redisClient: Redis) {
+  constructor(redisClient: Redis, redisHost: string, redisDbHsmKeys: number, accessLifetimeInMinutes: number) {
     this.client = redisClient
-    this.verifier = new Secp256r1Verifier()
+    this.verifier = new KeyVerifier(redisHost, redisDbHsmKeys, accessLifetimeInMinutes)
   }
 
   async get(identity: string): Promise<IVerificationKey> {
@@ -34,66 +39,40 @@ export class VerificationKeyStore implements IVerificationKeyStore {
       throw 'not found'
     }
 
-    // Parse as plain object to extract body substring
-    const hsmResponseObj = JSON.parse(value) as any
+    // Parse the response structure
+    const responseObj = JSON.parse(value) as KeySigningResponse
+    const bodyJson = getSubJson(value, 'body')
 
-    // Extract the raw body JSON substring from the original value string
-    // Find "body": and extract until the matching closing brace
-    const bodyStart = value.indexOf('"body":') + '"body":'.length
-    let braceCount = 0
-    let inBody = false
-    let bodyEnd = -1
-
-    for (let i = bodyStart; i < value.length; i++) {
-      const char = value[i]
-      if (char === '{') {
-        inBody = true
-        braceCount++
-      } else if (char === '}') {
-        braceCount--
-        if (inBody && braceCount === 0) {
-          bodyEnd = i + 1
-          break
-        }
-      }
-    }
-
-    if (bodyEnd === -1) {
-      throw new Error('failed to extract body from HSM response')
-    }
-
-    const bodyJson = value.substring(bodyStart, bodyEnd)
-    const signature = hsmResponseObj.signature
-
-    if (!signature) {
-      throw new Error('missing signature in HSM response')
-    }
-
-    // Parse body to validate contents
-    // Verify the signature over the raw body JSON
-    await this.verifier.verify(bodyJson, signature, HSM_PUBLIC_KEY)
-
-    const body = JSON.parse(bodyJson) as HsmResponseBody
-
-    // Verify HSM identity
-    if (body.hsmIdentity !== HSM_PUBLIC_KEY) {
-      throw new Error('invalid HSM identity')
-    }
+    // Verify HSM signature using KeyVerifier
+    await this.verifier.verify(
+      responseObj.signature,
+      responseObj.body.hsm.identity,
+      responseObj.body.hsm.generationId,
+      bodyJson
+    )
 
     // Validate purpose
-    if (body.payload.purpose !== 'access') {
+    if (responseObj.body.payload.purpose !== 'access') {
       throw new Error('invalid purpose: expected access')
     }
 
     // Check expiration
-    const expirationDate = new Date(body.payload.expiration)
+    const expirationDate = new Date(responseObj.body.payload.expiration)
     if (expirationDate <= new Date()) {
       throw new Error('key expired')
     }
 
     // Return the public key from the payload
-    const verificationKey = new VerificationKey(body.payload.publicKey, this.verifier)
+    const secp256r1Verifier = new Secp256r1Verifier()
+    const verificationKey = new VerificationKey(
+      responseObj.body.payload.publicKey,
+      secp256r1Verifier
+    )
 
     return verificationKey
+  }
+
+  async close(): Promise<void> {
+    await this.verifier.close()
   }
 }

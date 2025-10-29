@@ -31,20 +31,6 @@ WORKDIR /app
 # Copy HSM server binary from builder
 COPY --from=builder /app/hsm-server .
 
-# Copy initialization and export scripts
-COPY examples/basic/services/hsm/init-hsm.sh /init-hsm.sh
-COPY examples/basic/services/hsm/export-key.sh /export-key.sh
-RUN chmod +x /init-hsm.sh /export-key.sh
-
-# Create directory for optional key import
-RUN mkdir -p /keys
-
-# Copy test fixture key if it exists (for reproducible environments)
-COPY examples/basic/test-fixtures/hsm-authorization-key.pem /keys/hsm-authorization-key.pem
-
-# Initialize HSM on container start
-RUN /init-hsm.sh || (cat /tmp/init.log 2>&1 || true; exit 1)
-
 EXPOSE 11111
 
 # Start the HSM server

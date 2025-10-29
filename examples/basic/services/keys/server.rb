@@ -12,6 +12,8 @@ class KeysServer < Sinatra::Base
     host, port = redis_host.split(':')
     db = ENV['REDIS_DB_RESPONSE_KEYS'] || '1'
     set :redis, Redis.new(host: host, port: port.to_i, db: db.to_i)
+    db = ENV['REDIS_DB_HSM_KEYS'] || '4'
+    set :redisHsm, Redis.new(host: host, port: port.to_i, db: db.to_i)
 
     puts "Keys server configured to connect to Redis at #{redis_host}, DB #{db}"
   end
@@ -34,6 +36,7 @@ class KeysServer < Sinatra::Base
     begin
       # Test Redis connection
       settings.redis.ping
+      settings.redisHsm.ping
       { status: 'healthy', redis: 'connected' }.to_json
     rescue => e
       status 500
@@ -44,8 +47,6 @@ class KeysServer < Sinatra::Base
   # Get all keys and values from Redis DB 1
   get '/keys' do
     begin
-      print 'hello'
-
       keys = settings.redis.keys('*')
 
       # Use pipelined GET for efficiency
@@ -94,6 +95,31 @@ class KeysServer < Sinatra::Base
     end
   end
 
+  get '/hsm/keys' do
+    begin
+      keys = settings.redisHsm.keys('*')
+
+      # Use pipelined GET for efficiency
+      if keys.empty?
+        [].to_json
+      else
+        values = settings.redisHsm.pipelined do |pipeline|
+          keys.each { |key| pipeline.get(key) }
+        end
+
+        sorted = values.sort_by do |value|
+          object = JSON.parse(value)
+          [object["payload"]["prefix"], object["payload"]["sequenceNumber"]]
+        end
+
+        "[#{sorted.join(",")}]"
+      end
+    rescue => e
+      status 500
+      { error: 'Failed to fetch keys', message: e.message }.to_json
+    end
+  end
+
   # Root endpoint
   get '/' do
     {
@@ -102,7 +128,8 @@ class KeysServer < Sinatra::Base
       endpoints: {
         health: '/health',
         keys: '/keys',
-        key_by_identity: '/keys/:identity'
+        key_by_identity: '/keys/:identity',
+        hsm_keys: 'hsm/keys',
       }
     }.to_json
   end

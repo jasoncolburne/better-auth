@@ -16,6 +16,26 @@ garden logs --follow
 written to `.garden/` are rarely valuable for debugging. Verbose output gives you real-time
 feedback on what Garden is doing.
 
+### HSM Identity Setup
+
+After deploying HSM and keys services for the first time, export the HSM identity:
+
+```bash
+# Deploy HSM and keys services first
+garden deploy hsm keys --log-level=verbose
+
+# Export HSM identity to test-fixtures/hsm.id
+./scripts/export-hsm-identity.sh
+```
+
+The HSM identity is required by auth and app services to verify the chain of trust for keys published by the keys service. The exported identity is stored in `test-fixtures/hsm.id` (gitignored) and should be injected into service code at build time.
+
+**When to re-export:**
+- After initial HSM deployment
+- Before building/deploying auth or app services if `test-fixtures/hsm.id` doesn't exist
+
+**Note:** The HSM identity (prefix) does not change during key rotation, so you only need to export it once per deployment environment.
+
 ## Development Workflow
 
 ### Making Changes to a Service
@@ -433,12 +453,27 @@ Every 12 hours, CronJobs trigger rolling restarts:
 
 ## Common Development Tasks
 
+### Nuclear Reset (Complete Fresh Start)
+
+The cleanest way to reset everything including HSM identity, PVCs, and all state:
+
+```bash
+# Delete everything, redeploy HSM/keys, export identity, deploy all
+garden delete deploy && garden deploy hsm keys && ./scripts/export-hsm-identity.sh && garden deploy
+```
+
+This is the recommended approach when:
+- You want to start completely fresh
+- Troubleshooting complex multi-service state issues
+- Testing a clean deployment from scratch
+- Need new HSM keys and identity
+
 ### Resetting Redis State
 
 Redis data is now persistent (survives pod restarts and redeployments). To reset:
 
 ```bash
-# Option 1: Flush data (quick, keeps PVC)
+# Option 1: Flush data (quick, keeps PVC and HSM identity)
 kubectl exec -it -n better-auth-basic-example-dev deployment/redis -- redis-cli FLUSHALL
 
 # Option 2: Flush specific database
@@ -447,47 +482,68 @@ kubectl exec -it -n better-auth-basic-example-dev deployment/redis -- redis-cli
 SELECT 0
 FLUSHDB
 
-# Option 3: Delete PVC and start completely fresh
+# Option 3: Delete PVC and start completely fresh (keeps HSM identity)
 garden delete deploy --log-level=verbose
 kubectl delete pvc redis-data -n better-auth-basic-example-dev
 garden deploy --log-level=verbose
+
+# Option 4: Nuclear reset (regenerates HSM identity too)
+garden delete deploy && garden deploy hsm keys && ./scripts/export-hsm-identity.sh && garden deploy
 ```
 
-**Important**: The PVC survives `garden delete deploy`. If you're troubleshooting and want truly fresh state, you must manually delete the PVC.
+**Important**: The PVC survives `garden delete deploy`. If you're troubleshooting and want truly fresh state, you must manually delete the PVC or use nuclear reset.
 
 ### Resetting Postgres State
 
 Postgres data is now persistent (survives pod restarts and redeployments). To reset:
 
 ```bash
-# Option 1: Drop and recreate database (quick, keeps PVC)
+# Option 1: Drop and recreate database (quick, keeps PVC and HSM identity)
 kubectl exec -it -n better-auth-basic-example-dev deployment/postgres -- psql -U postgres -c "DROP DATABASE better_auth;"
 kubectl exec -it -n better-auth-basic-example-dev deployment/postgres -- psql -U postgres -c "CREATE DATABASE better_auth;"
 kubectl rollout restart deployment/auth -n better-auth-basic-example-dev
 
-# Option 2: Delete PVC and start completely fresh
+# Option 2: Delete PVC and start completely fresh (keeps HSM identity)
 garden delete deploy --log-level=verbose
 kubectl delete pvc postgres-data -n better-auth-basic-example-dev
 garden deploy --log-level=verbose
+
+# Option 3: Nuclear reset (regenerates HSM identity too)
+garden delete deploy && garden deploy hsm keys && ./scripts/export-hsm-identity.sh && garden deploy
 ```
 
-**Important**: Like Redis, the Postgres PVC survives `garden delete deploy`. If you're troubleshooting and want truly fresh state, you must manually delete the PVC.
+**Important**: Like Redis, the Postgres PVC survives `garden delete deploy`. If you're troubleshooting and want truly fresh state, you must manually delete the PVC or use nuclear reset.
 
-### Regenerating HSM Keys
+### Regenerating HSM Keys (Nuclear Reset)
+
+The cleanest way to regenerate HSM keys and reset everything is the nuclear reset:
 
 ```bash
-# Delete existing private key
-rm test-fixtures/hsm-authorization-key.pem
+# Nuclear reset: delete everything, redeploy HSM/keys, export identity, deploy all
+garden delete deploy && garden deploy hsm keys && ./scripts/export-hsm-identity.sh && garden deploy
+```
 
-# Redeploy HSM (generates new key)
-garden deploy hsm --force --log-level=verbose
+This ensures:
+- All deployments are removed cleanly
+- PVCs are deleted automatically by Garden
+- Fresh HSM keys are generated
+- New HSM identity is exported to `test-fixtures/hsm.id`
+- All services are redeployed with the new identity
 
-# Extract new keys
-garden run export-hsm-private-key --log-level=verbose
-garden run export-hsm-public-key --log-level=verbose
+**Manual alternative** (if you only want to regenerate HSM without full reset):
 
-# Update clients with new HSM public key
-# (hardcoded in iOS app and integration tests)
+```bash
+# Delete existing identity
+rm test-fixtures/hsm.id
+
+# Redeploy HSM and keys
+garden deploy hsm keys --force --log-level=verbose
+
+# Export new identity
+./scripts/export-hsm-identity.sh
+
+# Redeploy services that depend on HSM identity
+garden deploy auth app-ts app-rb app-rs app-py --force --log-level=verbose
 ```
 
 ### Restarting Services
@@ -559,23 +615,25 @@ The iOS app (`clients/ios/BetterAuthBasicExample/`) demonstrates the full protoc
    - Simulator 1: Create account, add device
    - Simulator 2: Link to account from Simulator 1
 
-### Updating HSM Key in iOS App
+### Updating HSM Identity in iOS App
 
-After regenerating HSM keys:
+After regenerating HSM keys (via nuclear reset or manual regeneration):
 
-1. **Extract new public key**:
+1. **Get the new HSM identity**:
    ```bash
-   garden run export-hsm-public-key --log-level=verbose
-   cat test-fixtures/hsm-authorization-key.cesr
+   # Should already exist from export-hsm-identity.sh
+   cat test-fixtures/hsm.id
    ```
 
 2. **Update iOS app**:
    ```swift
-   // In clients/ios/BetterAuthBasicExample/Implementation/Stores/AccessKeyStore.swift
-   private let hsmPublicKey = "1AAIAjIhd42fcH957TzvXeMbgX4AftiTT7lKmkJ7yHy3dph9"
+   // In clients/ios/BetterAuthBasicExample/Implementation/Stores/VerificationKeyStore.swift
+   private let hsmIdentity = "EABcXYZ..."  // Update with value from hsm.id
    ```
 
 3. **Rebuild app** in Xcode
+
+**Note**: The HSM identity is the prefix from the HSM's key log and is used to verify the chain of trust for all keys.
 
 ### iOS App Architecture
 
