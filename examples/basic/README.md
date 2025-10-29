@@ -303,10 +303,69 @@ The HSM identity is required by auth and app services to verify the chain of tru
 
 **When to re-export:**
 - After initial HSM deployment
-- Before building/deploying auth or app services if `test-fixtures/hsm.id` doesn't exist
+- Before building/deploying auth/app services or clients if `test-fixtures/hsm.id` doesn't exist
 - After regenerating HSM keys (see nuclear reset below)
 
 **Note:** The HSM identity (prefix) does not change during key rotation, so you only need to export it once per deployment environment unless you regenerate the HSM keys.
+
+### HSM Key Rotation
+
+To manually rotate the HSM signing key:
+
+```bash
+./scripts/rotate-hsm-key.sh
+```
+
+This rotates the HSM signing key and displays the new public key. Services automatically pick up the new key on their next HSM interaction. The HSM identity (prefix) remains unchanged.
+
+**When to use:**
+- Testing key rotation logic
+- Manual key rotation as part of planned security procedures
+
+### Service Key Purge and Rollout
+
+If a service key (not HSM key) is suspected to be compromised:
+
+```bash
+./scripts/purge-keys-and-roll-services.sh
+```
+
+This purges service keys and restarts services:
+1. Flushes Redis access keys (DB 0) and response keys (DB 1)
+2. Restarts auth and all app services
+
+**Result:**
+- All existing tokens become invalid immediately
+- Services regenerate keys using the existing (uncompromised) HSM key.
+- Clients must re-authenticate
+- Takes ~30 seconds for services to become ready
+
+**When to use:**
+- Service key compromise (auth or app service key leaked)
+- HSM key is known to be secure
+
+### Emergency Key Rotation (Red Button)
+
+For emergency situations requiring immediate key rotation:
+
+```bash
+./scripts/red-button.sh
+```
+
+This performs a complete emergency rotation:
+1. Rotates the HSM signing key
+2. Flushes Redis access keys (DB 0) and response keys (DB 1)
+3. Restarts auth and all app services
+
+**Result:**
+- All existing tokens become invalid immediately
+- Services generate new keys signed with the rotated HSM key
+- Clients must re-authenticate
+- Takes ~30 seconds for services to become ready
+
+**When to use:**
+- Security incident response (suspected hsm key compromise)
+- Testing disaster recovery procedures
 
 ## Project Structure
 

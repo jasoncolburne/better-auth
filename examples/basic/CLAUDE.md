@@ -530,6 +530,34 @@ This triggers HSM key rotation and displays the new public key. Services will au
 
 **Note**: This rotates the signing key within the existing HSM key chain. The HSM identity (prefix) stays the same. All rotation is currently manual.
 
+### Service Key Purge and Rollout
+
+If a service key (not HSM key) is suspected to be compromised:
+
+```bash
+./scripts/purge-keys-and-roll-services.sh
+```
+
+This script purges all service-generated keys and restarts services to regenerate them:
+1. Flushes Redis DB 0 (access keys) and DB 1 (response keys)
+2. Restarts auth and all app services
+
+**When to use:**
+- Service key compromise (auth or app service key leaked)
+- HSM key is known to be secure
+- Testing service key regeneration without HSM rotation
+
+**What happens:**
+- All existing tokens become invalid immediately
+- Services restart and generate new keys signed with the existing HSM key
+- Clients must re-authenticate
+- Takes ~30 seconds for services to become ready
+
+**What's preserved:**
+- HSM signing key (no rotation)
+- Redis DB 2 (access key hashes), DB 3 (revoked devices), DB 4 (HSM keys)
+- User accounts and devices in Postgres
+
 ### Emergency Key Rotation (Red Button)
 
 For emergency situations requiring immediate key rotation and service restart:

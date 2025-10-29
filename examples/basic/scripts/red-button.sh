@@ -1,8 +1,6 @@
 #!/bin/bash
 set -e
 
-NAMESPACE="better-auth-basic-example-dev"
-
 echo "=========================================="
 echo "🚨 RED BUTTON: Emergency Key Rotation 🚨"
 echo "=========================================="
@@ -25,28 +23,22 @@ if [ "$confirm" != "yes" ]; then
 fi
 
 echo ""
-echo "Step 1/3: Rotating HSM key..."
+echo "=========================================="
+echo "Step 1/2: Rotating HSM key..."
+echo "=========================================="
 ./scripts/rotate-hsm-key.sh
 
 echo ""
-echo "Step 2/3: Flushing Redis databases..."
-kubectl exec -n "$NAMESPACE" deployment/redis -- redis-cli -n 0 FLUSHDB
-kubectl exec -n "$NAMESPACE" deployment/redis -- redis-cli -n 1 FLUSHDB
+echo "=========================================="
+echo "Step 2/2: Purging keys and rolling services..."
+echo "=========================================="
+# Skip the confirmation prompt since we already confirmed
+export SKIP_CONFIRM=1
+./scripts/purge-keys-and-roll-services.sh
 
 echo ""
-echo "Step 3/3: Restarting services..."
-kubectl rollout restart deployment/auth -n "$NAMESPACE"
-kubectl rollout restart deployment/app-ts -n "$NAMESPACE"
-kubectl rollout restart deployment/app-rb -n "$NAMESPACE"
-kubectl rollout restart deployment/app-rs -n "$NAMESPACE"
-kubectl rollout restart deployment/app-py -n "$NAMESPACE"
-
-echo ""
+echo "=========================================="
 echo "✓ Red button sequence complete!"
+echo "=========================================="
 echo ""
-echo "Services are restarting and will:"
-echo "  - Generate new key pairs"
-echo "  - Sign them with the rotated HSM key"
-echo "  - Store them in Redis"
-echo ""
-echo "Wait ~30 seconds for all services to become ready."
+echo "All services have been rotated with new keys signed by the rotated HSM key."
