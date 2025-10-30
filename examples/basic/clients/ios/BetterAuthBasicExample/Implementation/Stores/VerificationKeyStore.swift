@@ -232,6 +232,7 @@ class VerificationKeyStore: IVerificationKeyStore {
     private var cache: [String: (Secp256r1VerificationKey, Date)] = [:]
     private var verifier = KeyVerifier()
     private var timestamper = Rfc3339Nano()
+    var isAuthenticated: Bool = false
 
     func get(identity: String) async throws -> any IVerificationKey {
         // Check cache first
@@ -297,10 +298,16 @@ class VerificationKeyStore: IVerificationKeyStore {
             throw VerificationError.expiredKey
         }
 
-        // Create verification key and cache it
+        // Create verification key and cache it only if authenticated
         let verificationKey = Secp256r1VerificationKey(publicKey: decodedBody.payload.publicKey)
-        cache[identity] = (verificationKey, expirationTimestamp)
+        if isAuthenticated {
+            cache[identity] = (verificationKey, expirationTimestamp)
+        }
 
         return verificationKey
+    }
+
+    func clearCache() {
+        cache.removeAll()
     }
 }

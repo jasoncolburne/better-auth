@@ -588,8 +588,11 @@ This script performs a complete emergency rotation sequence:
 - HSM identity (prefix) - remains the same
 - User accounts and devices in Postgres - unchanged
 
-**Known limitation:**
-- The current iOS client implementation caches keys, so clients may continue using old keys until the app is restarted. A better implementation would be to clear the cache any time authentication fails, since that happens during this procedure.
+**Side effects:**
+- The current iOS client implementation caches response keys only when authenticated, so when this
+happens they lose access and in the process that cache is cleared. This isn't perfect, but it's
+better than not doing it. To be safer, remove the cache entirely at the expense of some more network
+calls.
 
 ### Regenerating HSM Keys (Nuclear Reset)
 
