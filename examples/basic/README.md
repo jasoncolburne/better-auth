@@ -155,7 +155,19 @@ COPY ../../../implementations/better-auth-rs /better-auth-rs
 cd examples/basic
 ```
 
-### 2. Deploy Everything
+### 2. Deploy HSM and Keys services (required for identity export)
+
+```bash
+garden deploy hsm keys
+```
+
+### 3. Export HSM identity
+
+```bash
+scripts/export-hsm-identity.sh
+```
+
+### 4. Deploy everything
 
 Garden will build Docker images, deploy to Kubernetes, and set up ingresses:
 
@@ -166,6 +178,7 @@ garden deploy
 This command will:
 - Build the auth Docker image
 - Build the app Docker images (TypeScript, Ruby, Rust, Python)
+- Build the keys Docker image
 - Create Kubernetes deployments and services
 - Setup ingresses for local access:
   - Auth Service: http://auth.better-auth.local/
@@ -176,7 +189,7 @@ This command will:
     - Python: http://app-py.better-auth.local/
   - Keys Service: http://keys.better-auth.local/
 
-### 3. Verify Deployment
+### 5. Verify Deployment
 
 Check that all services are healthy:
 
@@ -193,7 +206,7 @@ garden logs app-py
 garden logs keys
 ```
 
-### 4. Update /etc/hosts
+### 6. Update /etc/hosts
 
 Add these lines
 
@@ -206,7 +219,7 @@ Add these lines
 127.0.0.1 keys.better-auth.local
 ```
 
-### 5. Test the Services
+### 7. Test the Services
 
 Check for keys:
 
@@ -238,6 +251,11 @@ From the typescript implementation:
 ```bash
 npm run test:k8s
 ```
+
+### 8. Build the iOS app
+
+There is an iOS app that can be built using `make simulator`. You can run two and exercise the
+entire set of protocols, as well as test the example deployment.
 
 ## Garden Commands
 
