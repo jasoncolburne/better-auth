@@ -473,7 +473,7 @@ This is the recommended approach when:
 Redis data is now persistent (survives pod restarts and redeployments). To reset:
 
 ```bash
-# Option 1: Flush data (quick, keeps PVC and HSM identity)
+# Option 1: Flush data (quick, keeps PVC) - hsm service needs to be modified to re-export its keys for this to be a real option
 kubectl exec -it -n better-auth-basic-example-dev deployment/redis -- redis-cli FLUSHALL
 
 # Option 2: Flush specific database
@@ -482,8 +482,8 @@ kubectl exec -it -n better-auth-basic-example-dev deployment/redis -- redis-cli
 SELECT 0
 FLUSHDB
 
-# Option 3: Delete PVC and start completely fresh (keeps HSM identity)
-garden delete deploy --log-level=verbose
+# Option 3: Delete PVC and start completely fresh
+kubectx delete deployment redis -n better-auth-basic-example-dev
 kubectl delete pvc redis-data -n better-auth-basic-example-dev
 garden deploy --log-level=verbose
 
@@ -491,28 +491,27 @@ garden deploy --log-level=verbose
 garden delete deploy && garden deploy hsm keys && ./scripts/export-hsm-identity.sh && garden deploy
 ```
 
-**Important**: The PVC survives `garden delete deploy`. If you're troubleshooting and want truly fresh state, you must manually delete the PVC or use nuclear reset.
-
 ### Resetting Postgres State
 
 Postgres data is now persistent (survives pod restarts and redeployments). To reset:
 
 ```bash
-# Option 1: Drop and recreate database (quick, keeps PVC and HSM identity)
-kubectl exec -it -n better-auth-basic-example-dev deployment/postgres -- psql -U postgres -c "DROP DATABASE better_auth;"
-kubectl exec -it -n better-auth-basic-example-dev deployment/postgres -- psql -U postgres -c "CREATE DATABASE better_auth;"
-kubectl rollout restart deployment/auth -n better-auth-basic-example-dev
+# Option 1: Drop and recreate database (quick, keeps PVC)
+kubectl delete deployment hsm auth
+kubectl exec -it -n better-auth-basic-example-dev deployment/postgres -- psql -U postgres -c "DROP DATABASE better_auth_auth;"
+kubectl exec -it -n better-auth-basic-example-dev deployment/postgres -- psql -U postgres -c "DROP DATABASE better_auth_hsm;"
+kubectl exec -it -n better-auth-basic-example-dev deployment/postgres -- psql -U postgres -c "CREATE DATABASE better_auth_auth;"
+kubectl exec -it -n better-auth-basic-example-dev deployment/postgres -- psql -U postgres -c "CREATE DATABASE better_auth_hsm;"
+garden deploy --log-level=verbose
 
-# Option 2: Delete PVC and start completely fresh (keeps HSM identity)
-garden delete deploy --log-level=verbose
+# Option 2: Delete PVC and start completely fresh
+kubectxl delete deployment postgres
 kubectl delete pvc postgres-data -n better-auth-basic-example-dev
 garden deploy --log-level=verbose
 
 # Option 3: Nuclear reset (regenerates HSM identity too)
 garden delete deploy && garden deploy hsm keys && ./scripts/export-hsm-identity.sh && garden deploy
 ```
-
-**Important**: Like Redis, the Postgres PVC survives `garden delete deploy`. If you're troubleshooting and want truly fresh state, you must manually delete the PVC or use nuclear reset.
 
 ### Rotating HSM Keys Manually
 
