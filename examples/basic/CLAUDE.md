@@ -483,7 +483,7 @@ SELECT 0
 FLUSHDB
 
 # Option 3: Delete PVC and start completely fresh
-kubectx delete deployment redis -n better-auth-basic-example-dev
+kubectl delete deployment redis -n better-auth-basic-example-dev
 kubectl delete pvc redis-data -n better-auth-basic-example-dev
 garden deploy --log-level=verbose
 
@@ -505,7 +505,7 @@ kubectl exec -it -n better-auth-basic-example-dev deployment/postgres -- psql -U
 garden deploy --log-level=verbose
 
 # Option 2: Delete PVC and start completely fresh
-kubectxl delete deployment postgres
+kubectl delete deployment postgres -n better-auth-basic-example-dev
 kubectl delete pvc postgres-data -n better-auth-basic-example-dev
 garden deploy --log-level=verbose
 
