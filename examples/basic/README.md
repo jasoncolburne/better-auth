@@ -28,10 +28,9 @@ This example consists of multiple services:
 
 4. **HSM Service (Go)**: Hardware Security Module simulator for centralized key signing
    - Signs all public keys (access and response) when services start
-   - Provides `/sign` endpoint that signs arbitrary payloads with a fixed HSM key
-   - In production, this would be backed by a real HSM with secure key storage, and hopefully,
-     would allow rotation
-   - HSM public key (`1AAIAjIhd42fcH957TzvXeMbgX4AftiTT7lKmkJ7yHy3dph9`) is hardcoded in clients
+   - Provides `/sign` endpoint that signs arbitrary payloads with a rotating HSM key
+   - In production, this would be backed by a real HSM with secure key storage
+   - HSM identity is hardcoded in clients
 
 5. **Redis**: Backing store for HSM-signed keys and session key hashes
    - Uses persistent storage (64Mi PersistentVolumeClaim with AOF)
@@ -40,6 +39,9 @@ This example consists of multiple services:
    - DB 1: HSM-signed response keys (from auth and app services, verified by clients)
    - DB 2: AccessKey hashes, for rejecting refreshes of public access keys that have already been
      refreshed
+   - DB 3: Revoked devices. For rejecting access to devices within the access lifetime window, or
+     if used without a TTL, this could be used to ban users and prevent resource access
+   - DB 4: HSM keys, chained and self-addressed
 
 6. **PostgreSQL**: Database for auth service
    - Uses persistent storage (256Mi PersistentVolumeClaim)
@@ -50,9 +52,10 @@ This example consists of multiple services:
 
 ### Required
 
-1. **Docker Desktop with Kubernetes enabled**
+1. **Docker Desktop with Kubernetes enabled (or equivalent)**
    - Install [Docker Desktop](https://www.docker.com/products/docker-desktop/)
    - Enable Kubernetes: Settings → Kubernetes → Enable Kubernetes
+   - Podman+k8s, minikube, k3s etc should all be supported but haven't been tested
 
 2. **Garden CLI**
    ```bash
@@ -246,7 +249,7 @@ curl -X POST -d '...' http://app-py.better-auth.local/foo/bar
 
 If you dump backend logs for the app servers you'll see the error.
 
-From the typescript implementation:
+Next, from the typescript implementation:
 
 ```bash
 npm run test:k8s
@@ -255,7 +258,7 @@ npm run test:k8s
 ### 8. Build the iOS app
 
 There is an iOS app that can be built using `make simulator`. You can run two and exercise the
-entire set of protocols, as well as test the example deployment.
+entire set of protocols.
 
 ## Garden Commands
 
