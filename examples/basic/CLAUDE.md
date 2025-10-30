@@ -571,7 +571,7 @@ This script performs a complete emergency rotation sequence:
 3. Restarts auth and all app services to regenerate and re-sign keys
 
 **When to use:**
-- Security incident response (suspected key compromise)
+- Security incident response (suspected hsm key compromise)
 - Testing disaster recovery procedures
 - Simulating emergency key rotation scenarios
 
