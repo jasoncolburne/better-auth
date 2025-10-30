@@ -635,7 +635,7 @@ This will:
 - Starting completely fresh with new HSM keys
 - PVCs are corrupted or in a bad state
 - Need to test a clean deployment from scratch
-- Troubleshooting complex state issues across multiple services
+- Troubleshooting complex state issues across multiple services (this example shouldn't be an issue)
 
 ### Persistent data survives deployments
 

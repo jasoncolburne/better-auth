@@ -464,7 +464,7 @@ garden delete deploy && garden deploy hsm keys && ./scripts/export-hsm-identity.
 
 This is the recommended approach when:
 - You want to start completely fresh
-- Troubleshooting complex multi-service state issues
+- Troubleshooting complex multi-service state issues (in this example this won't be an issue)
 - Testing a clean deployment from scratch
 - Need new HSM keys and identity
 
