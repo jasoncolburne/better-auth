@@ -639,15 +639,16 @@ This will:
 
 ### Persistent data survives deployments
 
-Both Redis and Postgres use persistent storage. If you need to reset data but keep the same HSM identity:
+Redis, postgres and the HSM all use persistent storage. If you want to start fresh you can delete
+them.
 
 ```bash
-# Delete deployment and both PVCs (but keep test-fixtures/hsm.id)
-garden delete deploy
-kubectl delete pvc redis-data postgres-data -n better-auth-basic-example-dev
+# Delete deployment and all PVCs
+kubectl delete deployment redis postgres hsm
+kubectl delete pvc redis-data postgres-data softhsm-tokens -n better-auth-basic-example-dev
 
-# Redeploy (creates new PVCs, reuses existing HSM identity)
-garden deploy
+# Redeploy (creates new PVCs)
+garden deploy hsm keys && scripts/export-hsm-identity.sh && garden deploy
 ```
 
 ### Resetting specific databases
