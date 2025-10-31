@@ -5,8 +5,6 @@ public enum VerificationError: Error {
     case expiredKey
 }
 
-let twelveHoursFifteenMinutes: TimeInterval = 12 * 3600 + 15 * 60
-
 func extractJSONValues(from jsonString: String, forKey key: String) throws -> [String] {
     var values: [String] = []
     var searchRange = jsonString.startIndex..<jsonString.endIndex
@@ -82,8 +80,13 @@ class KeyVerifier {
     private let verifier = Secp256r1Verifier()
     private let hasher = Hasher()
     private var cache: [String: SignedEntry] = [:]
+    private let serverLifetime: TimeInterval
     var isAuthenticated: Bool = false
     var onCacheCleared: (() -> Void)?
+
+    init(serverLifetimeHours: Int) {
+        self.serverLifetime = TimeInterval(serverLifetimeHours * 3600)
+    }
 
     func verify(_ body: String, _ signature: String, _ hsmIdentity: String, _ generationId: String) async throws {
         var foundEntry = self.cache[generationId]
@@ -186,7 +189,7 @@ class KeyVerifier {
 
                 tainted = payload.taintPrevious ?? false
 
-                if payload.createdAt + twelveHoursFifteenMinutes < Date() {
+                if payload.createdAt + serverLifetime < Date() {
                     break
                 }
             }
@@ -255,11 +258,13 @@ typealias Response = [String: Key]
 
 class VerificationKeyStore: IVerificationKeyStore {
     private var cache: [String: (Secp256r1VerificationKey, Date)] = [:]
-    var verifier = KeyVerifier()
+    var verifier: KeyVerifier
     private var timestamper = Rfc3339Nano()
     var isAuthenticated: Bool = false
 
-    init() {
+    init(serverLifetimeHours: Int) {
+        self.verifier = KeyVerifier(serverLifetimeHours: serverLifetimeHours)
+
         // Set up callback to clear response key cache when HSM cache is cleared
         verifier.onCacheCleared = { [weak self] in
             self?.cache.removeAll()

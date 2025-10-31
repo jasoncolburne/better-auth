@@ -49,6 +49,7 @@ func (s *Server) CloseClients() {
 }
 
 func NewServer() (*Server, error) {
+	serverLifetime := 12 * time.Hour
 	accessLifetime := 15 * time.Minute
 	refreshLifetime := 12 * time.Hour
 	authenticationChallengeLifetime := 1 * time.Minute
@@ -62,7 +63,7 @@ func NewServer() (*Server, error) {
 		return nil, err
 	}
 
-	accessVerificationKeyStore, err := implementation.NewAccessVerificationKeyStore(refreshLifetime)
+	accessVerificationKeyStore, err := implementation.NewAccessVerificationKeyStore(serverLifetime, refreshLifetime)
 	if err != nil {
 		return nil, err
 	}

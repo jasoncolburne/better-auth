@@ -6,13 +6,6 @@ import { getSubJson } from './utils.js'
 
 const HSM_IDENTITY = 'BETTER_AUTH_HSM_IDENTITY_PLACEHOLDER'
 
-// needs to be server lifetime + access lifetime. consider a server that just rolled before the hsm
-// rotation. it may issue a token 11:59:59 into the new hsm key's existence, but it's authorized with
-// the old hsm key. that key is then valid for the access lifetime (15 minutes in our case) before
-// it must be refreshed. again for app servers, this time must be server lifetime + access lifetime.
-// for auth servers it is different. in this example, the access lifetime is a parameter of the store.
-const TWELVE_HOURS_MS = 12 * 60 * 60 * 1000
-
 interface LogEntry {
   id: string
   prefix: string
@@ -35,10 +28,17 @@ export class KeyVerifier {
   private readonly verifier: IVerifier
   private readonly hasher: IHasher
   private readonly cache: Map<string, LogEntry>
+  private readonly serverLifetime: number
   private readonly accessLifetime: number
 
-  constructor(redisHost: string, redisDbHsmKeys: number, accessLifetimeInMinutes: number) {
-    this.accessLifetime = accessLifetimeInMinutes * 60 * 1000
+  constructor(
+    redisHost: string,
+    redisDbHsmKeys: number,
+    serverLifetimeHours: number,
+    accessLifetimeMinutes: number
+  ) {
+    this.serverLifetime = serverLifetimeHours * 60 * 60 * 1000
+    this.accessLifetime = accessLifetimeMinutes * 60 * 1000
     this.client = new Redis({
       host: redisHost.split(':')[0],
       port: parseInt(redisHost.split(':')[1]) || 6379,
@@ -156,7 +156,7 @@ export class KeyVerifier {
         }
 
         const createdAt = new Date(payload.createdAt)
-        if (createdAt.getTime() + TWELVE_HOURS_MS + this.accessLifetime < Date.now()) {
+        if (createdAt.getTime() + this.serverLifetime + this.accessLifetime < Date.now()) {
           break
         }
       }

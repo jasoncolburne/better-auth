@@ -26,13 +26,6 @@ from utils import get_sub_json
 
 HSM_IDENTITY = "BETTER_AUTH_HSM_IDENTITY_PLACEHOLDER"
 
-# needs to be server lifetime + access lifetime. consider a server that just rolled before the hsm
-# rotation. it may issue a token 11:59:59 into the new hsm key's existence, but it's authorized with
-# the old hsm key. that key is then valid for the access lifetime (15 minutes in our case) before
-# it must be refreshed. again for app servers, this time must be server lifetime + access lifetime.
-# for auth servers it is different.
-TWELVE_HOURS_FIFTEEN_MINUTES = timedelta(hours=12, minutes=15)
-
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s: %(message)s',
@@ -62,9 +55,9 @@ class SignedLogEntry:
 
 
 class KeyVerifier:
-    """Verifies HSM signatures with caching and 12-hour expiry."""
+    """Verifies HSM signatures with caching."""
 
-    def __init__(self, redis_host: str, redis_db_hsm_keys: int):
+    def __init__(self, redis_host: str, redis_db_hsm_keys: int, server_lifetime_hours: int, access_lifetime_minutes: int):
         self.redis_client = aioredis.from_url(
             f"redis://{redis_host}/{redis_db_hsm_keys}",
             encoding="utf-8",
@@ -73,6 +66,7 @@ class KeyVerifier:
         self.verifier = Secp256r1Verifier()
         self.hasher = Hasher()
         self.cache: Dict[str, LogEntry] = {}
+        self.verification_window = timedelta(hours=server_lifetime_hours, minutes=access_lifetime_minutes)
 
     async def verify(
         self,
@@ -169,7 +163,7 @@ class KeyVerifier:
 
                 tainted = True if payload.taint_previous == True else False
 
-                if payload.created_at + TWELVE_HOURS_FIFTEEN_MINUTES < datetime.now(payload.created_at.tzinfo):
+                if payload.created_at + self.verification_window < datetime.now(payload.created_at.tzinfo):
                     break
 
             cached_entry = self.cache.get(hsm_generation_id)

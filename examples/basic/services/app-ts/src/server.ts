@@ -55,7 +55,8 @@ class ApplicationServer {
     const redisHost = process.env.REDIS_HOST || 'redis:6379'
     Logger.log(`Connecting to Redis at ${redisHost}`)
 
-    const accessLifetimeInMinutes = 15
+    const serverLifetimeHours = 12
+    const accessLifetimeMinutes = 15
 
     const redisDbAccessKeys = parseInt(process.env.REDIS_DB_ACCESS_KEYS || '0')
     const redisDbResponseKeys = parseInt(process.env.REDIS_DB_RESPONSE_KEYS || '1')
@@ -77,7 +78,8 @@ class ApplicationServer {
       accessClient,
       redisHost,
       redisDbHsmKeys,
-      accessLifetimeInMinutes
+      serverLifetimeHours,
+      accessLifetimeMinutes
     )
 
     // Create an in-memory nonce store with 30 second window

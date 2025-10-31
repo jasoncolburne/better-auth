@@ -80,9 +80,9 @@ class VerificationKey(IVerificationKey):
 class RedisVerificationKeyStore(IVerificationKeyStore):
     """Redis-backed verification key store with HSM key verification."""
 
-    def __init__(self, redis_client: aioredis.Redis, redis_host: str, redis_db_hsm_keys: int):
+    def __init__(self, redis_client: aioredis.Redis, redis_host: str, redis_db_hsm_keys: int, server_lifetime_hours: int, access_lifetime_minutes: int):
         self.redis_client = redis_client
-        self.key_verifier = KeyVerifier(redis_host, redis_db_hsm_keys)
+        self.key_verifier = KeyVerifier(redis_host, redis_db_hsm_keys, server_lifetime_hours, access_lifetime_minutes)
         self.verifier = Secp256r1Verifier()
 
     async def get(self, identity: str) -> IVerificationKey:
@@ -170,6 +170,9 @@ class ApplicationServer:
         redis_host = os.environ.get('REDIS_HOST', 'redis:6379')
         logger.info(f"Connecting to Redis at {redis_host}")
 
+        server_lifetime_hours = 12
+        access_lifetime_minutes = 15
+
         redis_db_access_keys = int(os.environ.get('REDIS_DB_ACCESS_KEYS', '0'))
         redis_db_response_keys = int(os.environ.get('REDIS_DB_RESPONSE_KEYS', '1'))
         redis_db_revoked_devices = int(os.environ.get('REDIS_DB_REVOKED_DEVICES', '3'))
@@ -211,7 +214,7 @@ class ApplicationServer:
             # Create verification key store
             verifier = Secp256r1Verifier()
             verification_key_store = RedisVerificationKeyStore(
-                self.access_client, redis_host, redis_db_hsm_keys
+                self.access_client, redis_host, redis_db_hsm_keys, server_lifetime_hours, access_lifetime_minutes
             )
 
             # Create an in-memory nonce store with 30 second window

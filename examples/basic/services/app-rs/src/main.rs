@@ -190,8 +190,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // Create storage components
     let access_window = 30; // 30 seconds
+    let server_lifetime_hours = 12;
+    let access_lifetime_minutes = 15;
     let access_nonce_store = ServerTimeLockStore::new(access_window);
-    let access_key_store = RedisVerificationKeyStore::new(access_conn, hsm_conn);
+    let access_key_store = RedisVerificationKeyStore::new(access_conn, hsm_conn, server_lifetime_hours, access_lifetime_minutes);
 
     // Create encoding components
     let timestamper = Rfc3339Nano::new();

@@ -21,7 +21,6 @@ import (
 )
 
 const HSM_IDENTITY = "BETTER_AUTH_HSM_IDENTITY_PLACEHOLDER"
-const TWELVE_HOURS = 12 * time.Hour
 
 type LogEntry struct {
 	primitives.VerifiableRecorder
@@ -42,10 +41,11 @@ type KeyVerifier struct {
 	hasher          cryptointerfaces.Hasher
 	cache           map[string]*LogEntry
 	cacheMu         sync.RWMutex
+	serverLifetime  time.Duration
 	refreshLifetime time.Duration
 }
 
-func NewKeyVerifier(refreshLifetime time.Duration) (*KeyVerifier, error) {
+func NewKeyVerifier(serverLifetime, refreshLifetime time.Duration) (*KeyVerifier, error) {
 	redisHost := os.Getenv("REDIS_HOST")
 	if redisHost == "" {
 		redisHost = "redis:6379"
@@ -71,6 +71,7 @@ func NewKeyVerifier(refreshLifetime time.Duration) (*KeyVerifier, error) {
 		verifier:        verifier,
 		hasher:          hasher,
 		cache:           map[string]*LogEntry{},
+		serverLifetime:  serverLifetime,
 		refreshLifetime: refreshLifetime,
 	}, nil
 }
@@ -225,7 +226,7 @@ func (v *KeyVerifier) Verify(
 			// rotation, a session token may be issued. that token may be refreshed another 12 hours
 			// in the future (in our setup), which is what this verification actually authorizes
 			when := (time.Time)(*payload.CreatedAt)
-			if when.Add(v.refreshLifetime + TWELVE_HOURS).Before(time.Now()) {
+			if when.Add(v.serverLifetime + v.refreshLifetime).Before(time.Now()) {
 				break
 			}
 		}
@@ -277,7 +278,7 @@ type AccessVerificationKeyStore struct {
 	timestamper encodinginterfaces.Timestamper
 }
 
-func NewAccessVerificationKeyStore(refreshLifetime time.Duration) (*AccessVerificationKeyStore, error) {
+func NewAccessVerificationKeyStore(serverLifetime, refreshLifetime time.Duration) (*AccessVerificationKeyStore, error) {
 	redisHost := os.Getenv("REDIS_HOST")
 	if redisHost == "" {
 		redisHost = "redis:6379"
@@ -295,7 +296,7 @@ func NewAccessVerificationKeyStore(refreshLifetime time.Duration) (*AccessVerifi
 		DB:   redisDbAccessKeys,
 	})
 
-	verifier, err := NewKeyVerifier(refreshLifetime)
+	verifier, err := NewKeyVerifier(serverLifetime, refreshLifetime)
 	if err != nil {
 		return nil, err
 	}

@@ -43,10 +43,10 @@ pub struct RedisVerificationKeyStore {
 }
 
 impl RedisVerificationKeyStore {
-    pub fn new(connection: ConnectionManager, hsm_connection: ConnectionManager) -> Self {
+    pub fn new(connection: ConnectionManager, hsm_connection: ConnectionManager, server_lifetime_hours: i64, access_lifetime_minutes: i64) -> Self {
         Self {
             connection: Arc::new(Mutex::new(connection)),
-            key_verifier: Arc::new(KeyVerifier::new(hsm_connection)),
+            key_verifier: Arc::new(KeyVerifier::new(hsm_connection, server_lifetime_hours, access_lifetime_minutes)),
         }
     }
 }

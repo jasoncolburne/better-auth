@@ -27,9 +27,15 @@ export class VerificationKeyStore implements IVerificationKeyStore {
   private readonly client: Redis
   private readonly verifier: KeyVerifier
 
-  constructor(redisClient: Redis, redisHost: string, redisDbHsmKeys: number, accessLifetimeInMinutes: number) {
+  constructor(
+    redisClient: Redis,
+    redisHost: string,
+    redisDbHsmKeys: number,
+    serverLifetimeHours: number,
+    accessLifetimeMinutes: number
+  ) {
     this.client = redisClient
-    this.verifier = new KeyVerifier(redisHost, redisDbHsmKeys, accessLifetimeInMinutes)
+    this.verifier = new KeyVerifier(redisHost, redisDbHsmKeys, serverLifetimeHours, accessLifetimeMinutes)
   }
 
   async get(identity: string): Promise<IVerificationKey> {

@@ -23,9 +23,9 @@ module Storage
   end
 
   class VerificationKeyStore
-    def initialize(redis_client, redis_host, redis_db_hsm_keys)
+    def initialize(redis_client, redis_host, redis_db_hsm_keys, server_lifetime_hours, access_lifetime_minutes)
       @redis = redis_client
-      @key_verifier = KeyVerifier.new(redis_host, redis_db_hsm_keys)
+      @key_verifier = KeyVerifier.new(redis_host, redis_db_hsm_keys, server_lifetime_hours, access_lifetime_minutes)
       @verifier = Crypto::Secp256r1Verifier.new
     end
 

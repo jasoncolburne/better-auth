@@ -8,13 +8,6 @@ require_relative './utils'
 module Storage
   HSM_IDENTITY = 'BETTER_AUTH_HSM_IDENTITY_PLACEHOLDER'
 
-  # needs to be server lifetime + access lifetime. consider a server that just rolled before the hsm
-  # rotation. it may issue a token 11:59:59 into the new hsm key's existence, but it's authorized with
-  # the old hsm key. that key is then valid for the access lifetime (15 minutes in our case) before
-  # it must be refreshed. again for app servers, this time must be server lifetime + access lifetime.
-  # for auth servers it is different.
-  TWELVE_HOURS_FIFTEEN_MINUTES = 12 * 3600 + 15 * 60
-
   class LogEntry
     attr_reader :id, :prefix, :previous, :sequence_number, :created_at, :taint_previous, :purpose, :public_key, :rotation_hash
 
@@ -41,11 +34,12 @@ module Storage
   end
 
   class KeyVerifier
-    def initialize(redis_host, redis_db_hsm_keys)
+    def initialize(redis_host, redis_db_hsm_keys, server_lifetime_hours, access_lifetime_minutes)
       @redis = Redis.new(url: "redis://#{redis_host}/#{redis_db_hsm_keys}")
       @verifier = Crypto::Secp256r1Verifier.new
       @hasher = Crypto::Blake3.new
       @cache = {}
+      @verification_window = server_lifetime_hours * 3600 + access_lifetime_minutes * 60
     end
 
     def verify(signature, hsm_identity, hsm_generation_id, message)
@@ -129,7 +123,7 @@ module Storage
 
           tainted = payload.taint_previous || false
 
-          break if payload.created_at + TWELVE_HOURS_FIFTEEN_MINUTES < Time.now
+          break if payload.created_at + @verification_window < Time.now
         end
 
         cached_entry = @cache[hsm_generation_id]

@@ -13,13 +13,6 @@ use super::utils::get_sub_json;
 
 const HSM_IDENTITY: &str = "BETTER_AUTH_HSM_IDENTITY_PLACEHOLDER";
 
-// needs to be server lifetime + access lifetime. consider a server that just rolled before the hsm
-// rotation. it may issue a token 11:59:59 into the new hsm key's existence, but it's authorized with
-// the old hsm key. that key is then valid for the access lifetime (15 minutes in our case) before
-// it must be refreshed. again for app servers, this time must be server lifetime + access lifetime.
-// for auth servers it is different.
-const TWELVE_HOURS_FIFTEEN_MINUTES_IN_SECONDS: i64 = 12 * 3600 + 15 * 60;
-
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 struct LogEntry {
@@ -43,13 +36,15 @@ struct SignedLogEntry {
 pub struct KeyVerifier {
     connection: Arc<Mutex<ConnectionManager>>,
     cache: Arc<Mutex<HashMap<String, LogEntry>>>,
+    verification_window_seconds: i64,
 }
 
 impl KeyVerifier {
-    pub fn new(connection: ConnectionManager) -> Self {
+    pub fn new(connection: ConnectionManager, server_lifetime_hours: i64, access_lifetime_minutes: i64) -> Self {
         Self {
             connection: Arc::new(Mutex::new(connection)),
             cache: Arc::new(Mutex::new(HashMap::new())),
+            verification_window_seconds: server_lifetime_hours * 3600 + access_lifetime_minutes * 60,
         }
     }
 
@@ -171,7 +166,7 @@ impl KeyVerifier {
             let created_at = DateTime::parse_from_rfc3339(&payload.created_at)
                 .map_err(|e| format!("Failed to parse created_at: {}", e))?;
 
-            if created_at.with_timezone(&Utc) + Duration::seconds(TWELVE_HOURS_FIFTEEN_MINUTES_IN_SECONDS) < Utc::now() {
+            if created_at.with_timezone(&Utc) + Duration::seconds(self.verification_window_seconds) < Utc::now() {
                 break;
             }
         }
