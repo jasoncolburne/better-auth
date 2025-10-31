@@ -13,6 +13,7 @@ const KEYS_TABLE_SQL = `
 
 		-- Optional fields
 		created_at          TIMESTAMP NOT NULL,
+		taint_previous      BOOLEAN,
 
 		-- Model-specific fields
 		purpose             TEXT NOT NULL,
@@ -26,9 +27,10 @@ const KEYS_TABLE_SQL = `
 
 type Keys struct {
 	primitives.VerifiableRecorder
-	Purpose      string `db:"purpose" json:"purpose"`
-	PublicKey    string `db:"public_key" json:"publicKey"`
-	RotationHash string `db:"rotation_hash" json:"rotationHash"`
+	TaintPrevious *bool  `db:"taint_previous" json:"taintPrevious,omitempty"`
+	Purpose       string `db:"purpose" json:"purpose"`
+	PublicKey     string `db:"public_key" json:"publicKey"`
+	RotationHash  string `db:"rotation_hash" json:"rotationHash"`
 }
 
 func (*Keys) TableName() string {

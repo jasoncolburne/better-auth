@@ -12,7 +12,13 @@ use super::super::crypto::{Blake3Hasher, Secp256r1Verifier};
 use super::utils::get_sub_json;
 
 const HSM_IDENTITY: &str = "BETTER_AUTH_HSM_IDENTITY_PLACEHOLDER";
-const TWELVE_HOURS_FIFTEEN_MINUTES_SECONDS: i64 = 12 * 3600 + 15 * 60;
+
+// needs to be server lifetime + access lifetime. consider a server that just rolled before the hsm
+// rotation. it may issue a token 11:59:59 into the new hsm key's existence, but it's authorized with
+// the old hsm key. that key is then valid for the access lifetime (15 minutes in our case) before
+// it must be refreshed. again for app servers, this time must be server lifetime + access lifetime.
+// for auth servers it is different.
+const TWELVE_HOURS_FIFTEEN_MINUTES_IN_SECONDS: i64 = 12 * 3600 + 15 * 60;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -22,6 +28,7 @@ struct LogEntry {
     previous: Option<String>,
     sequence_number: i32,
     created_at: String,
+    taint_previous: Option<bool>,
     purpose: String,
     public_key: String,
     rotation_hash: String,
@@ -59,6 +66,11 @@ impl KeyVerifier {
             return self.verify_with_entry(cached_entry, signature, hsm_identity, message).await;
         }
 
+        drop(cache);
+
+        // Clear cache before repopulating
+        let mut cache = self.cache.lock().await;
+        cache.clear();
         drop(cache);
 
         // Fetch all HSM keys from Redis
@@ -146,14 +158,20 @@ impl KeyVerifier {
 
         // Cache entries within 12-hour window (iterate backwards)
         let mut cache = self.cache.lock().await;
+        let mut tainted = false;
         for (record, _) in records.iter().rev() {
             let payload = &record.payload;
-            cache.insert(payload.id.clone(), payload.clone());
+
+            if !tainted {
+                cache.insert(payload.id.clone(), payload.clone());
+            }
+
+            tainted = payload.taint_previous.unwrap_or(false);
 
             let created_at = DateTime::parse_from_rfc3339(&payload.created_at)
                 .map_err(|e| format!("Failed to parse created_at: {}", e))?;
 
-            if created_at.with_timezone(&Utc) + Duration::seconds(TWELVE_HOURS_FIFTEEN_MINUTES_SECONDS) < Utc::now() {
+            if created_at.with_timezone(&Utc) + Duration::seconds(TWELVE_HOURS_FIFTEEN_MINUTES_IN_SECONDS) < Utc::now() {
                 break;
             }
         }

@@ -7,10 +7,16 @@ require_relative './utils'
 
 module Storage
   HSM_IDENTITY = 'BETTER_AUTH_HSM_IDENTITY_PLACEHOLDER'
+
+  # needs to be server lifetime + access lifetime. consider a server that just rolled before the hsm
+  # rotation. it may issue a token 11:59:59 into the new hsm key's existence, but it's authorized with
+  # the old hsm key. that key is then valid for the access lifetime (15 minutes in our case) before
+  # it must be refreshed. again for app servers, this time must be server lifetime + access lifetime.
+  # for auth servers it is different.
   TWELVE_HOURS_FIFTEEN_MINUTES = 12 * 3600 + 15 * 60
 
   class LogEntry
-    attr_reader :id, :prefix, :previous, :sequence_number, :created_at, :purpose, :public_key, :rotation_hash
+    attr_reader :id, :prefix, :previous, :sequence_number, :created_at, :taint_previous, :purpose, :public_key, :rotation_hash
 
     def initialize(data)
       @id = data['id']
@@ -18,6 +24,7 @@ module Storage
       @previous = data['previous']
       @sequence_number = data['sequenceNumber']
       @created_at = Time.parse(data['createdAt'])
+      @taint_previous = data['taintPrevious']
       @purpose = data['purpose']
       @public_key = data['publicKey']
       @rotation_hash = data['rotationHash']
@@ -45,6 +52,9 @@ module Storage
       cached_entry = @cache[hsm_generation_id]
 
       unless cached_entry
+        # Clear cache before repopulating
+        @cache.clear
+
         # Fetch all HSM keys from Redis
         keys = @redis.keys('*')
         raise 'No HSM keys found in Redis' if keys.empty?
@@ -112,9 +122,12 @@ module Storage
         records = by_prefix[HSM_IDENTITY]
 
         # Cache entries within 12-hour window (iterate backwards)
+        tainted = false
         records.reverse_each do |record, _|
           payload = record.payload
-          @cache[payload.id] = payload
+          @cache[payload.id] = payload unless tainted
+
+          tainted = payload.taint_previous || false
 
           break if payload.created_at + TWELVE_HOURS_FIFTEEN_MINUTES < Time.now
         end

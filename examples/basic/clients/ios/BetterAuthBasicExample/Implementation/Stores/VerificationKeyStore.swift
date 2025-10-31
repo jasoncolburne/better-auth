@@ -71,6 +71,7 @@ struct SignedEntry: Codable {
         let previous: String?
         let sequenceNumber: Int
         let createdAt: Date
+        let taintPrevious: Bool?
         let purpose: String
         let publicKey: String
         let rotationHash: String
@@ -81,11 +82,18 @@ class KeyVerifier {
     private let verifier = Secp256r1Verifier()
     private let hasher = Hasher()
     private var cache: [String: SignedEntry] = [:]
+    var isAuthenticated: Bool = false
+    var onCacheCleared: (() -> Void)?
 
     func verify(_ body: String, _ signature: String, _ hsmIdentity: String, _ generationId: String) async throws {
-        var cachedEntry = self.cache[generationId]
+        var foundEntry = self.cache[generationId]
 
-        if cachedEntry == nil {
+        if foundEntry == nil {
+            // Clear cache before repopulating
+            self.cache.removeAll()
+            // Notify parent that cache was cleared
+            onCacheCleared?()
+
             // Fetch from server
             let url = URL(string: "http://keys.better-auth.local/hsm/keys")!
             var request = URLRequest(url: url)
@@ -160,18 +168,31 @@ class KeyVerifier {
                 i += 1
             }
 
+            var tainted = false
             for entry in prefixedEntries.reversed() {
                 let payload = entry.payload
-                self.cache[payload.id] = entry
+
+                if !tainted {
+                    // Check if this is the entry we're looking for
+                    if payload.id == generationId {
+                        foundEntry = entry
+                    }
+
+                    // Only cache if authenticated
+                    if isAuthenticated {
+                        self.cache[payload.id] = entry
+                    }
+                }
+
+                tainted = payload.taintPrevious ?? false
+
                 if payload.createdAt + twelveHoursFifteenMinutes < Date() {
                     break
                 }
             }
-
-            cachedEntry = self.cache[generationId]
         }
 
-        guard let entry = cachedEntry else {
+        guard let entry = foundEntry else {
             throw BetterAuthError.invalidData
         }
 
@@ -203,6 +224,10 @@ class KeyVerifier {
             throw BetterAuthError.invalidData
         }
     }
+
+    func clearCache() {
+        cache.removeAll()
+    }
 }
 
 struct Key: Codable {
@@ -230,9 +255,16 @@ typealias Response = [String: Key]
 
 class VerificationKeyStore: IVerificationKeyStore {
     private var cache: [String: (Secp256r1VerificationKey, Date)] = [:]
-    private var verifier = KeyVerifier()
+    var verifier = KeyVerifier()
     private var timestamper = Rfc3339Nano()
     var isAuthenticated: Bool = false
+
+    init() {
+        // Set up callback to clear response key cache when HSM cache is cleared
+        verifier.onCacheCleared = { [weak self] in
+            self?.cache.removeAll()
+        }
+    }
 
     func get(identity: String) async throws -> any IVerificationKey {
         // Check cache first
@@ -309,5 +341,6 @@ class VerificationKeyStore: IVerificationKeyStore {
 
     func clearCache() {
         cache.removeAll()
+        verifier.clearCache()
     }
 }

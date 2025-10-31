@@ -5,7 +5,12 @@ import { Blake3Hasher } from '../crypto/blake3.js'
 import { getSubJson } from './utils.js'
 
 const HSM_IDENTITY = 'BETTER_AUTH_HSM_IDENTITY_PLACEHOLDER'
-// server restart threshold + access lifetime
+
+// needs to be server lifetime + access lifetime. consider a server that just rolled before the hsm
+// rotation. it may issue a token 11:59:59 into the new hsm key's existence, but it's authorized with
+// the old hsm key. that key is then valid for the access lifetime (15 minutes in our case) before
+// it must be refreshed. again for app servers, this time must be server lifetime + access lifetime.
+// for auth servers it is different. in this example, the access lifetime is a parameter of the store.
 const TWELVE_HOURS_MS = 12 * 60 * 60 * 1000
 
 interface LogEntry {
@@ -14,6 +19,7 @@ interface LogEntry {
   previous: string | null
   sequenceNumber: number
   createdAt: string
+  taintPrevious: boolean | null
   purpose: string
   publicKey: string
   rotationHash: string
@@ -52,6 +58,9 @@ export class KeyVerifier {
     let cachedEntry = this.cache.get(hsmGenerationId)
 
     if (!cachedEntry) {
+      // clear the cache, we are seeing a new key
+      this.cache.clear()
+
       // Fetch all HSM keys from Redis
       const keys = await this.client.keys('*')
       const values = await this.client.mget(...keys)
@@ -131,10 +140,20 @@ export class KeyVerifier {
         throw new Error('hsm identity not found')
       }
 
+      var tainted = false
       // Cache entries within 12-hour window (iterate backwards)
       for (let i = records.length - 1; i >= 0; i--) {
         const payload = records[i][0].payload
-        this.cache.set(payload.id, payload)
+
+        if (!tainted) {
+          this.cache.set(payload.id, payload)
+        }
+
+        if (payload.taintPrevious === true) {
+          tainted = true
+        } else {
+          tainted = false
+        }
 
         const createdAt = new Date(payload.createdAt)
         if (createdAt.getTime() + TWELVE_HOURS_MS + this.accessLifetime < Date.now()) {

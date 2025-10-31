@@ -221,7 +221,7 @@ func NewHSMServer() (*HSMServer, error) {
 	}, nil
 }
 
-func (s *HSMServer) rotateSigningKey() error {
+func (s *HSMServer) rotateSigningKey(taintPrevious bool) error {
 	ctx := context.Background()
 	ctx, cancel1 := context.WithTimeout(ctx, 5*time.Second)
 	defer cancel1()
@@ -254,6 +254,12 @@ func (s *HSMServer) rotateSigningKey() error {
 
 	record.PublicKey = s.key.cesrPublicKey
 	record.RotationHash = rotationHash
+
+	if taintPrevious {
+		record.TaintPrevious = &taintPrevious
+	} else {
+		record.TaintPrevious = nil
+	}
 
 	ctx = context.Background()
 	ctx, cancel2 := context.WithTimeout(ctx, 5*time.Second)
@@ -376,10 +382,23 @@ func (s *HSMServer) handleSign(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
+func (s *HSMServer) handleTaint(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+
+	currentGenerationId := s.key.generationId
+
+	if err := s.rotateSigningKey(true); err != nil {
+		fmt.Fprintf(w, `{"error":"internal error"}`)
+		return
+	}
+
+	fmt.Fprintf(w, `{"taintedGenerationId":"%s","newGenerationId":"%s"}`, currentGenerationId, s.key.generationId)
+}
+
 func (s *HSMServer) handleRotate(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
-	if err := s.rotateSigningKey(); err != nil {
+	if err := s.rotateSigningKey(false); err != nil {
 		fmt.Fprintf(w, `{"error":"internal error"}`)
 		return
 	}
@@ -401,6 +420,7 @@ func main() {
 
 	// Log public key at startup
 	http.HandleFunc("/sign", server.handleSign)
+	http.HandleFunc("/taint", server.handleTaint)
 	http.HandleFunc("/rotate", server.handleRotate)
 	http.HandleFunc("/health", server.handleHealth)
 

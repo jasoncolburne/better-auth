@@ -8,6 +8,7 @@ import (
 	"slices"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/jasoncolburne/better-auth-go/examples/crypto"
@@ -20,12 +21,14 @@ import (
 )
 
 const HSM_IDENTITY = "BETTER_AUTH_HSM_IDENTITY_PLACEHOLDER"
+const TWELVE_HOURS = 12 * time.Hour
 
 type LogEntry struct {
 	primitives.VerifiableRecorder
-	Purpose      string `json:"purpose"`
-	PublicKey    string `json:"publicKey"`
-	RotationHash string `json:"rotationHash"`
+	TaintPrevious *bool  `json:"taintPrevious,omitempty"`
+	Purpose       string `json:"purpose"`
+	PublicKey     string `json:"publicKey"`
+	RotationHash  string `json:"rotationHash"`
 }
 
 type SignedLogEntry struct {
@@ -34,14 +37,15 @@ type SignedLogEntry struct {
 }
 
 type KeyVerifier struct {
-	client         *redis.Client
-	verifier       cryptointerfaces.Verifier
-	hasher         cryptointerfaces.Hasher
-	cache          map[string]*LogEntry
-	accessLifetime time.Duration
+	client          *redis.Client
+	verifier        cryptointerfaces.Verifier
+	hasher          cryptointerfaces.Hasher
+	cache           map[string]*LogEntry
+	cacheMu         sync.RWMutex
+	refreshLifetime time.Duration
 }
 
-func NewKeyVerifier(accessLifetime time.Duration) (*KeyVerifier, error) {
+func NewKeyVerifier(refreshLifetime time.Duration) (*KeyVerifier, error) {
 	redisHost := os.Getenv("REDIS_HOST")
 	if redisHost == "" {
 		redisHost = "redis:6379"
@@ -63,11 +67,11 @@ func NewKeyVerifier(accessLifetime time.Duration) (*KeyVerifier, error) {
 	hasher := crypto.NewBlake3()
 
 	return &KeyVerifier{
-		client:         hsmKeysClient,
-		verifier:       verifier,
-		hasher:         hasher,
-		cache:          map[string]*LogEntry{},
-		accessLifetime: accessLifetime,
+		client:          hsmKeysClient,
+		verifier:        verifier,
+		hasher:          hasher,
+		cache:           map[string]*LogEntry{},
+		refreshLifetime: refreshLifetime,
 	}, nil
 }
 
@@ -78,8 +82,17 @@ func (v *KeyVerifier) Verify(
 	hsmGenerationId string,
 	message []byte,
 ) error {
+	v.cacheMu.RLock()
 	cachedEntry, ok := v.cache[hsmGenerationId]
+	v.cacheMu.RUnlock()
+
 	if !ok {
+		// Clear cache before repopulating. This ensures that if we see a new key, we disregard any
+		// older than the threshold below. It also allows tainting keys during emergency rotations.
+		v.cacheMu.Lock()
+		v.cache = make(map[string]*LogEntry)
+		v.cacheMu.Unlock()
+
 		recordStrings, err := retryRedisOperation(ctx, func() ([]any, error) {
 			keys, err := v.client.Keys(ctx, "*").Result()
 			if err != nil {
@@ -190,19 +203,35 @@ func (v *KeyVerifier) Verify(
 			return fmt.Errorf("hsm identity not found")
 		}
 
+		tainted := false
+		v.cacheMu.Lock()
 		for i := len(records) - 1; i >= 0; i-- {
 			payload := records[i].Payload
 
-			v.cache[payload.Id] = &payload
+			if !tainted {
+				v.cache[payload.Id] = &payload
+			}
 
+			if payload.TaintPrevious != nil && *payload.TaintPrevious {
+				tainted = true
+			} else {
+				tainted = false
+			}
+
+			// this is different than an app server. it needs to honour signatures from hsm keys
+			// that may have been rotated away from as much as a refresh lifetime and server
+			// lifetime ago. consider the case where the auth service rolls just before an hsm
+			// rotation. that means up to the server's lifetime (in our case 12 hours) after a
+			// rotation, a session token may be issued. that token may be refreshed another 12 hours
+			// in the future (in our setup), which is what this verification actually authorizes
 			when := (time.Time)(*payload.CreatedAt)
-			// server restart threshold + token lifetime
-			if when.Add(v.accessLifetime + 12*time.Hour).Before(time.Now()) {
+			if when.Add(v.refreshLifetime + TWELVE_HOURS).Before(time.Now()) {
 				break
 			}
 		}
 
 		cachedEntry, ok = v.cache[hsmGenerationId]
+		v.cacheMu.Unlock()
 		if !ok {
 			return fmt.Errorf("can't find valid public key")
 		}
@@ -248,7 +277,7 @@ type AccessVerificationKeyStore struct {
 	timestamper encodinginterfaces.Timestamper
 }
 
-func NewAccessVerificationKeyStore(accessLifetime time.Duration) (*AccessVerificationKeyStore, error) {
+func NewAccessVerificationKeyStore(refreshLifetime time.Duration) (*AccessVerificationKeyStore, error) {
 	redisHost := os.Getenv("REDIS_HOST")
 	if redisHost == "" {
 		redisHost = "redis:6379"
@@ -266,7 +295,7 @@ func NewAccessVerificationKeyStore(accessLifetime time.Duration) (*AccessVerific
 		DB:   redisDbAccessKeys,
 	})
 
-	verifier, err := NewKeyVerifier(accessLifetime)
+	verifier, err := NewKeyVerifier(refreshLifetime)
 	if err != nil {
 		return nil, err
 	}

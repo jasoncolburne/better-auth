@@ -62,7 +62,7 @@ func NewServer() (*Server, error) {
 		return nil, err
 	}
 
-	accessVerificationKeyStore, err := implementation.NewAccessVerificationKeyStore(accessLifetime)
+	accessVerificationKeyStore, err := implementation.NewAccessVerificationKeyStore(refreshLifetime)
 	if err != nil {
 		return nil, err
 	}

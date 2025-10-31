@@ -25,6 +25,12 @@ from implementation.crypto.hash import Hasher
 from utils import get_sub_json
 
 HSM_IDENTITY = "BETTER_AUTH_HSM_IDENTITY_PLACEHOLDER"
+
+# needs to be server lifetime + access lifetime. consider a server that just rolled before the hsm
+# rotation. it may issue a token 11:59:59 into the new hsm key's existence, but it's authorized with
+# the old hsm key. that key is then valid for the access lifetime (15 minutes in our case) before
+# it must be refreshed. again for app servers, this time must be server lifetime + access lifetime.
+# for auth servers it is different.
 TWELVE_HOURS_FIFTEEN_MINUTES = timedelta(hours=12, minutes=15)
 
 logging.basicConfig(
@@ -42,6 +48,7 @@ class LogEntry:
         self.previous = data.get('previous')
         self.sequence_number = data['sequenceNumber']
         self.created_at = datetime.fromisoformat(data['createdAt'].replace('Z', '+00:00'))
+        self.taint_previous = data.get('taintPrevious')
         self.purpose = data['purpose']
         self.public_key = data['publicKey']
         self.rotation_hash = data['rotationHash']
@@ -78,6 +85,9 @@ class KeyVerifier:
         cached_entry = self.cache.get(hsm_generation_id)
 
         if not cached_entry:
+            # Clear cache before repopulating
+            self.cache.clear()
+
             # Fetch all HSM keys from Redis
             keys = await self.redis_client.keys('*')
             if not keys:
@@ -150,9 +160,14 @@ class KeyVerifier:
             records = by_prefix[HSM_IDENTITY]
 
             # Cache entries within 12-hour window (iterate backwards)
+            tainted = False
             for record, _ in reversed(records):
                 payload = record.payload
-                self.cache[payload.id] = payload
+
+                if not tainted:
+                    self.cache[payload.id] = payload
+
+                tainted = True if payload.taint_previous == True else False
 
                 if payload.created_at + TWELVE_HOURS_FIFTEEN_MINUTES < datetime.now(payload.created_at.tzinfo):
                     break
