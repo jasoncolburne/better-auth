@@ -23,23 +23,23 @@ process across another field, and both the id and this field (we'll call it the 
 prefixes the sequence). We'll let this field remain constant for the entire chain, using it to
 identify the chain. Remember, the same value is also the id of the first event.
 
-This is what the references in such a key chain look like:
+This is what such a key chain looks like:
 
 ```
-Event N-1    ...    Event N     ...     Event N+1
+...   Event N-1    ...    Event N     ...     Event N+1     ...
 
-Prefix       =      Prefix       =      Prefix
-SequenceNumber=N-1  SequenceNumber=N    SequenceNumber=N+1
-CreatedAt=...       CreatedAt=...       CreatedAt=...
-                                        TaintPrevious=True
-Previous
-Id<-----------------Previous
-                    Id<-----------------Previous
-                                        Id
-PublicKey
-RotationHash------->PublicKey
-                    RotationHash------->PublicKey
-                                        RotationHash
+      Prefix       =      Prefix       =      Prefix
+      SequenceNumber=N-1  SequenceNumber=N    SequenceNumber=N+1
+      CreatedAt=...       CreatedAt=...       CreatedAt=...
+                                              TaintPrevious=True
+      Previous
+      Id<-----------------Previous
+                          Id<-----------------Previous
+                                              Id
+      PublicKey
+      RotationHash------->PublicKey
+                          RotationHash------->PublicKey
+                                              RotationHash
 ```
 
 - Id - The self-addressing identifier for the event.
