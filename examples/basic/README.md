@@ -17,11 +17,12 @@ we create a self-certifying keychain. If we add timestamps, we know which genera
 which signature. If we add another field called `taintPrevious` we can invalidate keys for cases
 where previous signatures remain valid for a duration of time (think tokens). We'll add sequence
 numbers to create an easy way to prevent divergence of the chain. If two events share the same
-sequence number, the first in time is considered valid. When creating the self-addressing
-identifier, we'll also do something special for the first record in the chain. We replicate the
-process across another field, and both the id and this field (we'll call it the prefix since it
-prefixes the sequence). We'll let this field remain constant for the entire chain, using it to
-identify the chain. Remember, the same value is also the id of the first event.
+sequence number, the entire key chain is contested, and a rotation is required to regain control.
+This next event's previous field will indicate the correct previous event. When creating the
+self-addressing identifier, we'll also do something special for the first record in the chain. We
+replicate the process across another field, and both the id and this field (we'll call it the prefix
+since it prefixes the sequence). We'll let this field remain constant for the entire chain, using it
+to identify the chain. Remember, the same value is also the id of the first event.
 
 This is what such a key chain looks like:
 
