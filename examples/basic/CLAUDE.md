@@ -390,6 +390,32 @@ On Access Request:
   4. App uses public key to verify client request
 ```
 
+### HSM Key Verification Caching
+
+The key verification process includes sophisticated caching to avoid repeated Redis lookups while maintaining security:
+
+**Cache Population:**
+- When a new HSM generation ID is seen, the cache is cleared
+- All HSM keys are fetched from Redis and verified (signatures, chain, timestamps)
+- Keys within the verification window are cached in reverse chronological order
+- Each cache entry includes the key data and an expiration timestamp
+- The most recent (current) key has nil expiration
+
+**Verification Windows by Service:**
+- iOS: 12 hours + 60 seconds (serverLifetime + maxResponseTime)
+- Auth: 24 hours (12h serverLifetime + 12h refreshLifetime)
+- Apps: 12 hours 15 minutes (12h serverLifetime + 15m accessLifetime)
+
+**Why Auth Has Longer Window:**
+The auth service needs to verify HSM signatures on access keys that may have been created by auth services that rolled just before an HSM rotation. When a service rolls just before rotation, it may issue session tokens. Those session tokens can be refreshed up to 12 hours later, requiring the auth service to verify HSM signatures on access keys created up to 24 hours ago.
+
+**Timestamp Validation:**
+All verifiers enforce:
+- No future timestamps (createdAt < now)
+- Strictly increasing timestamps (createdAt_n > createdAt_n-1)
+
+This ensures temporal ordering of the key chain and supports graceful rotation.
+
 ### CronJob Rolling Restarts
 
 Every 12 hours, CronJobs trigger rolling restarts:
@@ -589,10 +615,11 @@ This script performs a complete emergency rotation sequence:
 - User accounts and devices in Postgres - unchanged
 
 **Side effects:**
-- The current iOS client implementation caches response keys only when authenticated, so when this
-happens they lose access and in the process that cache is cleared. This isn't perfect, but it's
-better than not doing it. To be safer, remove the cache entirely at the expense of some more network
-calls.
+- All verifiers cache HSM keys with expiration timestamps; expired keys fail verification
+- When services restart and request new HSM-signed keys, verifiers see new generation IDs and clear their HSM key caches
+- This triggers re-verification of the full HSM key chain, detecting any taints or rotations
+- iOS clients cache response keys only when authenticated and will clear their response key cache when the HSM cache is cleared (via callback mechanism)
+- The iOS behavior ensures clients detect HSM rotations but requires re-authentication to rebuild the response key cache
 
 ### Regenerating HSM Keys (Nuclear Reset)
 

@@ -80,6 +80,32 @@ All verifiers follow this pattern:
 2. Verify key authorization signature with valid HSM key
 3. Verify payload signature with key
 
+#### HSM Key Chain Verification & Caching
+
+All verifiers implement a sophisticated caching mechanism for HSM keys:
+
+**Verification Windows:**
+- **iOS Client**: 12 hours (serverLifetime) + 60 seconds (maxResponseTime)
+- **Auth Service**: 24 hours (12h serverLifetime + 12h refreshLifetime)
+- **App Services**: 12 hours 15 minutes (12h serverLifetime + 15m accessLifetime)
+
+The auth service requires a longer window because when a service rolls just before an HSM rotation, it may issue session tokens. Those session tokens can be refreshed up to 12 hours later, requiring the auth service to verify HSM signatures on access keys created up to 24 hours ago.
+
+**Cache Expiration:**
+When HSM keys are cached, each entry stores:
+- The log entry (key data)
+- An expiration timestamp (createdAt + verificationWindow)
+- The most recent (current) key has nil expiration (never expires from cache)
+
+Entries are validated on retrieval - if expired, the request fails with "expired key" error.
+
+**Timestamp Validation:**
+All verifiers enforce strict timestamp ordering:
+- Timestamps must not be in the future (createdAt < now)
+- Timestamps must strictly increase (createdAt_n > createdAt_n-1)
+
+This ensures temporal ordering of the key chain and supports graceful rotation.
+
 #### Services
 
 Each server generates a response signing key and has it endorsed by the HSM upon startup, and the
@@ -654,8 +680,14 @@ The HSM service provides centralized key signing to prevent unauthorized keys fr
 2. **Key Verification** (on every access request):
    - App services fetch keys from Redis DB 0 (access keys)
    - Clients fetch keys from keys service which reads Redis DB 1 (response keys)
-   - Verifiers fetch the HSM key chain from the keys service which reads from Redis DB 3 (hsm keys)
-   - Verifiers verify the key chain and cache any live keys for use
+   - Verifiers fetch the HSM key chain from the keys service which reads from Redis DB 4 (hsm keys)
+   - Verifiers verify the key chain (signatures, timestamps, commitments) and cache live keys
+   - A "live" key is one that:
+     - Is within its verification window (createdAt + window > now)
+     - Is not tainted (no taintPrevious flag in a later entry)
+     - Has valid timestamp ordering (strictly increasing, not in future)
+   - Cached keys include an expiration timestamp; the most recent key never expires
+   - On retrieval, if a cached key has expired, verification fails with "expired key"
    - Verifiers extract the body JSON and signature from HSM response
    - Verifiers attempt to verify the signature using a live, cached key
    - Verifiers check: HSM identity matches, purpose is correct, key not expired, self-certification
