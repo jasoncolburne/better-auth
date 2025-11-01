@@ -60,18 +60,39 @@ Now that we've created a self-certifying key chain, we can apply it to the HSM d
 burn the chain's prefix into all the software to prevent impersonation, without the need for complex
 recovery mechanisms.
 
-### Delegation (Services)
+### Verifiers
+
+All verifiers follow this pattern:
+
+1. Verify HSM key chain, removing stale/tainted keys
+2. Verify key authorization signature with valid HSM key
+3. Verify payload signature with key
+
+#### Services
 
 Each server generates a response signing key and has it endorsed by the HSM upon startup, and the
 servers are cycled every 12 hours. Additionally, the auth servers generate access signing keys and
 these are also endorsed by the HSM.
 
-### Clients
+When any server needs to verify an access key signature created by an auth server, it checks the hsm
+key chain and authorization to ensure the key is valid.
+
+#### Clients
 
 Client key chains are similar to the HSM key chain, but are instead managed by the auth service
 through a storage abstraction (in a postgres db in this example). Management requests are signed
 by the client keys, and forward secrecy/hardware are employed to protect the identifier of the
 client.
+
+When clients receive responses the keys used to create response signatures are verified to be
+correctly endorsed by the hsm.
+
+### Known Weaknesses
+
+- Brute force of the current HSM key and masquerading as the backend (recoverable by
+  rotation/tainting)
+- Physical theft of an unlocked client device (recoverable by recovery/unlinking)
+- Code execution on an app or auth service (recoverable by rotating/tainting/rolling)
 
 ## Architecture
 
