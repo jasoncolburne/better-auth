@@ -4,6 +4,8 @@ This example demonstrates a production-like Better Auth deployment using Garden.
 
 ## Security
 
+### Root (HSM)
+
 The security of this system rests on forward secrecy and hardware-backed keys. By pre-generating
 securely stored keys and committing to them using forward secrecy, we build recovery avenues for
 identifiers associated with such keys. To ensure that the identifiers are tightly bound to the
@@ -46,7 +48,7 @@ CreatedAt=...       CreatedAt=...       CreatedAt=...
 - PublicKey - The current generation's signing key's verification key
 - RotationHash - A commitment to the next signing key
 - SequenceNumber - Increments by 1, starts at 0, no two events can share the same sequence number.
-- CreatedAt - A timestamp.
+- CreatedAt - A timestamp, always increases.
 - TamperPrevious - True if the rotation was due to a compromised key.
 
 In the example, generation N is tainted and signatures created with it, no matter how recent, should
@@ -55,8 +57,21 @@ not be respected. This permits zero-downtime hsm key rotation.
 Each event is signed with the signing key that corresponds to the event's PublicKey.
 
 Now that we've created a self-certifying key chain, we can apply it to the HSM described below and
-burn the chain's prefix into the software to prevent impersonation, without the need for complex
+burn the chain's prefix into all the software to prevent impersonation, without the need for complex
 recovery mechanisms.
+
+### Delegation (Services)
+
+Each server generates a response signing key and has it endorsed by the HSM upon startup, and the
+servers are cycled every 12 hours. Additionally, the auth servers generate access signing keys and
+these are also endorsed by the HSM.
+
+### Clients
+
+Client key chains are similar to the HSM key chain, but are instead managed by the auth service
+through a storage abstraction (in a postgres db in this example). Management requests are signed
+by the client keys, and forward secrecy/hardware are employed to protect the identifier of the
+client.
 
 ## Architecture
 
