@@ -8,21 +8,26 @@ This example demonstrates a production-like Better Auth deployment using Garden.
 
 The security of this system rests on forward secrecy and hardware-backed keys. By pre-generating
 securely stored keys and committing to them using forward secrecy, we build recovery avenues for
-identifiers associated with such keys. To ensure that the identifiers are tightly bound to the
-keys they are associated with, several measures are taken. In addition to commitments to keys
-revealed in the future, each event about an identifier's keys is chained back to the previous
-event. By creating content-addressable, embedded identifiers in each event, we can prove that
-the entire event has not been tampered. By signing each event with the key revealed in that event,
-we create a self-certifying keychain. If we add timestamps, we know which generation of key created
-which signature. If we add another field called `taintPrevious` we can invalidate keys for cases
-where previous signatures remain valid for a duration of time (think tokens). We'll add sequence
-numbers to create an easy way to prevent divergence of the chain. If two events share the same
-sequence number, the entire key chain is contested, and a rotation is required to regain control.
-This next event's previous field will indicate the correct previous event. When creating the
-self-addressing identifier, we'll also do something special for the first record in the chain. We
-replicate the process across another field, and both the id and this field (we'll call it the prefix
-since it prefixes the sequence). We'll let this field remain constant for the entire chain, using it
-to identify the chain. Remember, the same value is also the id of the first event.
+identifiers associated with such keys.
+
+To ensure that the identifiers are tightly bound to the keys they are associated with, several
+measures are taken:
+- In addition to commitments to keys revealed in the future, each event about an identifier's keys
+is chained back to the previous event.
+- By creating content-addressable, embedded identifiers in each event, we can prove that the event
+has not been tampered.
+- When creating the self-addressing identifier, we'll also do something special for the first record
+in the chain. We replicate the process across another field, and both the id and this field (we'll
+call it the prefix since it prefixes the sequence). It remains constant for the entire chain, and
+identifies the chain.
+- The prefix is also the id of the first event.
+- By signing each event with the key revealed in that event, we create a self-certifying keychain.
+- If we add timestamps, we know which generation of key created a given signature.
+- If we add another field called `taintPrevious` we can invalidate keys for cases where previous
+signatures remain valid for a duration of time (think tokens).
+- We can add sequence numbers to create an easy way to prevent divergence of the chain. If two
+events share the same sequence number, the entire key chain is contested, and a rotation is required
+to regain control. This next event's previous field will indicate the correct previous event.
 
 This is what such a key chain looks like:
 
