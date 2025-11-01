@@ -241,7 +241,7 @@ This example demonstrates how to reference Better Auth libraries locally without
 Uses Go's `replace` directive in `go.mod`:
 
 ```go
-module github.com/jasoncolburne/better-auth/examples/basic/auth
+module github.com/jasoncolburne/better-auth/examples/garden-k8s/auth
 
 require github.com/jasoncolburne/better-auth-go v0.1.0
 
@@ -304,7 +304,7 @@ COPY ../../../implementations/better-auth-rs /better-auth-rs
 ### 1. Navigate to Example Directory
 
 ```bash
-cd examples/basic
+cd examples/garden-k8s
 ```
 
 ### 2. Deploy HSM and Keys services (required for identity export)
@@ -540,7 +540,7 @@ This performs a complete emergency rotation:
 ## Project Structure
 
 ```
-examples/basic/
+examples/garden-k8s/
 ├── project.garden.yml              # Main Garden project configuration
 ├── README.md                       # This file
 └── services/

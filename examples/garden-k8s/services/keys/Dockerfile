@@ -4,11 +4,11 @@ FROM ruby:3.3-bookworm AS builder
 WORKDIR /app
 
 # Copy Gemfile and install dependencies
-COPY examples/basic/services/keys/Gemfile examples/basic/services/keys/Gemfile.lock* ./
+COPY examples/garden-k8s/services/keys/Gemfile examples/garden-k8s/services/keys/Gemfile.lock* ./
 RUN bundle install --jobs 4 --retry 3
 
 # Copy application code
-COPY examples/basic/services/keys/ .
+COPY examples/garden-k8s/services/keys/ .
 
 # Final stage
 FROM ruby:3.3-slim-bookworm

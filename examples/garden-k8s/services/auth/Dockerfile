@@ -8,14 +8,14 @@ RUN mkdir /dependencies
 COPY implementations/better-auth-go /dependencies/better-auth-go
 
 # Copy go module files
-COPY examples/basic/services/auth/go.mod examples/basic/services/auth/go.sum ./
+COPY examples/garden-k8s/services/auth/go.mod examples/garden-k8s/services/auth/go.sum ./
 RUN go mod download
 
 # Copy source code
-COPY examples/basic/services/auth/ .
+COPY examples/garden-k8s/services/auth/ .
 
 # Inject HSM identity from test-fixtures/hsm.id
-COPY examples/basic/test-fixtures/hsm.id /tmp/hsm.id
+COPY examples/garden-k8s/test-fixtures/hsm.id /tmp/hsm.id
 RUN HSM_ID=$(cat /tmp/hsm.id) && \
     sed -i "s/BETTER_AUTH_HSM_IDENTITY_PLACEHOLDER/$HSM_ID/" pkg/implementation/accessverificationkeystore.go && \
     rm /tmp/hsm.id

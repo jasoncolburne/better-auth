@@ -7,12 +7,12 @@ source:
 
 include:
   - implementations/better-auth-go/**/*
-  - examples/basic/services/auth/**/*
-  - examples/basic/test-fixtures/**/*
+  - examples/garden-k8s/services/auth/**/*
+  - examples/garden-k8s/test-fixtures/**/*
 
 spec:
   # Build the Docker image for the Go auth server
-  dockerfile: examples/basic/services/auth/Dockerfile
+  dockerfile: examples/garden-k8s/services/auth/Dockerfile
 
 ---
 

@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/jasoncolburne/better-auth/examples/basic/auth/pkg/models"
+	"github.com/jasoncolburne/better-auth/examples/garden-k8s/auth/pkg/models"
 	"github.com/jasoncolburne/verifiable-storage-go/pkg/data"
 	"github.com/jasoncolburne/verifiable-storage-go/pkg/data/expressions"
 	"github.com/jasoncolburne/verifiable-storage-go/pkg/data/orderings"

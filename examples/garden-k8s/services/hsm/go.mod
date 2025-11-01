@@ -1,4 +1,4 @@
-module github.com/jasoncolburne/better-auth/examples/basic/services/hsm
+module github.com/jasoncolburne/better-auth/examples/garden-k8s/services/hsm
 
 go 1.25.1
 

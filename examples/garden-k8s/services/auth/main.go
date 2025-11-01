@@ -19,9 +19,9 @@ import (
 	"github.com/jasoncolburne/better-auth-go/examples/crypto"
 	"github.com/jasoncolburne/better-auth-go/examples/encoding"
 	"github.com/jasoncolburne/better-auth-go/pkg/cryptointerfaces"
-	"github.com/jasoncolburne/better-auth/examples/basic/auth/pkg/db"
-	"github.com/jasoncolburne/better-auth/examples/basic/auth/pkg/implementation"
-	"github.com/jasoncolburne/better-auth/examples/basic/auth/pkg/models"
+	"github.com/jasoncolburne/better-auth/examples/garden-k8s/auth/pkg/db"
+	"github.com/jasoncolburne/better-auth/examples/garden-k8s/auth/pkg/implementation"
+	"github.com/jasoncolburne/better-auth/examples/garden-k8s/auth/pkg/models"
 	"github.com/redis/go-redis/v9"
 )
 

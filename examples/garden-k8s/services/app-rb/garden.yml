@@ -7,12 +7,12 @@ source:
 
 include:
   - implementations/better-auth-rb/**/*
-  - examples/basic/services/app-rb/**/*
-  - examples/basic/test-fixtures/**/*
+  - examples/garden-k8s/services/app-rb/**/*
+  - examples/garden-k8s/test-fixtures/**/*
 
 spec:
   # Build the Docker image for the Ruby app server
-  dockerfile: examples/basic/services/app-rb/Dockerfile
+  dockerfile: examples/garden-k8s/services/app-rb/Dockerfile
 
 ---
 

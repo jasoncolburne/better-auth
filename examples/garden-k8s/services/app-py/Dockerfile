@@ -16,14 +16,14 @@ RUN pip install --no-cache-dir -e .
 
 # Copy app requirements and install
 WORKDIR /app
-COPY examples/basic/services/app-py/requirements.txt ./
+COPY examples/garden-k8s/services/app-py/requirements.txt ./
 RUN . "$HOME/.cargo/env" && pip install --no-cache-dir -r requirements.txt
 
 # Copy application code
-COPY examples/basic/services/app-py/ .
+COPY examples/garden-k8s/services/app-py/ .
 
 # Inject HSM identity from test-fixtures/hsm.id
-COPY examples/basic/test-fixtures/hsm.id /tmp/hsm.id
+COPY examples/garden-k8s/test-fixtures/hsm.id /tmp/hsm.id
 RUN HSM_ID=$(cat /tmp/hsm.id) && \
     sed -i "s/BETTER_AUTH_HSM_IDENTITY_PLACEHOLDER/$HSM_ID/" key_verifier.py && \
     rm /tmp/hsm.id

@@ -1,4 +1,4 @@
-module github.com/jasoncolburne/better-auth/examples/basic/auth
+module github.com/jasoncolburne/better-auth/examples/garden-k8s/auth
 
 go 1.25.1
 

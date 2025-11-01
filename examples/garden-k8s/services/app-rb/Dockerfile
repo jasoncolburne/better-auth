@@ -19,14 +19,14 @@ RUN gem update bundler && \
 
 # Install app dependencies in the builder
 WORKDIR /app
-COPY examples/basic/services/app-rb/Gemfile examples/basic/services/app-rb/Gemfile.lock* ./
+COPY examples/garden-k8s/services/app-rb/Gemfile examples/garden-k8s/services/app-rb/Gemfile.lock* ./
 RUN bundle install --jobs 4 --retry 3
 
 # Copy application code
-COPY examples/basic/services/app-rb/ .
+COPY examples/garden-k8s/services/app-rb/ .
 
 # Inject HSM identity from test-fixtures/hsm.id
-COPY examples/basic/test-fixtures/hsm.id /tmp/hsm.id
+COPY examples/garden-k8s/test-fixtures/hsm.id /tmp/hsm.id
 RUN HSM_ID=$(cat /tmp/hsm.id) && \
     sed -i "s/BETTER_AUTH_HSM_IDENTITY_PLACEHOLDER/$HSM_ID/" lib/storage/key_verifier.rb && \
     rm /tmp/hsm.id

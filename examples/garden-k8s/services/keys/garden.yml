@@ -6,11 +6,11 @@ source:
   path: ../../../..  # Set build context to repository root
 
 include:
-  - examples/basic/services/keys/**/*
+  - examples/garden-k8s/services/keys/**/*
 
 spec:
   # Build the Docker image for the Ruby keys server
-  dockerfile: examples/basic/services/keys/Dockerfile
+  dockerfile: examples/garden-k8s/services/keys/Dockerfile
 
 ---
 

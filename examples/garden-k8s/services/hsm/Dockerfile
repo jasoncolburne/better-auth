@@ -4,11 +4,11 @@ FROM golang:1.25.1-bookworm AS builder
 WORKDIR /app
 
 # Copy go module files
-COPY examples/basic/services/hsm/go.mod examples/basic/services/hsm/go.sum ./
+COPY examples/garden-k8s/services/hsm/go.mod examples/garden-k8s/services/hsm/go.sum ./
 RUN go mod download
 
 # Copy source code
-COPY examples/basic/services/hsm/*.go ./
+COPY examples/garden-k8s/services/hsm/*.go ./
 
 # Build the HSM server
 RUN CGO_ENABLED=1 GOOS=linux go build -o hsm-server .

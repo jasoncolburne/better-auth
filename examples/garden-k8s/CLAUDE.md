@@ -5,7 +5,7 @@ This guide is for developers working on the Better Auth basic Kubernetes example
 ## Quick Start for Development
 
 ```bash
-# From examples/basic/
+# From examples/garden-k8s/
 garden deploy --log-level=verbose
 
 # Watch logs from all services
