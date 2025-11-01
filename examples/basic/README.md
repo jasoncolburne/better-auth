@@ -29,6 +29,9 @@ This is what the references in such a key chain look like:
 Event N-1    ...    Event N     ...     Event N+1
 
 Prefix       =      Prefix       =      Prefix
+SequenceNumber=N-1  SequenceNumber=N    SequenceNumber=N+1
+CreatedAt=...       CreatedAt=...       CreatedAt=...
+                                        TaintPrevious=True
 Previous
 Id<-----------------Previous
                     Id<-----------------Previous
@@ -37,9 +40,6 @@ PublicKey
 RotationHash------->PublicKey
                     RotationHash------->PublicKey
                                         RotationHash
-SequenceNumber=N-1  SequenceNumber=N    SequenceNumber=N+1
-CreatedAt=...       CreatedAt=...       CreatedAt=...
-                                        TaintPrevious=True
 ```
 
 - Id - The self-addressing identifier for the event.
@@ -52,7 +52,8 @@ CreatedAt=...       CreatedAt=...       CreatedAt=...
 - TamperPrevious - True if the rotation was due to a compromised key.
 
 In the example, generation N is tainted and signatures created with it, no matter how recent, should
-not be respected. This permits zero-downtime hsm key rotation.
+not be respected. This permits zero-downtime hsm key rotation with an optional lookback window,
+without the need to log and distribute each signature on its respective key chain.
 
 Each event is signed with the signing key that corresponds to the event's PublicKey.
 
@@ -76,6 +77,10 @@ these are also endorsed by the HSM.
 
 When any server needs to verify an access key signature created by an auth server, it checks the hsm
 key chain and authorization to ensure the key is valid.
+
+When the HSM key is tainted, it is critical to restart all the services. This informs clients, by
+virtue of the new hsm key they will see, that there has been an update to the key chain - which is
+how they detect the taint.
 
 #### Clients
 
