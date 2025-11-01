@@ -830,9 +830,8 @@ kubectl describe pvc postgres-data -n better-auth-basic-example-dev
 
 ## Next Steps
 
-- Add more complex authentication flows
 - Add monitoring and observability (Prometheus, Grafana)
-- Add client implementations for Swift, Dart, and Kotlin
+- Add more client implementations (start with Android)
 
 ## Resources
 
