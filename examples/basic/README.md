@@ -832,6 +832,8 @@ kubectl describe pvc postgres-data -n better-auth-basic-example-dev
 
 - Add monitoring and observability (Prometheus, Grafana)
 - Add more client implementations (start with Android)
+- Figure out an easy way to verify that a signature was created after the response/access key
+  (probably requires plumbing a timestamp somewhere)
 
 ## Resources
 
