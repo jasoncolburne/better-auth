@@ -52,7 +52,7 @@ This is what such a key chain looks like:
 - Prefix - The self-addressing identifier for event 0 in this chain.
 - Previous (Optional) - The previous event's Id
 - PublicKey - The current generation's signing key's verification key
-- RotationHash - A commitment to the next signing key
+- RotationHash - A commitment to the next public key
 - SequenceNumber - Increments by 1, starts at 0, no two events can share the same sequence number.
 - CreatedAt - A timestamp, always increases.
 - TaintPrevious (Optional) - True if the rotation was due to a compromised key.
