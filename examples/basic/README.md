@@ -4,11 +4,11 @@ This example demonstrates a production-like Better Auth deployment using Garden.
 
 ## Security
 
-### Root (HSM)
-
 The security of this system rests on forward secrecy and hardware-backed keys. By pre-generating
 securely stored keys and committing to them using forward secrecy, we build recovery avenues for
 identifiers associated with such keys.
+
+### Root (HSM)
 
 To ensure that the identifiers are tightly bound to the keys they are associated with, several
 measures are taken:
