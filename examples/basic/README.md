@@ -132,10 +132,18 @@ correctly endorsed by the hsm.
 
 ### Known Weaknesses
 
-- Brute force of the current HSM key and masquerading as the backend (recoverable by
-  rotation/tainting)
-- Physical theft of an unlocked client device (recoverable by recovery/unlinking)
-- Code execution on an app or auth service (recoverable by rotating/tainting/rolling)
+- Brute force of the current HSM key and masquerading as the backend
+  - recoverable by rotation/tainting
+    - caveat: since the client caches the hsm key chain in this system, a successful masquerade
+      involving interception of outbound requests and denial of true server responses would cause
+      the client not to update its keychain and continue to trust the adversary. if the adversary
+      can masquerade in this way _and_ can compromise an HSM-backed key, there is little defense
+      that can stop the adversary from tricking the client. even if we tried to fetch the key chain
+      each request, we must assume masquerading could prevent that true response as well.
+- Physical theft of an unlocked client device
+  - recoverable by recovery or unlinking
+- Code execution on an app or auth service
+  - recoverable by rotating/tainting/rolling, after solving the root issue
 
 ## Architecture
 
