@@ -79,10 +79,15 @@ struct SignedEntry: Codable {
 // 1 minute
 let maxResponseTime = TimeInterval(60)
 
+struct ExpiringEntry {
+    let entry: SignedEntry
+    let expiration: Date?
+}
+
 class KeyVerifier {
     private let verifier = Secp256r1Verifier()
     private let hasher = Hasher()
-    private var cache: [String: SignedEntry] = [:]
+    private var cache: [String: ExpiringEntry] = [:]
     private let serverLifetime: TimeInterval
     var isAuthenticated: Bool = false
     var onCacheCleared: (() -> Void)?
@@ -92,7 +97,8 @@ class KeyVerifier {
     }
 
     func verify(_ body: String, _ signature: String, _ hsmIdentity: String, _ generationId: String) async throws {
-        var foundEntry = self.cache[generationId]
+        let cachedEntry = self.cache[generationId]
+        var foundEntry = cachedEntry?.entry
 
         if foundEntry == nil {
             // Clear cache before repopulating
@@ -188,6 +194,7 @@ class KeyVerifier {
             }
 
             var tainted = false
+            var expiration: Date? = nil
             for entry in prefixedEntries.reversed() {
                 let payload = entry.payload
 
@@ -199,13 +206,16 @@ class KeyVerifier {
 
                     // Only cache if authenticated
                     if isAuthenticated {
-                        self.cache[payload.id] = entry
+                        self.cache[payload.id] = ExpiringEntry(entry: entry, expiration: expiration)
                     }
                 }
 
                 tainted = payload.taintPrevious ?? false
 
-                if payload.createdAt + serverLifetime + maxResponseTime < Date() {
+                let exp = payload.createdAt + serverLifetime + maxResponseTime
+                expiration = exp
+
+                if exp < Date() {
                     break
                 }
             }
@@ -220,6 +230,10 @@ class KeyVerifier {
         }
 
         if entry.payload.purpose != "key-authorization" {
+            throw BetterAuthError.invalidData
+        }
+
+        if let expiration = cachedEntry?.expiration, expiration < Date() {
             throw BetterAuthError.invalidData
         }
 

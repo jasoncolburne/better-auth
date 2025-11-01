@@ -33,9 +33,14 @@ struct SignedLogEntry {
     signature: String,
 }
 
+struct ExpiringEntry {
+    entry: LogEntry,
+    expiration: Option<DateTime<Utc>>,
+}
+
 pub struct KeyVerifier {
     connection: Arc<Mutex<ConnectionManager>>,
-    cache: Arc<Mutex<HashMap<String, LogEntry>>>,
+    cache: Arc<Mutex<HashMap<String, ExpiringEntry>>>,
     verification_window_seconds: i64,
 }
 
@@ -171,19 +176,27 @@ impl KeyVerifier {
         // Cache entries within 12-hour window (iterate backwards)
         let mut cache = self.cache.lock().await;
         let mut tainted = false;
+        let mut expiration: Option<DateTime<Utc>> = None;
         for (record, _) in records.iter().rev() {
             let payload = &record.payload;
 
             if !tainted {
-                cache.insert(payload.id.clone(), payload.clone());
+                cache.insert(payload.id.clone(), ExpiringEntry {
+                    entry: payload.clone(),
+                    expiration: expiration,
+                });
             }
 
             tainted = payload.taint_previous.unwrap_or(false);
 
             let created_at = DateTime::parse_from_rfc3339(&payload.created_at)
-                .map_err(|e| format!("Failed to parse created_at: {}", e))?;
+                .map_err(|e| format!("Failed to parse created_at: {}", e))?
+                .with_timezone(&Utc);
 
-            if created_at.with_timezone(&Utc) + Duration::seconds(self.verification_window_seconds) < Utc::now() {
+            let exp = created_at + Duration::seconds(self.verification_window_seconds);
+            expiration = Some(exp);
+
+            if exp < Utc::now() {
                 break;
             }
         }
@@ -196,22 +209,28 @@ impl KeyVerifier {
 
     async fn verify_with_entry(
         &self,
-        cached_entry: &LogEntry,
+        cached_entry: &ExpiringEntry,
         signature: &str,
         hsm_identity: &str,
         message: &str,
     ) -> Result<(), String> {
-        if cached_entry.prefix != hsm_identity {
+        if cached_entry.entry.prefix != hsm_identity {
             return Err("incorrect identity (expected hsm.identity == prefix)".to_string());
         }
 
-        if cached_entry.purpose != "key-authorization" {
+        if cached_entry.entry.purpose != "key-authorization" {
             return Err("incorrect purpose (expected key-authorization)".to_string());
+        }
+
+        if let Some(expiration) = cached_entry.expiration {
+            if expiration < Utc::now() {
+                return Err("expired key".to_string());
+            }
         }
 
         // Verify message signature
         let verifier = Secp256r1Verifier::new();
-        verifier.verify(message, signature, &cached_entry.public_key).await
+        verifier.verify(message, signature, &cached_entry.entry.public_key).await
     }
 
     async fn verify_prefix_and_data(payload_json: &str, payload: &LogEntry) -> Result<(), String> {

@@ -23,11 +23,16 @@ interface SignedLogEntry {
   signature: string
 }
 
+interface ExpiringEntry {
+  entry: LogEntry
+  expiration: Date | null
+}
+
 export class KeyVerifier {
   private readonly client: Redis
   private readonly verifier: IVerifier
   private readonly hasher: IHasher
-  private readonly cache: Map<string, LogEntry>
+  private readonly cache: Map<string, ExpiringEntry>
   private readonly serverLifetime: number
   private readonly accessLifetime: number
 
@@ -153,12 +158,16 @@ export class KeyVerifier {
       }
 
       var tainted = false
+      var expiration: Date | null = null
       // Cache entries within 12-hour window (iterate backwards)
       for (let i = records.length - 1; i >= 0; i--) {
         const payload = records[i][0].payload
 
         if (!tainted) {
-          this.cache.set(payload.id, payload)
+          this.cache.set(payload.id, {
+            entry: payload,
+            expiration: expiration
+          })
         }
 
         if (payload.taintPrevious === true) {
@@ -168,7 +177,10 @@ export class KeyVerifier {
         }
 
         const createdAt = new Date(payload.createdAt)
-        if (createdAt.getTime() + this.serverLifetime + this.accessLifetime < Date.now()) {
+        const exp = createdAt.getTime() + this.serverLifetime + this.accessLifetime
+        expiration = new Date(exp)
+
+        if (exp < Date.now()) {
           break
         }
       }
@@ -179,16 +191,20 @@ export class KeyVerifier {
       }
     }
 
-    if (cachedEntry.prefix !== hsmIdentity) {
+    if (cachedEntry.entry.prefix !== hsmIdentity) {
       throw new Error('incorrect identity (expected hsm.identity == prefix)')
     }
 
-    if (cachedEntry.purpose !== 'key-authorization') {
+    if (cachedEntry.entry.purpose !== 'key-authorization') {
       throw new Error('incorrect purpose (expected key-authorization)')
     }
 
+    if (cachedEntry.expiration !== null && cachedEntry.expiration < new Date()) {
+      throw new Error('expired key')
+    }
+
     // Verify message signature
-    await this.verifier.verify(message, signature, cachedEntry.publicKey)
+    await this.verifier.verify(message, signature, cachedEntry.entry.publicKey)
   }
 
   private async verifyPrefixAndData(payloadJson: string, payload: LogEntry): Promise<void> {

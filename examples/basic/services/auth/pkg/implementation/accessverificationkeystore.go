@@ -35,11 +35,16 @@ type SignedLogEntry struct {
 	Signature string   `json:"signature"`
 }
 
+type ExpiringEntry struct {
+	entry      *LogEntry
+	expiration *time.Time
+}
+
 type KeyVerifier struct {
 	client          *redis.Client
 	verifier        cryptointerfaces.Verifier
 	hasher          cryptointerfaces.Hasher
-	cache           map[string]*LogEntry
+	cache           map[string]ExpiringEntry
 	cacheMu         sync.RWMutex
 	serverLifetime  time.Duration
 	refreshLifetime time.Duration
@@ -70,7 +75,7 @@ func NewKeyVerifier(serverLifetime, refreshLifetime time.Duration) (*KeyVerifier
 		client:          hsmKeysClient,
 		verifier:        verifier,
 		hasher:          hasher,
-		cache:           map[string]*LogEntry{},
+		cache:           map[string]ExpiringEntry{},
 		serverLifetime:  serverLifetime,
 		refreshLifetime: refreshLifetime,
 	}, nil
@@ -91,7 +96,7 @@ func (v *KeyVerifier) Verify(
 		// Clear cache before repopulating. This ensures that if we see a new key, we disregard any
 		// older than the threshold below. It also allows tainting keys during emergency rotations.
 		v.cacheMu.Lock()
-		v.cache = make(map[string]*LogEntry)
+		v.cache = make(map[string]ExpiringEntry)
 		v.cacheMu.Unlock()
 
 		recordStrings, err := retryRedisOperation(ctx, func() ([]any, error) {
@@ -218,11 +223,15 @@ func (v *KeyVerifier) Verify(
 
 		tainted := false
 		v.cacheMu.Lock()
+		var expiration *time.Time
 		for i := len(records) - 1; i >= 0; i-- {
 			payload := records[i].Payload
 
 			if !tainted {
-				v.cache[payload.Id] = &payload
+				v.cache[payload.Id] = ExpiringEntry{
+					entry:      &payload,
+					expiration: expiration,
+				}
 			}
 
 			if payload.TaintPrevious != nil && *payload.TaintPrevious {
@@ -238,7 +247,10 @@ func (v *KeyVerifier) Verify(
 			// rotation, a session token may be issued. that token may be refreshed another 12 hours
 			// in the future (in our setup), which is what this verification actually authorizes
 			when := (time.Time)(*payload.CreatedAt)
-			if when.Add(v.serverLifetime + v.refreshLifetime).Before(time.Now()) {
+			exp := when.Add(v.serverLifetime + v.refreshLifetime)
+			expiration = &exp
+
+			if expiration.Before(time.Now()) {
 				break
 			}
 		}
@@ -250,15 +262,19 @@ func (v *KeyVerifier) Verify(
 		}
 	}
 
-	if cachedEntry.Prefix != hsmIdentity {
+	if cachedEntry.entry.Prefix != hsmIdentity {
 		return fmt.Errorf("incorrect identity (expected hsm.identity == prefix)")
 	}
 
-	if cachedEntry.Purpose != "key-authorization" {
+	if cachedEntry.entry.Purpose != "key-authorization" {
 		return fmt.Errorf("incorrect purpose (expected key-authorization)")
 	}
 
-	publicKey := cachedEntry.PublicKey
+	if cachedEntry.expiration != nil && cachedEntry.expiration.Before(time.Now()) {
+		return fmt.Errorf("expired key")
+	}
+
+	publicKey := cachedEntry.entry.PublicKey
 
 	// verify message signature
 	if err := v.verifier.Verify(signature, publicKey, message); err != nil {

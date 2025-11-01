@@ -4,6 +4,7 @@ import json
 import logging
 import os
 import sys
+from dataclasses import dataclass
 from datetime import datetime, timedelta
 from typing import Dict, Optional
 
@@ -54,6 +55,13 @@ class SignedLogEntry:
         self.signature = data['signature']
 
 
+@dataclass
+class ExpiringEntry:
+    """Cache entry with expiration."""
+    entry: LogEntry
+    expiration: Optional[datetime]
+
+
 class KeyVerifier:
     """Verifies HSM signatures with caching."""
 
@@ -65,7 +73,7 @@ class KeyVerifier:
         )
         self.verifier = Secp256r1Verifier()
         self.hasher = Hasher()
-        self.cache: Dict[str, LogEntry] = {}
+        self.cache: Dict[str, ExpiringEntry] = {}
         self.verification_window = timedelta(hours=server_lifetime_hours, minutes=access_lifetime_minutes)
 
     async def verify(
@@ -164,29 +172,39 @@ class KeyVerifier:
 
             # Cache entries within 12-hour window (iterate backwards)
             tainted = False
+            expiration: Optional[datetime] = None
             for record, _ in reversed(records):
                 payload = record.payload
 
                 if not tainted:
-                    self.cache[payload.id] = payload
+                    self.cache[payload.id] = ExpiringEntry(
+                        entry=payload,
+                        expiration=expiration
+                    )
 
                 tainted = True if payload.taint_previous == True else False
 
-                if payload.created_at + self.verification_window < datetime.now(payload.created_at.tzinfo):
+                exp = payload.created_at + self.verification_window
+                expiration = exp
+
+                if exp < datetime.now(payload.created_at.tzinfo):
                     break
 
             cached_entry = self.cache.get(hsm_generation_id)
             if not cached_entry:
                 raise ValueError("can't find valid public key")
 
-        if cached_entry.prefix != hsm_identity:
+        if cached_entry.entry.prefix != hsm_identity:
             raise ValueError('incorrect identity (expected hsm.identity == prefix)')
 
-        if cached_entry.purpose != 'key-authorization':
+        if cached_entry.entry.purpose != 'key-authorization':
             raise ValueError('incorrect purpose (expected key-authorization)')
 
+        if cached_entry.expiration is not None and cached_entry.expiration < datetime.now(cached_entry.entry.created_at.tzinfo):
+            raise ValueError('expired key')
+
         # Verify message signature
-        await self.verifier.verify(message, signature, cached_entry.public_key)
+        await self.verifier.verify(message, signature, cached_entry.entry.public_key)
 
     async def _verify_prefix_and_data(self, payload_json: str, payload: LogEntry) -> None:
         """Verify prefix and data for sequence 0."""

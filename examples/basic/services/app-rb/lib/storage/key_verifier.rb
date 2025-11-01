@@ -33,6 +33,8 @@ module Storage
     end
   end
 
+  ExpiringEntry = Struct.new(:entry, :expiration)
+
   class KeyVerifier
     def initialize(redis_host, redis_db_hsm_keys, server_lifetime_hours, access_lifetime_minutes)
       @redis = Redis.new(url: "redis://#{redis_host}/#{redis_db_hsm_keys}")
@@ -124,24 +126,33 @@ module Storage
 
         # Cache entries within 12-hour window (iterate backwards)
         tainted = false
+        expiration = nil
         records.reverse_each do |record, _|
           payload = record.payload
-          @cache[payload.id] = payload unless tainted
+
+          unless tainted
+            @cache[payload.id] = ExpiringEntry.new(payload, expiration)
+          end
 
           tainted = payload.taint_previous || false
 
-          break if payload.created_at + @verification_window < Time.now
+          exp = payload.created_at + @verification_window
+          expiration = exp
+
+          break if exp < Time.now
         end
 
         cached_entry = @cache[hsm_generation_id]
         raise "can't find valid public key" unless cached_entry
       end
 
-      raise 'incorrect identity (expected hsm.identity == prefix)' if cached_entry.prefix != hsm_identity
-      raise 'incorrect purpose (expected key-authorization)' if cached_entry.purpose != 'key-authorization'
+      raise 'incorrect identity (expected hsm.identity == prefix)' if cached_entry.entry.prefix != hsm_identity
+      raise 'incorrect purpose (expected key-authorization)' if cached_entry.entry.purpose != 'key-authorization'
+
+      raise 'expired key' if cached_entry.expiration && cached_entry.expiration < Time.now
 
       # Verify message signature
-      @verifier.verify(signature, cached_entry.public_key, message.bytes)
+      @verifier.verify(signature, cached_entry.entry.public_key, message.bytes)
     end
 
     private
