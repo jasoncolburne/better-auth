@@ -102,7 +102,7 @@ This example consists of multiple services:
      without a TTL, this could be used to ban users and prevent resource access
    - DB 4: HSM keys, chained and self-certifying
 
-6. **PostgreSQL**: Database for auth service
+6. **PostgreSQL**: Database for auth and hsm services
    - Uses persistent storage (256Mi PersistentVolumeClaim)
    - Stores accounts, devices, and authentication state
    - Data survives pod restarts and redeployments
