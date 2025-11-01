@@ -43,6 +43,8 @@ sys.path.insert(0, examples_path)
 from implementation.crypto.secp256r1 import Secp256r1, Secp256r1Verifier
 from implementation.encoding.timestamper import Rfc3339Nano
 from implementation.encoding.token_encoder import TokenEncoder
+from key_verifier import KeyVerifier
+from utils import get_sub_json
 
 # Configure logging
 logging.basicConfig(
@@ -76,12 +78,11 @@ class VerificationKey(IVerificationKey):
 
 
 class RedisVerificationKeyStore(IVerificationKeyStore):
-    """Redis-backed verification key store."""
+    """Redis-backed verification key store with HSM key verification."""
 
-    HSM_PUBLIC_KEY = "1AAIAjIhd42fcH957TzvXeMbgX4AftiTT7lKmkJ7yHy3dph9"
-
-    def __init__(self, redis_client: aioredis.Redis):
+    def __init__(self, redis_client: aioredis.Redis, redis_host: str, redis_db_hsm_keys: int, server_lifetime_hours: int, access_lifetime_minutes: int):
         self.redis_client = redis_client
+        self.key_verifier = KeyVerifier(redis_host, redis_db_hsm_keys, server_lifetime_hours, access_lifetime_minutes)
         self.verifier = Secp256r1Verifier()
 
     async def get(self, identity: str) -> IVerificationKey:
@@ -94,56 +95,26 @@ class RedisVerificationKeyStore(IVerificationKeyStore):
         if isinstance(value, bytes):
             value = value.decode('utf-8')
 
-        # Extract the raw body JSON substring without re-encoding
-        body_start = value.find('"body":') + len('"body":')
-        if body_start == -1 + len('"body":'):
-            raise ValueError("missing body in HSM response")
+        # Parse the response structure
+        response_obj = json.loads(value)
+        body_json = get_sub_json(value, "body")
 
-        brace_count = 0
-        in_body = False
-        body_end = -1
-
-        for i in range(body_start, len(value)):
-            char = value[i]
-            if char == '{':
-                in_body = True
-                brace_count += 1
-            elif char == '}':
-                brace_count -= 1
-                if in_body and brace_count == 0:
-                    body_end = i + 1
-                    break
-
-        if body_end == -1:
-            raise ValueError("failed to extract body from HSM response")
-
-        body_json = value[body_start:body_end]
-
-        # Parse the full response to get signature
-        hsm_response = json.loads(value)
-        signature = hsm_response.get('signature')
-        if not signature:
-            raise ValueError("missing signature in HSM response")
-
-        # Parse body to validate contents
-        body = json.loads(body_json)
-
-        # Verify HSM identity
-        if body.get('hsmIdentity') != self.HSM_PUBLIC_KEY:
-            raise ValueError("invalid HSM identity")
-
-        # Verify the signature over the raw body JSON
-        await self.verifier.verify(body_json, signature, self.HSM_PUBLIC_KEY)
+        # Verify HSM signature using KeyVerifier
+        await self.key_verifier.verify(
+            response_obj['signature'],
+            response_obj['body']['hsm']['identity'],
+            response_obj['body']['hsm']['generationId'],
+            body_json
+        )
 
         # Validate purpose
-        payload = body.get('payload', {})
+        payload = response_obj['body']['payload']
         if payload.get('purpose') != 'access':
             raise ValueError(f"invalid purpose: expected access, got {payload.get('purpose')}")
 
         # Check expiration
         expiration_str = payload.get('expiration')
         if expiration_str:
-            from datetime import datetime
             expiration = datetime.fromisoformat(expiration_str.replace('Z', '+00:00'))
             if expiration <= datetime.now(expiration.tzinfo):
                 raise ValueError("key expired")
@@ -154,6 +125,10 @@ class RedisVerificationKeyStore(IVerificationKeyStore):
             raise ValueError("missing publicKey in payload")
 
         return VerificationKey(public_key, self.verifier)
+
+    async def close(self) -> None:
+        """Close KeyVerifier connection."""
+        await self.key_verifier.close()
 
 
 class InMemoryTimeLockStore(IServerTimeLockStore):
@@ -195,9 +170,13 @@ class ApplicationServer:
         redis_host = os.environ.get('REDIS_HOST', 'redis:6379')
         logger.info(f"Connecting to Redis at {redis_host}")
 
+        server_lifetime_hours = 12
+        access_lifetime_minutes = 15
+
         redis_db_access_keys = int(os.environ.get('REDIS_DB_ACCESS_KEYS', '0'))
         redis_db_response_keys = int(os.environ.get('REDIS_DB_RESPONSE_KEYS', '1'))
         redis_db_revoked_devices = int(os.environ.get('REDIS_DB_REVOKED_DEVICES', '3'))
+        redis_db_hsm_keys = int(os.environ.get('REDIS_DB_HSM_KEYS', '4'))
 
         # Parse Redis host and port
         if ':' in redis_host:
@@ -234,7 +213,9 @@ class ApplicationServer:
         try:
             # Create verification key store
             verifier = Secp256r1Verifier()
-            verification_key_store = RedisVerificationKeyStore(self.access_client)
+            verification_key_store = RedisVerificationKeyStore(
+                self.access_client, redis_host, redis_db_hsm_keys, server_lifetime_hours, access_lifetime_minutes
+            )
 
             # Create an in-memory nonce store with 30 second window
             access_nonce_store = InMemoryTimeLockStore(30)
@@ -301,17 +282,19 @@ class ApplicationServer:
                 logger.error("No HSM authorization to store in Redis")
 
             self.response_key = app_response_key
+        except:
+            raise
         finally:
-            await response_client.close()
+            await response_client.aclose()
 
         logger.info("Application server initialized")
 
     async def cleanup(self) -> None:
         """Clean up resources."""
         if self.access_client:
-            await self.access_client.close()
+            await self.access_client.aclose()
         if self.revoked_devices_client:
-            await self.revoked_devices_client.close()
+            await self.revoked_devices_client.aclose()
 
 
 # Global server instance

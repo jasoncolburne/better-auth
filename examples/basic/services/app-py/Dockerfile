@@ -22,6 +22,12 @@ RUN . "$HOME/.cargo/env" && pip install --no-cache-dir -r requirements.txt
 # Copy application code
 COPY examples/basic/services/app-py/ .
 
+# Inject HSM identity from test-fixtures/hsm.id
+COPY examples/basic/test-fixtures/hsm.id /tmp/hsm.id
+RUN HSM_ID=$(cat /tmp/hsm.id) && \
+    sed -i "s/BETTER_AUTH_HSM_IDENTITY_PLACEHOLDER/$HSM_ID/" key_verifier.py && \
+    rm /tmp/hsm.id
+
 # Final stage
 FROM python:3.14-slim-bookworm
 

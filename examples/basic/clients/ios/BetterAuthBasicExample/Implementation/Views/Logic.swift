@@ -256,6 +256,8 @@ class ContentViewLogic {
 
         do {
             try await betterAuthClient.createSession()
+            verificationKeyStore.isAuthenticated = true
+            verificationKeyStore.verifier.isAuthenticated = true
             statusMessage = "Signed in!"
             isLoading = false
             state = AppState.authenticated
@@ -285,6 +287,9 @@ class ContentViewLogic {
         statusMessage = "Ending session..."
 
         accessKeyStore.reset()
+        verificationKeyStore.isAuthenticated = false
+        verificationKeyStore.verifier.isAuthenticated = false
+        verificationKeyStore.clearCache()
         statusMessage = "Session ended."
         isLoading = false
         state = AppState.created

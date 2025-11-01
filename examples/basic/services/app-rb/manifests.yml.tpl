@@ -22,13 +22,15 @@ spec:
               name: http
           env:
             - name: REDIS_HOST
-              value: "redis:6379"
+              value: "${variables.redisHost}:${variables.redisPort}"
             - name: REDIS_DB_ACCESS_KEYS
               value: "${variables.redisDbAccessKeys}"
             - name: REDIS_DB_RESPONSE_KEYS
               value: "${variables.redisDbResponseKeys}"
             - name: REDIS_DB_REVOKED_DEVICES
               value: "${variables.redisDbRevokedDevices}"
+            - name: REDIS_DB_HSM_KEYS
+              value: "${variables.redisDbHsmKeys}"
             - name: APP_ENV
               value: "dev"
             - name: HSM_HOST

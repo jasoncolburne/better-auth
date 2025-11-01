@@ -8,6 +8,7 @@ source:
 include:
   - implementations/better-auth-ts/**/*
   - examples/basic/services/app-ts/**/*
+  - examples/basic/test-fixtures/**/*
 
 spec:
   # Build the Docker image for the TypeScript app server

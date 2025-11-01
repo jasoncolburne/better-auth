@@ -25,6 +25,12 @@ RUN bundle install --jobs 4 --retry 3
 # Copy application code
 COPY examples/basic/services/app-rb/ .
 
+# Inject HSM identity from test-fixtures/hsm.id
+COPY examples/basic/test-fixtures/hsm.id /tmp/hsm.id
+RUN HSM_ID=$(cat /tmp/hsm.id) && \
+    sed -i "s/BETTER_AUTH_HSM_IDENTITY_PLACEHOLDER/$HSM_ID/" lib/storage/key_verifier.rb && \
+    rm /tmp/hsm.id
+
 # Final stage
 FROM ruby:3.4-slim-bookworm
 

@@ -17,7 +17,7 @@ struct ContentView: View {
     }
 
     init() {
-        let verificationKeyStore = VerificationKeyStore()
+        let verificationKeyStore = VerificationKeyStore(serverLifetimeHours: 12)
         let authenticationKeyStore = ClientRotatingKeyStore(prefix: "authentication")
         let accessKeyStore = ClientRotatingKeyStore(prefix: "access")
         let identityValueStore = ClientValueStore(suffix: "identity")

@@ -2,6 +2,141 @@
 
 This example demonstrates a production-like Better Auth deployment using Garden.io for local Kubernetes development.
 
+## Security
+
+### Root (HSM)
+
+The security of this system rests on forward secrecy and hardware-backed keys. By pre-generating
+securely stored keys and committing to them using forward secrecy, we build recovery avenues for
+identifiers associated with such keys.
+
+To ensure that the identifiers are tightly bound to the keys they are associated with, several
+measures are taken:
+- In addition to commitments to keys revealed in the future, each event about an identifier's keys
+is chained back to the previous event.
+- By creating content-addressable, embedded identifiers in each event, we can prove that the event
+has not been tampered.
+- When creating the self-addressing identifier, we'll also do something special for the first record
+in the chain. We replicate the process across another field, and both the id and this field (we'll
+call it the prefix since it prefixes the sequence) will share the same value for the first record.
+The prefix remains constant for the entire chain, and identifies the chain up to cryptographic
+collision (effectively, uniquely). This is what we mean when we talk about the HSM identity.
+- The prefix is also the id of the first event.
+- By signing each event with the key revealed in that event, we create a self-certifying keychain.
+- If we add timestamps, we know which generation of key created a given signature.
+- If we add another field called `taintPrevious` we can invalidate keys for cases where previous
+signatures remain valid for a duration of time (think tokens).
+- We can add sequence numbers to create an easy way to prevent divergence of the chain. If two
+events share the same sequence number, the entire key chain is contested, and a rotation is required
+to regain control. This next event's previous field will indicate the correct previous event.
+
+This is what such a key chain looks like:
+
+```
+...   Event N-1    ...    Event N     ...     Event N+1     ...
+
+      Prefix       =      Prefix       =      Prefix
+      SequenceNumber=N-1  SequenceNumber=N    SequenceNumber=N+1
+      CreatedAt=...       CreatedAt=...       CreatedAt=...
+                                              TaintPrevious=True
+      Previous
+      Id<-----------------Previous
+                          Id<-----------------Previous
+                                              Id
+      PublicKey
+      RotationHash------->PublicKey
+                          RotationHash------->PublicKey
+                                              RotationHash
+```
+
+- Id - The self-addressing identifier for the event.
+- Prefix - The self-addressing identifier for event 0 in this chain.
+- Previous (Optional) - The previous event's Id
+- PublicKey - The current generation's signing key's verification key
+- RotationHash - A commitment to the next public key
+- SequenceNumber - Increments by 1, starts at 0, no two events can share the same sequence number.
+- CreatedAt - A timestamp, always increases.
+- TaintPrevious (Optional) - True if the rotation was due to a compromised key.
+
+In the example, generation N is tainted and signatures created with it, no matter how recent, should
+not be respected. This permits zero-downtime hsm key rotation with an optional lookback window,
+without the need to log and distribute each signature on its respective key chain.
+
+Each event is signed with the signing key that corresponds to the event's PublicKey.
+
+Now that we've created a self-certifying key chain, we can apply it to the HSM described below and
+burn the chain's prefix into all the software to prevent impersonation, without the need for complex
+recovery mechanisms.
+
+#### Differences between this and a KERI KEL
+
+Typically in a KEL, a record of each signature is burned into the key chain. In this model, we use
+timestamps and the concept of tainting to acheive a similar result.
+
+### Verifiers
+
+All verifiers follow this pattern:
+
+1. Verify HSM key chain, removing stale/tainted keys
+2. Verify key authorization signature with valid HSM key
+3. Verify payload signature with key
+
+#### HSM Key Chain Verification & Caching
+
+All verifiers implement a sophisticated caching mechanism for HSM keys:
+
+**Verification Windows:**
+- **iOS Client**: 12 hours (serverLifetime) + 60 seconds (maxResponseTime)
+- **Auth Service**: 24 hours (12h serverLifetime + 12h refreshLifetime)
+- **App Services**: 12 hours 15 minutes (12h serverLifetime + 15m accessLifetime)
+
+The auth service requires a longer window because when a service rolls just before an HSM rotation, it may issue session tokens. Those session tokens can be refreshed up to 12 hours later, requiring the auth service to verify HSM signatures on access keys created up to 24 hours ago.
+
+**Cache Expiration:**
+When HSM keys are cached, each entry stores:
+- The log entry (key data)
+- An expiration timestamp (createdAt + verificationWindow)
+- The most recent (current) key has nil expiration (never expires from cache)
+
+Entries are validated on retrieval - if expired, the request fails with "expired key" error.
+
+**Timestamp Validation:**
+All verifiers enforce strict timestamp ordering:
+- Timestamps must not be in the future (createdAt < now)
+- Timestamps must strictly increase (createdAt_n > createdAt_n-1)
+
+This ensures temporal ordering of the key chain and supports graceful rotation.
+
+#### Services
+
+Each server generates a response signing key and has it endorsed by the HSM upon startup, and the
+servers are cycled every 12 hours. Additionally, the auth servers generate access signing keys and
+these are also endorsed by the HSM.
+
+When any server needs to verify an access key signature created by an auth server, it checks the hsm
+key chain and authorization to ensure the key is valid.
+
+When the HSM key is tainted, it is critical to restart all the services. This informs clients, by
+virtue of the new hsm key they will see, that there has been an update to the key chain - which is
+how they detect the taint.
+
+#### Clients
+
+Client key chains are similar to the HSM key chain, but are instead managed by the auth service
+through a storage abstraction (in a postgres db in this example). Management requests are signed
+by the client keys, and forward secrecy/hardware are employed to protect the identifier of the
+client.
+
+When clients receive responses the keys used to create response signatures are verified to be
+correctly endorsed by the hsm.
+
+### Known Weaknesses
+
+- Brute force of the current HSM key and masquerading as the backend (recoverable by
+  rotation/tainting)
+- Physical theft of an unlocked client device (recoverable by recovery/unlinking)
+- Code execution on an app or auth service (recoverable by rotating/tainting/rolling)
+
 ## Architecture
 
 This example consists of multiple services:
@@ -25,13 +160,15 @@ This example consists of multiple services:
    - Fetches HSM-signed keys from Redis
    - Returns signed keys directly (clients verify HSM signatures)
    - Provides `/keys` endpoint for all keys or `/keys/:identity` for specific keys
+   - Provides `/hsm/keys` for hsm key chain
 
 4. **HSM Service (Go)**: Hardware Security Module simulator for centralized key signing
    - Signs all public keys (access and response) when services start
-   - Provides `/sign` endpoint that signs arbitrary payloads with a fixed HSM key
-   - In production, this would be backed by a real HSM with secure key storage, and hopefully,
-     would allow rotation
-   - HSM public key (`1AAIAjIhd42fcH957TzvXeMbgX4AftiTT7lKmkJ7yHy3dph9`) is hardcoded in clients
+   - Provides `/sign` endpoint that signs arbitrary payloads with a rotating HSM key
+   - Provides `/rotate` endpoint that rotates to a new HSM key
+   - Provides `/taint` endpoint that taints the current HSM key and rotates to a new one
+   - In production, this would be backed by a real HSM with secure key storage
+   - HSM identity is hardcoded in clients
 
 5. **Redis**: Backing store for HSM-signed keys and session key hashes
    - Uses persistent storage (64Mi PersistentVolumeClaim with AOF)
@@ -40,8 +177,11 @@ This example consists of multiple services:
    - DB 1: HSM-signed response keys (from auth and app services, verified by clients)
    - DB 2: AccessKey hashes, for rejecting refreshes of public access keys that have already been
      refreshed
+   - DB 3: Revoked devices. For rejecting access to devices within the access lifetime window, or
+     without a TTL, this could be used to ban users and prevent resource access
+   - DB 4: HSM keys, chained and self-certifying
 
-6. **PostgreSQL**: Database for auth service
+6. **PostgreSQL**: Database for auth and hsm services
    - Uses persistent storage (256Mi PersistentVolumeClaim)
    - Stores accounts, devices, and authentication state
    - Data survives pod restarts and redeployments
@@ -50,9 +190,10 @@ This example consists of multiple services:
 
 ### Required
 
-1. **Docker Desktop with Kubernetes enabled**
+1. **Docker Desktop with Kubernetes enabled (or equivalent)**
    - Install [Docker Desktop](https://www.docker.com/products/docker-desktop/)
    - Enable Kubernetes: Settings → Kubernetes → Enable Kubernetes
+   - Podman+k8s, minikube, k3s etc should all be supported but haven't been tested
 
 2. **Garden CLI**
    ```bash
@@ -65,6 +206,9 @@ This example consists of multiple services:
    # Windows (via Chocolatey)
    choco install garden-cli
    ```
+
+3. **iOS toolchain (there are plans to make an Android app)**
+   Use XCode.
 
 ### Verify Setup
 
@@ -155,7 +299,19 @@ COPY ../../../implementations/better-auth-rs /better-auth-rs
 cd examples/basic
 ```
 
-### 2. Deploy Everything
+### 2. Deploy HSM and Keys services (required for identity export)
+
+```bash
+garden deploy hsm keys
+```
+
+### 3. Export HSM identity
+
+```bash
+scripts/export-hsm-identity.sh
+```
+
+### 4. Deploy everything
 
 Garden will build Docker images, deploy to Kubernetes, and set up ingresses:
 
@@ -166,6 +322,7 @@ garden deploy
 This command will:
 - Build the auth Docker image
 - Build the app Docker images (TypeScript, Ruby, Rust, Python)
+- Build the keys Docker image
 - Create Kubernetes deployments and services
 - Setup ingresses for local access:
   - Auth Service: http://auth.better-auth.local/
@@ -176,7 +333,7 @@ This command will:
     - Python: http://app-py.better-auth.local/
   - Keys Service: http://keys.better-auth.local/
 
-### 3. Verify Deployment
+### 5. Verify Deployment
 
 Check that all services are healthy:
 
@@ -193,7 +350,7 @@ garden logs app-py
 garden logs keys
 ```
 
-### 4. Update /etc/hosts
+### 6. Update /etc/hosts
 
 Add these lines
 
@@ -206,7 +363,7 @@ Add these lines
 127.0.0.1 keys.better-auth.local
 ```
 
-### 5. Test the Services
+### 7. Test the Services
 
 Check for keys:
 
@@ -233,11 +390,16 @@ curl -X POST -d '...' http://app-py.better-auth.local/foo/bar
 
 If you dump backend logs for the app servers you'll see the error.
 
-From the typescript implementation:
+Next, from the typescript implementation:
 
 ```bash
 npm run test:k8s
 ```
+
+### 8. Build the iOS app
+
+There is an iOS app that can be built using `make simulator`. You can run two and exercise the
+entire set of protocols.
 
 ## Garden Commands
 
@@ -287,31 +449,85 @@ kubectl exec -it -n better-auth-basic-example-dev deployment/keys -- sh
 kubectl exec -it -n better-auth-basic-example-dev deployment/hsm -- sh
 ```
 
-### Extracting HSM Keys
+### HSM Identity Setup
+
+After deploying HSM and keys services, export the HSM identity for use by auth and app services:
 
 ```bash
-# Export HSM public key (CESR format) to test-fixtures/hsm-authorization-key.cesr
-# Use this to hardcode the HSM verification key in clients
-garden run export-hsm-public-key
+# Deploy HSM and keys services first
+garden deploy hsm keys
 
-# Export HSM private key (PEM format) to test-fixtures/hsm-authorization-key.pem
-# This persists the HSM key across restarts - without it, HSM generates a new key on each restart
-garden run export-hsm-private-key
+# Export HSM identity to test-fixtures/hsm.id
+./scripts/export-hsm-identity.sh
 ```
 
-**Note**: To generate new HSM keys, delete the private key from `test-fixtures/` before deploying:
+The HSM identity is required by auth and app services to verify the chain of trust for keys published by the keys service. The exported identity is stored in `test-fixtures/hsm.id` (gitignored) and is injected into service code at build time.
+
+**When to re-export:**
+- After initial HSM deployment
+- Before building/deploying auth/app services or clients if `test-fixtures/hsm.id` doesn't exist
+- After regenerating HSM keys (see nuclear reset below)
+
+**Note:** The HSM identity (prefix) does not change during key rotation, so you only need to export it once per deployment environment unless you regenerate the HSM keys.
+
+### HSM Key Rotation
+
+To manually rotate the HSM signing key:
 
 ```bash
-# Delete existing private key
-rm test-fixtures/hsm-authorization-key.pem
-
-# Redeploy HSM (will generate new key)
-garden deploy hsm
-
-# Extract the newly generated keys
-garden run export-hsm-private-key  # Persist for future restarts
-garden run export-hsm-public-key   # Update clients with new verification key
+./scripts/rotate-hsm-key.sh
 ```
+
+This rotates the HSM signing key and displays the new public key. Services automatically pick up the new key on their next HSM interaction. The HSM identity (prefix) remains unchanged.
+
+**When to use:**
+- Testing key rotation logic
+- Manual key rotation as part of planned security procedures
+
+### Service Key Purge and Rollout
+
+If a service key (not HSM key) is suspected to be compromised:
+
+```bash
+./scripts/purge-keys-and-roll-services.sh
+```
+
+This purges service keys and restarts services:
+1. Flushes Redis access keys (DB 0) and response keys (DB 1)
+2. Restarts auth and all app services
+
+**Result:**
+- All existing tokens become invalid immediately
+- Services regenerate keys using the existing (uncompromised) HSM key.
+- Clients must re-authenticate
+- Takes ~30 seconds for services to become ready
+
+**When to use:**
+- Service key compromise (auth or app service key leaked)
+- HSM key is known to be secure
+
+### Emergency Key Rotation (Red Button)
+
+For emergency situations requiring immediate key rotation:
+
+```bash
+./scripts/red-button.sh
+```
+
+This performs a complete emergency rotation:
+1. Rotates the HSM signing key
+2. Flushes Redis access keys (DB 0) and response keys (DB 1)
+3. Restarts auth and all app services
+
+**Result:**
+- All existing tokens become invalid immediately
+- Services generate new keys signed with the rotated HSM key
+- Clients must re-authenticate
+- Takes ~30 seconds for services to become ready
+
+**When to use:**
+- Security incident response (suspected hsm key compromise)
+- Testing disaster recovery procedures
 
 ## Project Structure
 
@@ -465,9 +681,18 @@ The HSM service provides centralized key signing to prevent unauthorized keys fr
 2. **Key Verification** (on every access request):
    - App services fetch keys from Redis DB 0 (access keys)
    - Clients fetch keys from keys service which reads Redis DB 1 (response keys)
+   - Verifiers fetch the HSM key chain from the keys service which reads from Redis DB 4 (hsm keys)
+   - Verifiers verify the key chain (signatures, timestamps, commitments) and cache live keys
+   - A "live" key is one that:
+     - Is within its verification window (createdAt + window > now)
+     - Is not tainted (no taintPrevious flag in a later entry)
+     - Has valid timestamp ordering (strictly increasing, not in future)
+   - Cached keys include an expiration timestamp; the most recent key never expires
+   - On retrieval, if a cached key has expired, verification fails with "expired key"
    - Verifiers extract the body JSON and signature from HSM response
-   - Verifiers verify signature using hardcoded HSM public key
-   - Verifiers check: HSM identity matches, purpose is correct, key not expired
+   - Verifiers attempt to verify the signature using a live, cached key
+   - Verifiers check: HSM identity matches, purpose is correct, key not expired, self-certification
+     is valid
    - Only after verification passes is the public key extracted and used
 
 This ensures that even if Redis is compromised, attackers cannot inject unauthorized keys without the HSM private key.
@@ -540,17 +765,40 @@ garden util clean
 brew upgrade garden-cli  # macOS
 ```
 
-### Persistent data survives deployments
+### Nuclear Reset (Complete Fresh Start)
 
-Both Redis and Postgres now use persistent storage. If you need to start completely fresh:
+If you need to completely reset the environment including HSM identity, PVCs, and all state:
 
 ```bash
-# Delete deployment and both PVCs
-garden delete deploy
-kubectl delete pvc redis-data postgres-data -n better-auth-basic-example-dev
+# Delete everything, redeploy HSM and keys, export new identity, then deploy all services
+garden delete deploy && garden deploy hsm keys && ./scripts/export-hsm-identity.sh && garden deploy
+```
+
+This will:
+1. Delete all deployments and clean up resources
+2. Automatically delete both Redis and Postgres PVCs (Garden handles this)
+3. Deploy HSM and keys services with fresh keys
+4. Export the new HSM identity to `test-fixtures/hsm.id`
+5. Deploy all remaining services with the new HSM identity
+
+**When to use nuclear reset:**
+- Starting completely fresh with new HSM keys
+- PVCs are corrupted or in a bad state
+- Need to test a clean deployment from scratch
+- Troubleshooting complex state issues across multiple services (this example shouldn't be an issue)
+
+### Persistent data survives deployments
+
+Redis, postgres and the HSM all use persistent storage. If you want to start fresh you can delete
+them.
+
+```bash
+# Delete deployment and all PVCs
+kubectl delete deployment redis postgres hsm
+kubectl delete pvc redis-data postgres-data softhsm-tokens -n better-auth-basic-example-dev
 
 # Redeploy (creates new PVCs)
-garden deploy
+garden deploy hsm keys && scripts/export-hsm-identity.sh && garden deploy
 ```
 
 ### Resetting specific databases
@@ -583,9 +831,10 @@ kubectl describe pvc postgres-data -n better-auth-basic-example-dev
 
 ## Next Steps
 
-- Add more complex authentication flows
 - Add monitoring and observability (Prometheus, Grafana)
-- Add client implementations for Swift, Dart, and Kotlin
+- Add more client implementations (start with Android)
+- Figure out an easy way to verify that a signature was created after the response/access key
+  (probably requires plumbing a timestamp somewhere)
 
 ## Resources
 

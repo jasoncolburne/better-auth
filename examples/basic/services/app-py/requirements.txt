@@ -1,6 +1,6 @@
 flask==3.1.0
 redis[asyncio]==5.2.0
 cryptography==44.0.0
-blake3==0.4.1
 httpx==0.28.1
+blake3>=0.3.0
 -e file:///dependencies/better-auth-py

@@ -1,4 +1,6 @@
 use super::super::crypto::Secp256r1;
+use super::key_verifier::KeyVerifier;
+use super::utils::get_sub_json;
 use async_trait::async_trait;
 use better_auth::interfaces::{Verifier, VerificationKey, VerificationKeyStore as VerificationKeyStoreTrait};
 use redis::aio::ConnectionManager;
@@ -7,10 +9,8 @@ use serde::{Deserialize, Serialize};
 use std::sync::Arc;
 use tokio::sync::Mutex;
 
-const HSM_PUBLIC_KEY: &str = "1AAIAjIhd42fcH957TzvXeMbgX4AftiTT7lKmkJ7yHy3dph9";
-
 #[derive(Debug, Serialize, Deserialize)]
-struct HsmResponsePayload {
+struct KeySigningPayload {
     purpose: String,
     #[serde(rename = "publicKey")]
     public_key: String,
@@ -18,27 +18,35 @@ struct HsmResponsePayload {
 }
 
 #[derive(Debug, Serialize, Deserialize)]
-struct HsmResponseBody {
-    payload: HsmResponsePayload,
-    #[serde(rename = "hsmIdentity")]
-    hsm_identity: String,
+struct KeySigningHsm {
+    identity: String,
+    #[serde(rename = "generationId")]
+    generation_id: String,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
-struct HsmResponse {
-    body: HsmResponseBody,
+struct KeySigningBody {
+    payload: KeySigningPayload,
+    hsm: KeySigningHsm,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+struct KeySigningResponse {
+    body: KeySigningBody,
     signature: String,
 }
 
 /// Redis-based VerificationKeyStore that reads public keys from Redis
 pub struct RedisVerificationKeyStore {
     connection: Arc<Mutex<ConnectionManager>>,
+    key_verifier: Arc<KeyVerifier>,
 }
 
 impl RedisVerificationKeyStore {
-    pub fn new(connection: ConnectionManager) -> Self {
+    pub fn new(connection: ConnectionManager, hsm_connection: ConnectionManager, server_lifetime_hours: i64, access_lifetime_minutes: i64) -> Self {
         Self {
             connection: Arc::new(Mutex::new(connection)),
+            key_verifier: Arc::new(KeyVerifier::new(hsm_connection, server_lifetime_hours, access_lifetime_minutes)),
         }
     }
 }
@@ -66,7 +74,7 @@ impl VerificationKeyStoreTrait for RedisVerificationKeyStore {
             match result {
                 Ok(value) => {
                     // Successfully got value, continue with processing
-                    return Self::process_hsm_response(&value).await;
+                    return self.process_response(&value).await;
                 }
                 Err(e) => {
                     last_error = Some(format!("Redis error: {}", e));
@@ -82,56 +90,29 @@ impl VerificationKeyStoreTrait for RedisVerificationKeyStore {
 }
 
 impl RedisVerificationKeyStore {
-    async fn process_hsm_response(value: &str) -> Result<Box<dyn VerificationKey>, String> {
-        // Extract the raw body JSON substring without re-encoding
-        let body_start = value.find("\"body\":").ok_or("missing body in HSM response")?
-            + "\"body\":".len();
+    async fn process_response(&self, value: &str) -> Result<Box<dyn VerificationKey>, String> {
+        // Parse the response structure
+        let response: KeySigningResponse = serde_json::from_str(value)
+            .map_err(|e| format!("failed to parse response: {}", e))?;
 
-        let mut brace_count = 0;
-        let mut in_body = false;
-        let mut body_end = None;
+        // Extract raw body JSON for signature verification
+        let body_json = get_sub_json(value, "body")?;
 
-        for (i, ch) in value[body_start..].chars().enumerate() {
-            let idx = body_start + i;
-            match ch {
-                '{' => {
-                    in_body = true;
-                    brace_count += 1;
-                }
-                '}' => {
-                    brace_count -= 1;
-                    if in_body && brace_count == 0 {
-                        body_end = Some(idx + 1);
-                        break;
-                    }
-                }
-                _ => {}
-            }
-        }
-
-        let body_end = body_end.ok_or("failed to extract body from HSM response")?;
-        let body_json = &value[body_start..body_end];
-
-        // Parse the full response to get signature
-        let hsm_response: HsmResponse = serde_json::from_str(&value)
-            .map_err(|e| format!("failed to parse HSM response: {}", e))?;
-
-        // Verify HSM identity
-        if hsm_response.body.hsm_identity != HSM_PUBLIC_KEY {
-            return Err("invalid HSM identity".to_string());
-        }
-
-        // Verify the signature over the raw body JSON
-        let verifier = Secp256r1VerifierStatic;
-        verifier.verify(body_json, &hsm_response.signature, HSM_PUBLIC_KEY).await?;
+        // Verify HSM signature using KeyVerifier
+        self.key_verifier.verify(
+            &response.signature,
+            &response.body.hsm.identity,
+            &response.body.hsm.generation_id,
+            &body_json,
+        ).await?;
 
         // Validate purpose
-        if hsm_response.body.payload.purpose != "access" {
-            return Err(format!("invalid purpose: expected access, got {}", hsm_response.body.payload.purpose));
+        if response.body.payload.purpose != "access" {
+            return Err(format!("invalid purpose: expected access, got {}", response.body.payload.purpose));
         }
 
         // Check expiration
-        let expiration = chrono::DateTime::parse_from_rfc3339(&hsm_response.body.payload.expiration)
+        let expiration = chrono::DateTime::parse_from_rfc3339(&response.body.payload.expiration)
             .map_err(|e| format!("failed to parse expiration: {}", e))?;
         if expiration <= chrono::Utc::now() {
             return Err("key expired".to_string());
@@ -139,7 +120,7 @@ impl RedisVerificationKeyStore {
 
         // Return the public key from the payload
         Ok(Box::new(PublicKeyWrapper {
-            public_key: hsm_response.body.payload.public_key
+            public_key: response.body.payload.public_key
         }) as Box<dyn VerificationKey>)
     }
 }

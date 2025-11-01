@@ -22,7 +22,7 @@ spec:
               name: http
           env:
             - name: REDIS_HOST
-              value: "redis:6379"
+              value: "${variables.redisHost}:${variables.redisPort}"
             - name: REDIS_DB_ACCESS_KEYS
               value: "${variables.redisDbAccessKeys}"
             - name: REDIS_DB_RESPONSE_KEYS
@@ -31,12 +31,14 @@ spec:
               value: "${variables.redisDbAccessKeyHash}"
             - name: REDIS_DB_REVOKED_DEVICES
               value: "${variables.redisDbRevokedDevices}"
+            - name: REDIS_DB_HSM_KEYS
+              value: "${variables.redisDbHsmKeys}"
             - name: POSTGRES_HOST
-              value: "postgres"
+              value: "${variables.postgresHost}"
             - name: POSTGRES_PORT
-              value: "5432"
+              value: "${variables.postgresPort}"
             - name: POSTGRES_DATABASE
-              value: "${variables.postgresDatabase}"
+              value: "${variables.postgresDbAuth}"
             - name: POSTGRES_USER
               value: "${variables.postgresUser}"
             - name: POSTGRES_PASSWORD

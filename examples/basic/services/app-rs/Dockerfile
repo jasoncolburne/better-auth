@@ -10,11 +10,17 @@ RUN mkdir -p /dependencies
 # Copy the local better-auth-rs implementation
 COPY implementations/better-auth-rs /dependencies/better-auth-rs
 
-# Copy app files
+# Copy manifests, lockfile and source
 WORKDIR /app
 COPY examples/basic/services/app-rs/Cargo.toml ./
 COPY examples/basic/services/app-rs/Cargo.lock ./
 COPY examples/basic/services/app-rs/src ./src
+
+# Inject HSM identity from test-fixtures/hsm.id
+COPY examples/basic/test-fixtures/hsm.id /tmp/hsm.id
+RUN HSM_ID=$(cat /tmp/hsm.id) && \
+    sed -i "s/BETTER_AUTH_HSM_IDENTITY_PLACEHOLDER/$HSM_ID/" src/implementation/storage/key_verifier.rs && \
+    rm /tmp/hsm.id
 
 # Build the application in release mode
 RUN cargo build --release

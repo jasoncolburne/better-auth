@@ -145,20 +145,27 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .unwrap_or_else(|_| "3".to_string())
         .parse()
         .unwrap_or(3);
+    let redis_db_hsm_keys: u32 = std::env::var("REDIS_DB_HSM_KEYS")
+        .unwrap_or_else(|_| "4".to_string())
+        .parse()
+        .unwrap_or(4);
 
     println!("Connecting to Redis at {}", redis_host);
     println!("Access keys DB: {}", redis_db_access_keys);
     println!("Response keys DB: {}", redis_db_response_keys);
     println!("Revoked devices DB: {}", redis_db_revoked_devices);
+    println!("HSM keys DB: {}", redis_db_hsm_keys);
 
     // Create Redis clients
     let access_redis_url = format!("redis://{}/{}", redis_host, redis_db_access_keys);
     let response_redis_url = format!("redis://{}/{}", redis_host, redis_db_response_keys);
     let revoked_devices_redis_url = format!("redis://{}/{}", redis_host, redis_db_revoked_devices);
+    let hsm_redis_url = format!("redis://{}/{}", redis_host, redis_db_hsm_keys);
 
     let access_client = redis::Client::open(access_redis_url.as_str())?;
     let response_client = redis::Client::open(response_redis_url.as_str())?;
     let revoked_devices_client = redis::Client::open(revoked_devices_redis_url.as_str())?;
+    let hsm_client = redis::Client::open(hsm_redis_url.as_str())?;
 
     let access_conn = access_client
         .get_connection_manager()
@@ -168,6 +175,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .get_connection_manager()
         .await
         .map_err(|e| format!("Failed to connect to Redis (revoked devices): {}", e))?;
+    let hsm_conn = hsm_client
+        .get_connection_manager()
+        .await
+        .map_err(|e| format!("Failed to connect to Redis (HSM keys): {}", e))?;
     let mut response_conn = response_client
         .get_connection()
         .map_err(|e| format!("Failed to connect to Redis (response): {}", e))?;
@@ -179,8 +190,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // Create storage components
     let access_window = 30; // 30 seconds
+    let server_lifetime_hours = 12;
+    let access_lifetime_minutes = 15;
     let access_nonce_store = ServerTimeLockStore::new(access_window);
-    let access_key_store = RedisVerificationKeyStore::new(access_conn);
+    let access_key_store = RedisVerificationKeyStore::new(access_conn, hsm_conn, server_lifetime_hours, access_lifetime_minutes);
 
     // Create encoding components
     let timestamper = Rfc3339Nano::new();

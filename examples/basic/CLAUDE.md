@@ -16,6 +16,26 @@ garden logs --follow
 written to `.garden/` are rarely valuable for debugging. Verbose output gives you real-time
 feedback on what Garden is doing.
 
+### HSM Identity Setup
+
+After deploying HSM and keys services for the first time, export the HSM identity:
+
+```bash
+# Deploy HSM and keys services first
+garden deploy hsm keys --log-level=verbose
+
+# Export HSM identity to test-fixtures/hsm.id
+./scripts/export-hsm-identity.sh
+```
+
+The HSM identity is required by auth and app services to verify the chain of trust for keys published by the keys service. The exported identity is stored in `test-fixtures/hsm.id` (gitignored) and should be injected into service code at build time.
+
+**When to re-export:**
+- After initial HSM deployment
+- Before building/deploying auth or app services if `test-fixtures/hsm.id` doesn't exist
+
+**Note:** The HSM identity (prefix) does not change during key rotation, so you only need to export it once per deployment environment.
+
 ## Development Workflow
 
 ### Making Changes to a Service
@@ -370,6 +390,32 @@ On Access Request:
   4. App uses public key to verify client request
 ```
 
+### HSM Key Verification Caching
+
+The key verification process includes sophisticated caching to avoid repeated Redis lookups while maintaining security:
+
+**Cache Population:**
+- When a new HSM generation ID is seen, the cache is cleared
+- All HSM keys are fetched from Redis and verified (signatures, chain, timestamps)
+- Keys within the verification window are cached in reverse chronological order
+- Each cache entry includes the key data and an expiration timestamp
+- The most recent (current) key has nil expiration
+
+**Verification Windows by Service:**
+- iOS: 12 hours + 60 seconds (serverLifetime + maxResponseTime)
+- Auth: 24 hours (12h serverLifetime + 12h refreshLifetime)
+- Apps: 12 hours 15 minutes (12h serverLifetime + 15m accessLifetime)
+
+**Why Auth Has Longer Window:**
+The auth service needs to verify HSM signatures on access keys that may have been created by auth services that rolled just before an HSM rotation. When a service rolls just before rotation, it may issue session tokens. Those session tokens can be refreshed up to 12 hours later, requiring the auth service to verify HSM signatures on access keys created up to 24 hours ago.
+
+**Timestamp Validation:**
+All verifiers enforce:
+- No future timestamps (createdAt < now)
+- Strictly increasing timestamps (createdAt_n > createdAt_n-1)
+
+This ensures temporal ordering of the key chain and supports graceful rotation.
+
 ### CronJob Rolling Restarts
 
 Every 12 hours, CronJobs trigger rolling restarts:
@@ -433,12 +479,27 @@ Every 12 hours, CronJobs trigger rolling restarts:
 
 ## Common Development Tasks
 
+### Nuclear Reset (Complete Fresh Start)
+
+The cleanest way to reset everything including HSM identity, PVCs, and all state:
+
+```bash
+# Delete everything, redeploy HSM/keys, export identity, deploy all
+garden delete deploy && garden deploy hsm keys && ./scripts/export-hsm-identity.sh && garden deploy
+```
+
+This is the recommended approach when:
+- You want to start completely fresh
+- Troubleshooting complex multi-service state issues (in this example this won't be an issue)
+- Testing a clean deployment from scratch
+- Need new HSM keys and identity
+
 ### Resetting Redis State
 
 Redis data is now persistent (survives pod restarts and redeployments). To reset:
 
 ```bash
-# Option 1: Flush data (quick, keeps PVC)
+# Option 1: Flush data (quick, keeps PVC) - hsm service needs to be modified to re-export its keys for this to be a real option
 kubectl exec -it -n better-auth-basic-example-dev deployment/redis -- redis-cli FLUSHALL
 
 # Option 2: Flush specific database
@@ -448,12 +509,13 @@ SELECT 0
 FLUSHDB
 
 # Option 3: Delete PVC and start completely fresh
-garden delete deploy --log-level=verbose
+kubectl delete deployment redis -n better-auth-basic-example-dev
 kubectl delete pvc redis-data -n better-auth-basic-example-dev
 garden deploy --log-level=verbose
-```
 
-**Important**: The PVC survives `garden delete deploy`. If you're troubleshooting and want truly fresh state, you must manually delete the PVC.
+# Option 4: Nuclear reset (regenerates HSM identity too)
+garden delete deploy && garden deploy hsm keys && ./scripts/export-hsm-identity.sh && garden deploy
+```
 
 ### Resetting Postgres State
 
@@ -461,33 +523,134 @@ Postgres data is now persistent (survives pod restarts and redeployments). To re
 
 ```bash
 # Option 1: Drop and recreate database (quick, keeps PVC)
-kubectl exec -it -n better-auth-basic-example-dev deployment/postgres -- psql -U postgres -c "DROP DATABASE better_auth;"
-kubectl exec -it -n better-auth-basic-example-dev deployment/postgres -- psql -U postgres -c "CREATE DATABASE better_auth;"
-kubectl rollout restart deployment/auth -n better-auth-basic-example-dev
+kubectl delete deployment hsm auth
+kubectl exec -it -n better-auth-basic-example-dev deployment/postgres -- psql -U postgres -c "DROP DATABASE better_auth_auth;"
+kubectl exec -it -n better-auth-basic-example-dev deployment/postgres -- psql -U postgres -c "DROP DATABASE better_auth_hsm;"
+kubectl exec -it -n better-auth-basic-example-dev deployment/postgres -- psql -U postgres -c "CREATE DATABASE better_auth_auth;"
+kubectl exec -it -n better-auth-basic-example-dev deployment/postgres -- psql -U postgres -c "CREATE DATABASE better_auth_hsm;"
+garden deploy --log-level=verbose
 
 # Option 2: Delete PVC and start completely fresh
-garden delete deploy --log-level=verbose
+kubectl delete deployment postgres -n better-auth-basic-example-dev
 kubectl delete pvc postgres-data -n better-auth-basic-example-dev
 garden deploy --log-level=verbose
+
+# Option 3: Nuclear reset (regenerates HSM identity too)
+garden delete deploy && garden deploy hsm keys && ./scripts/export-hsm-identity.sh && garden deploy
 ```
 
-**Important**: Like Redis, the Postgres PVC survives `garden delete deploy`. If you're troubleshooting and want truly fresh state, you must manually delete the PVC.
+### Rotating HSM Keys Manually
 
-### Regenerating HSM Keys
+To manually rotate the HSM signing key without restarting anything:
 
 ```bash
-# Delete existing private key
-rm test-fixtures/hsm-authorization-key.pem
+./scripts/rotate-hsm-key.sh
+```
 
-# Redeploy HSM (generates new key)
-garden deploy hsm --force --log-level=verbose
+This triggers HSM key rotation and displays the new public key. Services will automatically pick up the new key on their next HSM interaction. The HSM identity (prefix) remains unchanged, so you don't need to re-export `hsm.id` or rebuild services.
 
-# Extract new keys
-garden run export-hsm-private-key --log-level=verbose
-garden run export-hsm-public-key --log-level=verbose
+**When to use:**
+- Testing key rotation logic
+- Manual key rotation as part of planned rotation
 
-# Update clients with new HSM public key
-# (hardcoded in iOS app and integration tests)
+**Note**: This rotates the signing key within the existing HSM key chain. The HSM identity (prefix) stays the same. All rotation is currently manual.
+
+### Service Key Purge and Rollout
+
+If a service key (not HSM key) is suspected to be compromised:
+
+```bash
+./scripts/purge-keys-and-roll-services.sh
+```
+
+This script purges all service-generated keys and restarts services to regenerate them:
+1. Flushes Redis DB 0 (access keys) and DB 1 (response keys)
+2. Restarts auth and all app services
+
+**When to use:**
+- Service key compromise (auth or app service key leaked)
+- HSM key is known to be secure
+- Testing service key regeneration without HSM rotation
+
+**What happens:**
+- All existing tokens become invalid immediately
+- Services restart and generate new keys signed with the existing HSM key
+- Clients must re-authenticate
+- Takes ~30 seconds for services to become ready
+
+**What's preserved:**
+- HSM signing key (no rotation)
+- Redis DB 2 (access key hashes), DB 3 (revoked devices), DB 4 (HSM keys)
+- User accounts and devices in Postgres
+
+### Emergency Key Rotation (Red Button)
+
+For emergency situations requiring immediate key rotation and service restart:
+
+```bash
+./scripts/red-button.sh
+```
+
+This script performs a complete emergency rotation sequence:
+1. Rotates the HSM signing key
+2. Flushes Redis DB 0 (access keys) and DB 1 (response keys)
+3. Restarts auth and all app services to regenerate and re-sign keys
+
+**When to use:**
+- Security incident response (suspected hsm key compromise)
+- Testing disaster recovery procedures
+- Simulating emergency key rotation scenarios
+
+**What happens:**
+- All existing tokens become invalid immediately
+- Services restart and generate new keys signed with the rotated HSM key
+- Clients will need to re-authenticate
+- Takes ~30 seconds for services to become ready
+
+**What's preserved:**
+- Redis DB 2 (access key hashes for refresh prevention)
+- Redis DB 3 (revoked devices cache)
+- Redis DB 4 (HSM keys - includes the newly rotated key)
+- HSM identity (prefix) - remains the same
+- User accounts and devices in Postgres - unchanged
+
+**Side effects:**
+- All verifiers cache HSM keys with expiration timestamps; expired keys fail verification
+- When services restart and request new HSM-signed keys, verifiers see new generation IDs and clear their HSM key caches
+- This triggers re-verification of the full HSM key chain, detecting any taints or rotations
+- iOS clients cache response keys only when authenticated and will clear their response key cache when the HSM cache is cleared (via callback mechanism)
+- The iOS behavior ensures clients detect HSM rotations but requires re-authentication to rebuild the response key cache
+
+### Regenerating HSM Keys (Nuclear Reset)
+
+The cleanest way to regenerate HSM keys and reset everything is the nuclear reset:
+
+```bash
+# Nuclear reset: delete everything, redeploy HSM/keys, export identity, deploy all
+garden delete deploy && garden deploy hsm keys && ./scripts/export-hsm-identity.sh && garden deploy
+```
+
+This ensures:
+- All deployments are removed cleanly
+- PVCs are deleted automatically by Garden
+- Fresh HSM keys are generated with a new identity (new key chain)
+- New HSM identity is exported to `test-fixtures/hsm.id`
+- All services are redeployed with the new identity
+
+**Manual alternative** (if you only want to regenerate HSM without full reset):
+
+```bash
+# Delete existing identity
+rm test-fixtures/hsm.id
+
+# Redeploy HSM and keys
+garden deploy hsm keys --force --log-level=verbose
+
+# Export new identity
+./scripts/export-hsm-identity.sh
+
+# Redeploy services that depend on HSM identity
+garden deploy auth app-ts app-rb app-rs app-py --force --log-level=verbose
 ```
 
 ### Restarting Services
@@ -559,23 +722,25 @@ The iOS app (`clients/ios/BetterAuthBasicExample/`) demonstrates the full protoc
    - Simulator 1: Create account, add device
    - Simulator 2: Link to account from Simulator 1
 
-### Updating HSM Key in iOS App
+### Updating HSM Identity in iOS App
 
-After regenerating HSM keys:
+After regenerating HSM keys (via nuclear reset or manual regeneration):
 
-1. **Extract new public key**:
+1. **Get the new HSM identity**:
    ```bash
-   garden run export-hsm-public-key --log-level=verbose
-   cat test-fixtures/hsm-authorization-key.cesr
+   # Should already exist from export-hsm-identity.sh
+   cat test-fixtures/hsm.id
    ```
 
 2. **Update iOS app**:
    ```swift
-   // In clients/ios/BetterAuthBasicExample/Implementation/Stores/AccessKeyStore.swift
-   private let hsmPublicKey = "1AAIAjIhd42fcH957TzvXeMbgX4AftiTT7lKmkJ7yHy3dph9"
+   // In clients/ios/BetterAuthBasicExample/Implementation/Stores/VerificationKeyStore.swift
+   private let hsmIdentity = "EABcXYZ..."  // Update with value from hsm.id
    ```
 
 3. **Rebuild app** in Xcode
+
+**Note**: The HSM identity is the prefix from the HSM's key log and is used to verify the chain of trust for all keys.
 
 ### iOS App Architecture
 

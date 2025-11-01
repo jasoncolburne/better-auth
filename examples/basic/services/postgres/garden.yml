@@ -3,5 +3,5 @@ name: postgres
 type: kubernetes
 
 spec:
-  manifestFiles:
-    - manifests.yml
+  manifestTemplates:
+    - manifests.yml.tpl

@@ -22,11 +22,36 @@ func NewPostgreSQLStore(ctx context.Context, dsn string, migrations []string) (*
 		return nil, err
 	}
 
-	for _, migration := range migrations {
-		if _, err := db.ExecContext(ctx, migration); err != nil {
-			db.Close()
-			return nil, err
+	// Use advisory lock to prevent concurrent migrations
+	// Lock ID: 0x42415554485f4d49 (ASCII for "BAUTH_MI" - Better Auth Migrations)
+	const migrationLockID = 4774929821315686217
+
+	// Acquire advisory lock (blocks until available)
+	if _, err := db.ExecContext(ctx, "SELECT pg_advisory_lock($1)", migrationLockID); err != nil {
+		db.Close()
+		return nil, fmt.Errorf("failed to acquire migration lock: %w", err)
+	}
+
+	// Run migrations
+	migrationErr := func() error {
+		for _, migration := range migrations {
+			if _, err := db.ExecContext(ctx, migration); err != nil {
+				return err
+			}
 		}
+		return nil
+	}()
+
+	// Release advisory lock
+	if _, err := db.ExecContext(ctx, "SELECT pg_advisory_unlock($1)", migrationLockID); err != nil {
+		db.Close()
+		return nil, fmt.Errorf("failed to release migration lock: %w", err)
+	}
+
+	// Check if migrations failed
+	if migrationErr != nil {
+		db.Close()
+		return nil, migrationErr
 	}
 
 	return &PostgreSQLStore{
