@@ -18,8 +18,9 @@ is chained back to the previous event.
 has not been tampered.
 - When creating the self-addressing identifier, we'll also do something special for the first record
 in the chain. We replicate the process across another field, and both the id and this field (we'll
-call it the prefix since it prefixes the sequence). It remains constant for the entire chain, and
-identifies the chain.
+call it the prefix since it prefixes the sequence) will share the same value for the first record.
+The prefix remains constant for the entire chain, and identifies the chain up to cryptographic
+collision (effectively, uniquely). This is what we mean when we talk about the HSM identity.
 - The prefix is also the id of the first event.
 - By signing each event with the key revealed in that event, we create a self-certifying keychain.
 - If we add timestamps, we know which generation of key created a given signature.
