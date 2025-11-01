@@ -49,7 +49,7 @@ This is what such a key chain looks like:
 - RotationHash - A commitment to the next signing key
 - SequenceNumber - Increments by 1, starts at 0, no two events can share the same sequence number.
 - CreatedAt - A timestamp, always increases.
-- TamperPrevious - True if the rotation was due to a compromised key.
+- TaintPrevious (Optional) - True if the rotation was due to a compromised key.
 
 In the example, generation N is tainted and signatures created with it, no matter how recent, should
 not be respected. This permits zero-downtime hsm key rotation with an optional lookback window,
