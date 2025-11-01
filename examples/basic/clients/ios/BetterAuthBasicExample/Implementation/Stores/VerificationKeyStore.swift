@@ -76,6 +76,9 @@ struct SignedEntry: Codable {
     }
 }
 
+// 1 minute
+let maxResponseTime = TimeInterval(60)
+
 class KeyVerifier {
     private let verifier = Secp256r1Verifier()
     private let hasher = Hasher()
@@ -189,7 +192,7 @@ class KeyVerifier {
 
                 tainted = payload.taintPrevious ?? false
 
-                if payload.createdAt + serverLifetime < Date() {
+                if payload.createdAt + serverLifetime + maxResponseTime < Date() {
                     break
                 }
             }
