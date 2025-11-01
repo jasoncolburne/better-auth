@@ -91,14 +91,20 @@ module Storage
         by_prefix.each_value do |records|
           last_id = ''
           last_rotation_hash = ''
+          last_created_at = Time.at(0)
 
           records.each_with_index do |(record, _), i|
             payload = record.payload
 
             raise 'bad sequence number' if payload.sequence_number != i
 
+            # Validate timestamp ordering
+            raise 'future timestamp' if payload.created_at >= Time.now
+
             unless payload.sequence_number.zero?
               raise 'broken chain' if last_id != payload.previous
+
+              raise 'non-increasing timestamp' if payload.created_at <= last_created_at
 
               hash = @hasher.sum(payload.public_key.bytes)
 
@@ -107,6 +113,7 @@ module Storage
 
             last_id = payload.id
             last_rotation_hash = payload.rotation_hash
+            last_created_at = payload.created_at
           end
         end
 

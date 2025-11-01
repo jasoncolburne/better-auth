@@ -109,6 +109,7 @@ export class KeyVerifier {
       for (const records of byPrefix.values()) {
         let lastId = ''
         let lastRotationHash = ''
+        let lastCreatedAt = new Date(0)
 
         for (let i = 0; i < records.length; i++) {
           const payload = records[i][0].payload
@@ -117,9 +118,19 @@ export class KeyVerifier {
             throw new Error('bad sequence number')
           }
 
+          // Validate timestamp ordering
+          const createdAt = new Date(payload.createdAt)
+          if (createdAt >= new Date()) {
+            throw new Error('future timestamp')
+          }
+
           if (payload.sequenceNumber !== 0) {
             if (lastId !== payload.previous) {
               throw new Error('broken chain')
+            }
+
+            if (createdAt <= lastCreatedAt) {
+              throw new Error('non-increasing timestamp')
             }
 
             const hash = await this.hasher.sum(payload.publicKey)
@@ -131,6 +142,7 @@ export class KeyVerifier {
 
           lastId = payload.id
           lastRotationHash = payload.rotationHash
+          lastCreatedAt = createdAt
         }
       }
 

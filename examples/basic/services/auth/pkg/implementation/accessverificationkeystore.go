@@ -174,6 +174,7 @@ func (v *KeyVerifier) Verify(
 		for _, records := range byPrefix {
 			lastId := ""
 			lastRotationHash := ""
+			lastCreatedAt := time.Time{}
 			for i, record := range records {
 				payload := record.Payload
 
@@ -181,9 +182,19 @@ func (v *KeyVerifier) Verify(
 					return fmt.Errorf("bad sequence number")
 				}
 
+				// Validate timestamp ordering
+				when := (time.Time)(*payload.CreatedAt)
+				if when.After(time.Now()) {
+					return fmt.Errorf("future timestamp")
+				}
+
 				if payload.SequenceNumber != 0 {
 					if lastId != *payload.Previous {
 						return fmt.Errorf("broken chain")
+					}
+
+					if !when.After(lastCreatedAt) {
+						return fmt.Errorf("non-increasing timestamp")
 					}
 
 					hash := v.hasher.Sum([]byte(payload.PublicKey))
@@ -195,6 +206,7 @@ func (v *KeyVerifier) Verify(
 
 				lastId = payload.Id
 				lastRotationHash = payload.RotationHash
+				lastCreatedAt = when
 			}
 		}
 

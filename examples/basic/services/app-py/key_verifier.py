@@ -128,6 +128,7 @@ class KeyVerifier:
             for records in by_prefix.values():
                 last_id = ''
                 last_rotation_hash = ''
+                last_created_at = datetime.min.replace(tzinfo=None)
 
                 for i, (record, _) in enumerate(records):
                     payload = record.payload
@@ -135,9 +136,16 @@ class KeyVerifier:
                     if payload.sequence_number != i:
                         raise ValueError('bad sequence number')
 
+                    # Validate timestamp ordering
+                    if payload.created_at >= datetime.now(payload.created_at.tzinfo):
+                        raise ValueError('future timestamp')
+
                     if payload.sequence_number != 0:
                         if last_id != payload.previous:
                             raise ValueError('broken chain')
+
+                        if payload.created_at <= last_created_at:
+                            raise ValueError('non-increasing timestamp')
 
                         hash = await self.hasher.sum(payload.public_key)
 
@@ -146,6 +154,7 @@ class KeyVerifier:
 
                     last_id = payload.id
                     last_rotation_hash = payload.rotation_hash
+                    last_created_at = payload.created_at
 
             # Verify prefix exists
             if HSM_IDENTITY not in by_prefix:

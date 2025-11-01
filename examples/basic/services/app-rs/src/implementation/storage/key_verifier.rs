@@ -121,6 +121,9 @@ impl KeyVerifier {
         for records in by_prefix.values() {
             let mut last_id = String::new();
             let mut last_rotation_hash = String::new();
+            let mut last_created_at = DateTime::parse_from_rfc3339("1970-01-01T00:00:00Z")
+                .unwrap()
+                .with_timezone(&Utc);
 
             for (i, (record, _)) in records.iter().enumerate() {
                 let payload = &record.payload;
@@ -129,9 +132,22 @@ impl KeyVerifier {
                     return Err("bad sequence number".to_string());
                 }
 
+                // Validate timestamp ordering
+                let created_at = DateTime::parse_from_rfc3339(&payload.created_at)
+                    .map_err(|e| format!("Failed to parse created_at: {}", e))?
+                    .with_timezone(&Utc);
+
+                if created_at >= Utc::now() {
+                    return Err("future timestamp".to_string());
+                }
+
                 if payload.sequence_number != 0 {
                     if &last_id != payload.previous.as_ref().ok_or("missing previous")? {
                         return Err("broken chain".to_string());
+                    }
+
+                    if created_at <= last_created_at {
+                        return Err("non-increasing timestamp".to_string());
                     }
 
                     let hasher = Blake3Hasher::new();
@@ -144,6 +160,7 @@ impl KeyVerifier {
 
                 last_id = payload.id.clone();
                 last_rotation_hash = payload.rotation_hash.clone();
+                last_created_at = created_at;
             }
         }
 

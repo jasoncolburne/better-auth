@@ -130,6 +130,7 @@ class KeyVerifier {
 
             var lastId = ""
             var lastRotationHash = ""
+            var lastCreatedAt: Date?
 
             var prefixedEntries: [SignedEntry] = []
 
@@ -146,6 +147,17 @@ class KeyVerifier {
 
                 if payload.sequenceNumber != i {
                     throw BetterAuthError.invalidData
+                }
+
+                // Validate timestamp ordering
+                if payload.createdAt >= Date() {
+                    throw BetterAuthError.invalidData
+                }
+
+                if let lastTime = lastCreatedAt {
+                    if payload.createdAt <= lastTime {
+                        throw BetterAuthError.invalidData
+                    }
                 }
 
                 if payload.sequenceNumber == 0 {
@@ -170,6 +182,7 @@ class KeyVerifier {
 
                 lastId = payload.id
                 lastRotationHash = payload.rotationHash
+                lastCreatedAt = payload.createdAt
 
                 i += 1
             }
