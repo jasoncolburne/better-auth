@@ -30,6 +30,6 @@
 	path = implementations/better-auth-kt
 	url = git@github.com:jasoncolburne/better-auth-kt.git
 	branch = main
-[submodule "examples/basic/clients/ios/vendor/phc-winner-argon2"]
-	path = examples/basic/clients/ios/vendor/phc-winner-argon2
+[submodule "examples/garden-k8s/clients/ios/vendor/phc-winner-argon2"]
+	path = examples/garden-k8s/clients/ios/vendor/phc-winner-argon2
 	url = https://github.com/P-H-C/phc-winner-argon2.git

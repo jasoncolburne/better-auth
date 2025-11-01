@@ -1,0 +1,28 @@
+kind: Build
+name: keys
+type: container
+
+source:
+  path: ../../../..  # Set build context to repository root
+
+include:
+  - examples/garden-k8s/services/keys/**/*
+
+spec:
+  # Build the Docker image for the Ruby keys server
+  dockerfile: examples/garden-k8s/services/keys/Dockerfile
+
+---
+
+kind: Deploy
+name: keys
+type: kubernetes
+
+# Build and runtime dependencies
+dependencies:
+  - build.keys
+  - deploy.redis
+
+spec:
+  manifestTemplates:
+    - manifests.yml.tpl

@@ -1,0 +1,28 @@
+kind: Build
+name: hsm
+type: container
+
+source:
+  path: ../../../..  # Set build context to repository root
+
+include:
+  - examples/garden-k8s/services/hsm/**/*
+
+spec:
+  # Build the Docker image for the HSM service
+  dockerfile: examples/garden-k8s/services/hsm/Dockerfile
+
+---
+
+kind: Deploy
+name: hsm
+type: kubernetes
+
+# Build dependencies
+dependencies:
+  - build.hsm
+  - deploy.postgres
+
+spec:
+  manifestTemplates:
+    - manifests.yml.tpl
