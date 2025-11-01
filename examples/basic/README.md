@@ -62,6 +62,11 @@ Now that we've created a self-certifying key chain, we can apply it to the HSM d
 burn the chain's prefix into all the software to prevent impersonation, without the need for complex
 recovery mechanisms.
 
+#### Differences between this and a KERI KEL
+
+Typically in a KEL, a record of each signature is burned into the key chain. In this model, we use
+timestamps and the concept of tainting to acheive a similar result.
+
 ### Verifiers
 
 All verifiers follow this pattern:
