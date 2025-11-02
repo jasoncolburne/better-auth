@@ -14,7 +14,7 @@ class Secp256r1Verifier: IVerifier {
         let sig = try P256.Signing.ECDSASignature(rawRepresentation: signatureBytes)
 
         guard key.isValidSignature(sig, for: messageBytes) else {
-            throw BetterAuthError.invalidData
+            throw ExampleError.invalidData
         }
     }
 }

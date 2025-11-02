@@ -40,6 +40,7 @@
 		BA000049 /* Debug.swift in Sources */ = {isa = PBXBuildFile; fileRef = BA00004A /* Debug.swift */; };
 		BA000053 /* KeychainHelper.swift in Sources */ = {isa = PBXBuildFile; fileRef = BA000054 /* KeychainHelper.swift */; };
 		BA000055 /* HardwareSecp256r1.swift in Sources */ = {isa = PBXBuildFile; fileRef = BA000056 /* HardwareSecp256r1.swift */; };
+		BA000057 /* ExampleError.swift in Sources */ = {isa = PBXBuildFile; fileRef = BA000058 /* ExampleError.swift */; };
 		BAVIEW02 /* LinkDevicePromptView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BAVIEW01 /* LinkDevicePromptView.swift */; };
 		BAVIEW05 /* ReadyStateView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BAVIEW04 /* ReadyStateView.swift */; };
 		BAVIEW07 /* CreatedStateView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BAVIEW06 /* CreatedStateView.swift */; };
@@ -83,6 +84,7 @@
 		BA00004A /* Debug.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Debug.swift; sourceTree = "<group>"; };
 		BA000054 /* KeychainHelper.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeychainHelper.swift; sourceTree = "<group>"; };
 		BA000056 /* HardwareSecp256r1.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HardwareSecp256r1.swift; sourceTree = "<group>"; };
+		BA000058 /* ExampleError.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExampleError.swift; sourceTree = "<group>"; };
 		BAVIEW01 /* LinkDevicePromptView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LinkDevicePromptView.swift; sourceTree = "<group>"; };
 		BAVIEW04 /* ReadyStateView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReadyStateView.swift; sourceTree = "<group>"; };
 		BAVIEW06 /* CreatedStateView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CreatedStateView.swift; sourceTree = "<group>"; };
@@ -239,6 +241,7 @@
 				BA000048 /* Base64.swift */,
 				BA00004A /* Debug.swift */,
 				BA000054 /* KeychainHelper.swift */,
+				BA000058 /* ExampleError.swift */,
 				6EAEA8BC6FA0081778D5796B /* Passphrase.swift */,
 			);
 			path = Utilities;
@@ -358,6 +361,7 @@
 				BA000049 /* Debug.swift in Sources */,
 				BA000053 /* KeychainHelper.swift in Sources */,
 				BA000055 /* HardwareSecp256r1.swift in Sources */,
+				BA000057 /* ExampleError.swift in Sources */,
 				BAVIEW02 /* LinkDevicePromptView.swift in Sources */,
 				BAVIEW11 /* Logic.swift in Sources */,
 				BAVIEW09 /* AuthenticatedStateView.swift in Sources */,

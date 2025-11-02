@@ -52,12 +52,12 @@ class ClientRotatingKeyStore: IClientRotatingKeyStore {
     func next() async throws -> (any ISigningKey, String) {
         // Load next identity from keychain
         guard let nextIdentity = try? keychainHelper.loadString(withKey: nextIdentityKey) else {
-            throw BetterAuthError.callInitializeFirst
+            throw ExampleError.callInitializeFirst
         }
 
         // Load the tag for next identity
         guard let nextTag = try? keychainHelper.loadString(withKey: identityToTagKey(nextIdentity)) else {
-            throw BetterAuthError.callInitializeFirst
+            throw ExampleError.callInitializeFirst
         }
 
         let nextKey = HardwareSecp256r1(tag: nextTag)
@@ -88,11 +88,11 @@ class ClientRotatingKeyStore: IClientRotatingKeyStore {
 
     func rotate() async throws {
         guard let nextIdentity = try? keychainHelper.loadString(withKey: nextIdentityKey) else {
-            throw BetterAuthError.callInitializeFirst
+            throw ExampleError.callInitializeFirst
         }
 
         guard let futureIdentity = try? keychainHelper.loadString(withKey: futureIdentityKey) else {
-            throw BetterAuthError.callNextFirst
+            throw ExampleError.callNextFirst
         }
 
         // Get current identity to delete its key
@@ -114,11 +114,11 @@ class ClientRotatingKeyStore: IClientRotatingKeyStore {
 
     func signer() async throws -> any ISigningKey {
         guard let currentIdentity = try? keychainHelper.loadString(withKey: currentIdentityKey) else {
-            throw BetterAuthError.callInitializeFirst
+            throw ExampleError.callInitializeFirst
         }
 
         guard let currentTag = try? keychainHelper.loadString(withKey: identityToTagKey(currentIdentity)) else {
-            throw BetterAuthError.callInitializeFirst
+            throw ExampleError.callInitializeFirst
         }
 
         return HardwareSecp256r1(tag: currentTag)
