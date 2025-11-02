@@ -1,21 +1,21 @@
 use better_auth::interfaces::Timestamper as TimestamperTrait;
 use std::time::{Duration, SystemTime};
 
-pub struct Rfc3339Nano;
+pub struct Rfc3339;
 
-impl Default for Rfc3339Nano {
+impl Default for Rfc3339 {
     fn default() -> Self {
         Self::new()
     }
 }
 
-impl Rfc3339Nano {
+impl Rfc3339 {
     pub fn new() -> Self {
         Self
     }
 }
 
-impl TimestamperTrait for Rfc3339Nano {
+impl TimestamperTrait for Rfc3339 {
     fn format(&self, when: SystemTime) -> String {
         use chrono::{DateTime, Utc};
 

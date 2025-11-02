@@ -20,7 +20,7 @@ use better_auth::messages::{Serializable, Signable};
 mod implementation;
 
 use implementation::{
-    Rfc3339Nano, RedisVerificationKeyStore, Secp256r1, Secp256r1Verifier, ServerTimeLockStore,
+    Rfc3339, RedisVerificationKeyStore, Secp256r1, Secp256r1Verifier, ServerTimeLockStore,
     TokenEncoder,
 };
 
@@ -196,7 +196,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let access_key_store = RedisVerificationKeyStore::new(access_conn, hsm_conn, server_lifetime_hours, access_lifetime_minutes);
 
     // Create encoding components
-    let timestamper = Rfc3339Nano::new();
+    let timestamper = Rfc3339::new();
     let token_encoder = TokenEncoder::new();
 
     // Generate and register response key

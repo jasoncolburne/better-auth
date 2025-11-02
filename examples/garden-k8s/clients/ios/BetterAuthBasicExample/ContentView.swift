@@ -27,7 +27,7 @@ struct ContentView: View {
             hasher: Hasher(),
             noncer: Noncer(),
             verificationKeyStore: verificationKeyStore,
-            timestamper: Rfc3339Nano(),
+            timestamper: Rfc3339(),
             network: Network(),
             paths: createDefaultPaths(),
             deviceIdentifierStore: deviceValueStore,

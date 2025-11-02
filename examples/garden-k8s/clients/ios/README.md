@@ -25,7 +25,7 @@ BetterAuthBasicExample/
 │   ├── Network/
 │   │   └── Network.swift                 # URLSession-based HTTP client
 │   ├── Time/
-│   │   └── Rfc3339Nano.swift             # ISO8601 timestamper
+│   │   └── Rfc3339.swift             # ISO8601 timestamper
 │   ├── Protocol/
 │   │   └── DefaultPaths.swift            # Default API paths
 │   ├── Models/
@@ -71,7 +71,7 @@ BetterAuthBasicExample/
 - `ClientRotatingKeyStore` for key rotation with forward secrecy
 - `Hasher` using BLAKE3
 - `Noncer` for secure nonce generation
-- `Rfc3339Nano` timestamper (ISO8601 with millisecond precision)
+- `Rfc3339` timestamper (ISO8601 with millisecond precision)
 - `Network` implementation with URLSession
 - `Argon2` password hashing using native C library
 - `Passphrase` generation (24-word passphrases)

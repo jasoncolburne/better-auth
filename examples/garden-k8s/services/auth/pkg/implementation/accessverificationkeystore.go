@@ -329,7 +329,7 @@ func NewAccessVerificationKeyStore(serverLifetime, refreshLifetime time.Duration
 		return nil, err
 	}
 
-	timestamper := encoding.NewRfc3339Nano()
+	timestamper := encoding.NewRfc3339()
 
 	return &AccessVerificationKeyStore{
 		client:      accessClient,

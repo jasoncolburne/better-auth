@@ -11,7 +11,7 @@ require 'better_auth/messages/common'
 require_relative 'lib/crypto/secp256r1'
 require_relative 'lib/storage/verification_key_store'
 require_relative 'lib/storage/timelock'
-require_relative 'lib/app_encoding/rfc3339nano'
+require_relative 'lib/app_encoding/rfc3339'
 require_relative 'lib/app_encoding/token_encoder'
 
 class TokenAttributes
@@ -91,7 +91,7 @@ class ApplicationServer < Sinatra::Base
         crypto: BetterAuth::API::VerifierCryptoContainer.new(verifier: verifier),
         encoding: BetterAuth::API::VerifierEncodingContainer.new(
           token_encoder: AppEncoding::TokenEncoder.new,
-          timestamper: AppEncoding::Rfc3339Nano.new
+          timestamper: AppEncoding::Rfc3339.new
         ),
         store: BetterAuth::API::VerifierStoreContainer.new(
           access_nonce: access_nonce_store,
@@ -112,7 +112,7 @@ class ApplicationServer < Sinatra::Base
       hsm_url = "http://#{hsm_host}:#{hsm_port}"
 
       ttl = 12 * 60 * 60 + 60 # 12 hours + 1 minute in seconds
-      response_expiration = (Time.now + ttl).utc.iso8601(9)
+      response_expiration = (Time.now + ttl).utc.iso8601(3)
       response_payload = {
         purpose: 'response',
         publicKey: app_response_public_key,

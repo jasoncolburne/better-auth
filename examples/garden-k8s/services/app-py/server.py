@@ -41,7 +41,7 @@ from better_auth.interfaces.storage import IServerTimeLockStore, IVerificationKe
 # Import reference implementations
 sys.path.insert(0, examples_path)
 from implementation.crypto.secp256r1 import Secp256r1, Secp256r1Verifier
-from implementation.encoding.timestamper import Rfc3339Nano
+from implementation.encoding.timestamper import Rfc3339
 from implementation.encoding.token_encoder import TokenEncoder
 from key_verifier import KeyVerifier
 from utils import get_sub_json
@@ -229,7 +229,7 @@ class ApplicationServer:
                     ),
                     encoding=AccessVerifierEncodingConfig(
                         token_encoder=TokenEncoder(),
-                        timestamper=Rfc3339Nano()
+                        timestamper=Rfc3339()
                     ),
                     store=AccessVerifierStorageConfig(
                         access=AccessVerifierStoreConfig(
@@ -252,7 +252,8 @@ class ApplicationServer:
             hsm_url = f"http://{hsm_host}:{hsm_port}"
 
             ttl = 12 * 60 * 60 + 60  # 12 hours + 1 minute in seconds
-            response_expiration = (datetime.now(timezone.utc) + timedelta(seconds=ttl)).isoformat()
+            timestamper = Rfc3339()
+            response_expiration = timestamper.format(datetime.now(timezone.utc) + timedelta(seconds=ttl))
             response_payload = {
                 "purpose": "response",
                 "publicKey": app_response_public_key,

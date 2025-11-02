@@ -105,7 +105,7 @@ func NewServer() (*Server, error) {
 	recoveryHashStore := implementation.NewRecoveryHashStore(store)
 
 	identityVerifier := encoding.NewMockIdentityVerifier(hasher)
-	timestamper := encoding.NewRfc3339Nano()
+	timestamper := encoding.NewRfc3339()
 	tokenEncoder := encoding.NewTokenEncoder[TokenAttributes]()
 
 	serverResponseKey, err := crypto.NewSecp256r1()
@@ -375,7 +375,7 @@ func registerKeysInRedis(accessKey, responseKey cryptointerfaces.SigningKey) err
 	hsmURL := fmt.Sprintf("http://%s:%s", hsmHost, hsmPort)
 
 	// Sign access key (expires in 24 hours to match Redis TTL)
-	accessExpiration := time.Now().Add(accessTTL).Format(time.RFC3339Nano)
+	accessExpiration := time.Now().Add(accessTTL).Format(encoding.ConsistentMilli)
 	accessPayload := implementation.KeySigningPayload{
 		Purpose:    "access",
 		PublicKey:  accessPublicKey,
@@ -389,7 +389,7 @@ func registerKeysInRedis(accessKey, responseKey cryptointerfaces.SigningKey) err
 	}
 
 	// Sign response key (expires in 12 hours + 1 minute to match Redis TTL)
-	responseExpiration := time.Now().Add(responseTTL).Format(time.RFC3339Nano)
+	responseExpiration := time.Now().Add(responseTTL).Format(encoding.ConsistentMilli)
 	responsePayload := implementation.KeySigningPayload{
 		Purpose:    "response",
 		PublicKey:  responsePublicKey,

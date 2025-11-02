@@ -1,6 +1,6 @@
 import { ITimestamper } from 'better-auth-ts'
 
-export class Rfc3339Nano implements ITimestamper {
+export class Rfc3339 implements ITimestamper {
   format(when: Date): string {
     // Use standard RFC3339 format with millisecond precision (3 digits)
     return when.toISOString()

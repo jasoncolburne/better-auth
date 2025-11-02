@@ -1,10 +1,6 @@
 import Foundation
 import BetterAuth
 
-public enum VerificationError: Error {
-    case expiredKey
-}
-
 func extractJSONValues(from jsonString: String, forKey key: String) throws -> [String] {
     var values: [String] = []
     var searchRange = jsonString.startIndex..<jsonString.endIndex
@@ -289,7 +285,7 @@ typealias Response = [String: Key]
 class VerificationKeyStore: IVerificationKeyStore {
     private var cache: [String: (Secp256r1VerificationKey, Date)] = [:]
     var verifier: KeyVerifier
-    private var timestamper = Rfc3339Nano()
+    private var timestamper = Rfc3339()
     var isAuthenticated: Bool = false
 
     init(serverLifetimeHours: Int) {
@@ -306,7 +302,7 @@ class VerificationKeyStore: IVerificationKeyStore {
         if let (cachedKey, expiration) = cache[identity] {
             if (timestamper.now() > expiration) {
                 cache.removeValue(forKey: identity)
-                throw VerificationError.expiredKey
+                throw ExampleError.expiredKey
             }
 
             return cachedKey
@@ -362,7 +358,7 @@ class VerificationKeyStore: IVerificationKeyStore {
         let expirationTimestamp = try timestamper.parse(decodedBody.payload.expiration)
 
         if (timestamper.now() > expirationTimestamp) {
-            throw VerificationError.expiredKey
+            throw ExampleError.expiredKey
         }
 
         // Create verification key and cache it only if authenticated
