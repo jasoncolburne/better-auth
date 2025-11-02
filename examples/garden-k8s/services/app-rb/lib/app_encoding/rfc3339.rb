@@ -1,9 +1,9 @@
 require 'time'
 
 module AppEncoding
-  class Rfc3339Nano
+  class Rfc3339
     def format(when_time)
-      when_time.utc.iso8601(9)
+      when_time.utc.iso8601(3)
     end
 
     def parse(when_string)

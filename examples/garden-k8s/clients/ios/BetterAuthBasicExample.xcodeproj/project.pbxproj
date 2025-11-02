@@ -35,7 +35,7 @@
 		BA00003F /* ClientRotatingKeyStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = BA000040 /* ClientRotatingKeyStore.swift */; };
 		BA000041 /* ClientValueStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = BA000042 /* ClientValueStore.swift */; };
 		BA000043 /* VerificationKeyStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = BA000044 /* VerificationKeyStore.swift */; };
-		BA000045 /* Rfc3339Nano.swift in Sources */ = {isa = PBXBuildFile; fileRef = BA000046 /* Rfc3339Nano.swift */; };
+		BA000045 /* Rfc3339.swift in Sources */ = {isa = PBXBuildFile; fileRef = BA000046 /* Rfc3339.swift */; };
 		BA000047 /* Base64.swift in Sources */ = {isa = PBXBuildFile; fileRef = BA000048 /* Base64.swift */; };
 		BA000049 /* Debug.swift in Sources */ = {isa = PBXBuildFile; fileRef = BA00004A /* Debug.swift */; };
 		BA000053 /* KeychainHelper.swift in Sources */ = {isa = PBXBuildFile; fileRef = BA000054 /* KeychainHelper.swift */; };
@@ -79,7 +79,7 @@
 		BA000040 /* ClientRotatingKeyStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClientRotatingKeyStore.swift; sourceTree = "<group>"; };
 		BA000042 /* ClientValueStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClientValueStore.swift; sourceTree = "<group>"; };
 		BA000044 /* VerificationKeyStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VerificationKeyStore.swift; sourceTree = "<group>"; };
-		BA000046 /* Rfc3339Nano.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Rfc3339Nano.swift; sourceTree = "<group>"; };
+		BA000046 /* Rfc3339.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Rfc3339.swift; sourceTree = "<group>"; };
 		BA000048 /* Base64.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Base64.swift; sourceTree = "<group>"; };
 		BA00004A /* Debug.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Debug.swift; sourceTree = "<group>"; };
 		BA000054 /* KeychainHelper.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeychainHelper.swift; sourceTree = "<group>"; };
@@ -230,7 +230,7 @@
 		BA000051 /* Time */ = {
 			isa = PBXGroup;
 			children = (
-				BA000046 /* Rfc3339Nano.swift */,
+				BA000046 /* Rfc3339.swift */,
 			);
 			path = Time;
 			sourceTree = "<group>";
@@ -356,7 +356,7 @@
 				BA00003F /* ClientRotatingKeyStore.swift in Sources */,
 				BA000041 /* ClientValueStore.swift in Sources */,
 				BA000043 /* VerificationKeyStore.swift in Sources */,
-				BA000045 /* Rfc3339Nano.swift in Sources */,
+				BA000045 /* Rfc3339.swift in Sources */,
 				BA000047 /* Base64.swift in Sources */,
 				BA000049 /* Debug.swift in Sources */,
 				BA000053 /* KeychainHelper.swift in Sources */,

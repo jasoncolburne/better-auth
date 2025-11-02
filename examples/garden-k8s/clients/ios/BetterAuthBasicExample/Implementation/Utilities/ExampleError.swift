@@ -6,4 +6,5 @@ enum ExampleError: Error {
     case keypairNotGenerated
     case callInitializeFirst
     case callNextFirst
+    case expiredKey
 }

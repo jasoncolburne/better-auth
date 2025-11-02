@@ -3,7 +3,7 @@ import { AccessVerifier, ISigningKey, ServerResponse } from 'better-auth-ts'
 import { Secp256r1, Secp256r1Verifier } from './utils/crypto/secp256r1.js'
 import { VerificationKeyStore } from './utils/storage/common.js'
 import { ServerTimeLockStore } from './utils/storage/server.js'
-import { Rfc3339Nano } from './utils/encoding/timestamper.js'
+import { Rfc3339 } from './utils/encoding/timestamper.js'
 import { TokenEncoder } from './utils/encoding/token_encoder.js'
 import { Redis } from 'ioredis'
 
@@ -92,7 +92,7 @@ class ApplicationServer {
       },
       encoding: {
         tokenEncoder: new TokenEncoder(),
-        timestamper: new Rfc3339Nano(),
+        timestamper: new Rfc3339(),
       },
       store: {
         access: {

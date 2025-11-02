@@ -1,7 +1,7 @@
 import Foundation
 import BetterAuth
 
-class Rfc3339Nano: ITimestamper {
+class Rfc3339: ITimestamper {
     func format(_ when: Date) -> String {
         let formatter = ISO8601DateFormatter()
         formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
