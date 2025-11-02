@@ -13,12 +13,12 @@ class Rfc3339Nano: ITimestamper {
             return date
         }
         guard let string = when as? String else {
-            throw BetterAuthError.invalidData
+            throw ExampleError.invalidData
         }
         let formatter = ISO8601DateFormatter()
         formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
         guard let date = formatter.date(from: string) else {
-            throw BetterAuthError.invalidData
+            throw ExampleError.invalidData
         }
         return date
     }

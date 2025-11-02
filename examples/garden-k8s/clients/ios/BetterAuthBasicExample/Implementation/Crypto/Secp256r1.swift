@@ -17,7 +17,7 @@ class Secp256r1: ISigningKey {
 
     func sign(_ message: String) async throws -> String {
         guard let keyPair else {
-            throw BetterAuthError.keypairNotGenerated
+            throw ExampleError.keypairNotGenerated
         }
 
         let messageBytes = message.data(using: .utf8)!
@@ -33,7 +33,7 @@ class Secp256r1: ISigningKey {
 
     func `public`() async throws -> String {
         guard let keyPair else {
-            throw BetterAuthError.keypairNotGenerated
+            throw ExampleError.keypairNotGenerated
         }
 
         let publicKey = keyPair.publicKey

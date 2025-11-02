@@ -24,6 +24,6 @@ class ClientValueStore: IClientValueStore {
             return value
         }
 
-        throw BetterAuthError.callInitializeFirst
+        throw ExampleError.callInitializeFirst
     }
 }

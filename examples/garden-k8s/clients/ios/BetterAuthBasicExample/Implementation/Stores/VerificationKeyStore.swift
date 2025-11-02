@@ -18,7 +18,7 @@ func extractJSONValues(from jsonString: String, forKey key: String) throws -> [S
 
         // Now we're at the start of the value (should be '{')
         guard currentIndex < jsonString.endIndex && jsonString[currentIndex] == "{" else {
-            throw BetterAuthError.invalidData
+            throw ExampleError.invalidData
         }
 
         // Extract the complete JSON object by counting braces
@@ -116,16 +116,16 @@ class KeyVerifier {
 
             guard let httpResponse = response as? HTTPURLResponse,
                 (200...299).contains(httpResponse.statusCode) else {
-                throw BetterAuthError.invalidData
+                throw ExampleError.invalidData
             }
 
             guard let hsmRecords = try JSONSerialization.jsonObject(with: data) as? [Any] else {
-                throw BetterAuthError.invalidData
+                throw ExampleError.invalidData
             }
 
             // Extract raw payload JSON strings directly from the original response
             guard let jsonString = String(data: data, encoding: .utf8) else {
-                throw BetterAuthError.invalidData
+                throw ExampleError.invalidData
             }
 
             let payloadStrings = try extractJSONValues(from: jsonString, forKey: "payload")
@@ -152,17 +152,17 @@ class KeyVerifier {
                 }
 
                 if payload.sequenceNumber != i {
-                    throw BetterAuthError.invalidData
+                    throw ExampleError.invalidData
                 }
 
                 // Validate timestamp ordering
                 if payload.createdAt >= Date() {
-                    throw BetterAuthError.invalidData
+                    throw ExampleError.invalidData
                 }
 
                 if let lastTime = lastCreatedAt {
                     if payload.createdAt <= lastTime {
-                        throw BetterAuthError.invalidData
+                        throw ExampleError.invalidData
                     }
                 }
 
@@ -170,13 +170,13 @@ class KeyVerifier {
                     try await self.verifyPrefixAndData(payloadString, payload)
                 } else {
                     if lastId != payload.previous {
-                        throw BetterAuthError.invalidData
+                        throw ExampleError.invalidData
                     }
 
                     let hash = try await self.hasher.sum(payload.publicKey)
 
                     if lastRotationHash != hash {
-                        throw BetterAuthError.invalidData
+                        throw ExampleError.invalidData
                     }
 
                     try await self.verifyAddressAndData(payloadString, payload)
@@ -222,19 +222,19 @@ class KeyVerifier {
         }
 
         guard let entry = foundEntry else {
-            throw BetterAuthError.invalidData
+            throw ExampleError.invalidData
         }
 
         if entry.payload.prefix != hsmIdentity {
-            throw BetterAuthError.invalidData
+            throw ExampleError.invalidData
         }
 
         if entry.payload.purpose != "key-authorization" {
-            throw BetterAuthError.invalidData
+            throw ExampleError.invalidData
         }
 
         if let expiration = cachedEntry?.expiration, expiration < Date() {
-            throw BetterAuthError.invalidData
+            throw ExampleError.invalidData
         }
 
         try await self.verifier.verify(body, signature, entry.payload.publicKey)
@@ -242,7 +242,7 @@ class KeyVerifier {
 
     func verifyPrefixAndData(_ payloadString: String, _ payload: SignedEntry.LogEntry) async throws {
         if payload.id != payload.prefix {
-            throw BetterAuthError.invalidData
+            throw ExampleError.invalidData
         }
 
         try await verifyAddressAndData(payloadString, payload)
@@ -254,7 +254,7 @@ class KeyVerifier {
         let hash = try await self.hasher.sum(modifiedPayload)
 
         if hash != payload.id {
-            throw BetterAuthError.invalidData
+            throw ExampleError.invalidData
         }
     }
 
@@ -322,28 +322,28 @@ class VerificationKeyStore: IVerificationKeyStore {
 
         guard let httpResponse = response as? HTTPURLResponse,
               (200...299).contains(httpResponse.statusCode) else {
-            throw BetterAuthError.invalidData
+            throw ExampleError.invalidData
         }
 
         // Extract the raw "body" JSON substring to preserve exact bytes that were signed
         guard let jsonString = String(data: data, encoding: .utf8) else {
-            throw BetterAuthError.invalidData
+            throw ExampleError.invalidData
         }
 
         let bodyStrings = try extractJSONValues(from: jsonString, forKey: "body")
         guard let bodyString = bodyStrings.first else {
-            throw BetterAuthError.invalidData
+            throw ExampleError.invalidData
         }
 
         // Parse the response to get the signature
         guard let hsmResponse = try JSONSerialization.jsonObject(with: data) as? [String: Any],
               let signature = hsmResponse["signature"] as? String else {
-            throw BetterAuthError.invalidData
+            throw ExampleError.invalidData
         }
 
         // Now decode the body to validate its contents
         guard let bodyData = bodyString.data(using: .utf8) else {
-            throw BetterAuthError.invalidData
+            throw ExampleError.invalidData
         }
         let decodedBody = try JSONDecoder().decode(Key.Body.self, from: bodyData)
 
@@ -356,7 +356,7 @@ class VerificationKeyStore: IVerificationKeyStore {
         )
 
         if (decodedBody.payload.purpose != "response") {
-            throw BetterAuthError.invalidData
+            throw ExampleError.invalidData
         }
 
         let expirationTimestamp = try timestamper.parse(decodedBody.payload.expiration)

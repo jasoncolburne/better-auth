@@ -31,7 +31,7 @@ class Network: INetwork {
 
         guard let httpResponse = response as? HTTPURLResponse,
               (200...299).contains(httpResponse.statusCode) else {
-            throw BetterAuthError.invalidData
+            throw ExampleError.invalidData
         }
 
         return String(data: data, encoding: .utf8) ?? ""

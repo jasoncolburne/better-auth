@@ -78,7 +78,7 @@ class HardwareSecp256r1: ISigningKey {
         var item: CFTypeRef?
         let status = SecItemCopyMatching(query as CFDictionary, &item)
         guard status == errSecSuccess, let privateKey = item as! SecKey? else {
-            throw BetterAuthError.keypairNotGenerated
+            throw ExampleError.keypairNotGenerated
         }
 
         // Sign the message
@@ -90,7 +90,7 @@ class HardwareSecp256r1: ISigningKey {
             messageBytes as CFData,
             &error
         ) as Data? else {
-            throw BetterAuthError.invalidData
+            throw ExampleError.invalidData
         }
 
         // Convert DER signature to raw format (r + s)
@@ -98,7 +98,7 @@ class HardwareSecp256r1: ISigningKey {
         guard derSignature.count > 8,
               derSignature[0] == 0x30,
               derSignature[2] == 0x02 else {
-            throw BetterAuthError.invalidData
+            throw ExampleError.invalidData
         }
 
         let rLength = Int(derSignature[3])
@@ -108,14 +108,14 @@ class HardwareSecp256r1: ISigningKey {
         // Validate bounds
         guard sLengthPos < derSignature.count,
               derSignature[sLengthPos - 1] == 0x02 else {
-            throw BetterAuthError.invalidData
+            throw ExampleError.invalidData
         }
 
         let sLength = Int(derSignature[sLengthPos])
         let sStart = sLengthPos + 1
 
         guard sStart + sLength <= derSignature.count else {
-            throw BetterAuthError.invalidData
+            throw ExampleError.invalidData
         }
 
         // Extract r and s, removing any leading zero padding
@@ -162,17 +162,17 @@ class HardwareSecp256r1: ISigningKey {
         var item: CFTypeRef?
         let status = SecItemCopyMatching(query as CFDictionary, &item)
         guard status == errSecSuccess, let privateKey = item as! SecKey? else {
-            throw BetterAuthError.keypairNotGenerated
+            throw ExampleError.keypairNotGenerated
         }
 
         // Get public key
         guard let publicKey = SecKeyCopyPublicKey(privateKey) else {
-            throw BetterAuthError.invalidData
+            throw ExampleError.invalidData
         }
 
         var error: Unmanaged<CFError>?
         guard let publicKeyData = SecKeyCopyExternalRepresentation(publicKey, &error) as Data? else {
-            throw BetterAuthError.invalidData
+            throw ExampleError.invalidData
         }
 
         // Convert to compressed format

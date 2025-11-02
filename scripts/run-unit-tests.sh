@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-set -e
+set -e -o pipefail
 
 # Colors for output
 RED='\033[0;31m'
@@ -77,8 +77,10 @@ main() {
         echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 
         local output
+        set +e  # Temporarily disable exit-on-error
         output=$(run_unit_tests "$repo" 2>&1)
         local status=$?
+        set -e  # Re-enable exit-on-error
 
         if [ $status -eq 0 ]; then
             if echo "$output" | grep -q "WARNING"; then
@@ -93,6 +95,7 @@ main() {
             results+=("${RED}✗${NC} better-auth-$repo")
             total_failed=$((total_failed + 1))
             echo "$output"
+            print_error "Unit tests failed for better-auth-$repo with exit code $status"
         fi
     done
 
