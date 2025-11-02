@@ -18,7 +18,6 @@ class Rfc3339: ITimestamper {
         let formatter = ISO8601DateFormatter()
         formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
         guard let date = formatter.date(from: string) else {
-            debugPrint(string)
             throw ExampleError.invalidData
         }
         return date
