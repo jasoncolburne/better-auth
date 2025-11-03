@@ -13,11 +13,52 @@ use better_auth::api::server::{
     AccessVerifier, AccessVerifierAccessStore, AccessVerifierCrypto, AccessVerifierEncoding,
     AccessVerifierStore,
 };
+use better_auth::error::BetterAuthError;
 use better_auth::interfaces::{SigningKey, VerificationKey};
 use better_auth::messages::{AccessToken, ServerResponse};
 use better_auth::messages::{Serializable, Signable};
 
 mod implementation;
+
+// Custom error type for the application
+#[derive(Debug)]
+enum AppError {
+    Auth(String),
+    Redis(String),
+    Permission(String),
+    Serialization(String),
+    Signing(String),
+}
+
+impl std::fmt::Display for AppError {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        match self {
+            AppError::Auth(e) => write!(f, "Authentication error: {}", e),
+            AppError::Redis(e) => write!(f, "Redis error: {}", e),
+            AppError::Permission(e) => write!(f, "Permission error: {}", e),
+            AppError::Serialization(e) => write!(f, "Serialization error: {}", e),
+            AppError::Signing(e) => write!(f, "Signing error: {}", e),
+        }
+    }
+}
+
+impl From<String> for AppError {
+    fn from(s: String) -> Self {
+        AppError::Auth(s)
+    }
+}
+
+impl From<AppError> for BetterAuthError {
+    fn from(err: AppError) -> BetterAuthError {
+        match err {
+            AppError::Auth(e) => BetterAuthError::new("APP001", format!("Auth: {}", e)),
+            AppError::Redis(e) => BetterAuthError::new("APP002", format!("Redis: {}", e)),
+            AppError::Permission(e) => BetterAuthError::new("APP003", format!("Permission: {}", e)),
+            AppError::Serialization(e) => BetterAuthError::new("APP004", format!("Serialization: {}", e)),
+            AppError::Signing(e) => BetterAuthError::new("APP005", format!("Signing: {}", e)),
+        }
+    }
+}
 
 use implementation::{
     Rfc3339, RedisVerificationKeyStore, Secp256r1, Secp256r1Verifier, ServerTimeLockStore,
@@ -71,19 +112,20 @@ async fn foo_bar(State(state): State<AppState>, body: String) -> (StatusCode, St
     match handle_foo_bar(&state, body).await {
         Ok(response) => (StatusCode::OK, response),
         Err(e) => {
+            // Application boundary: convert AppError to string for HTTP response
             eprintln!("Error handling /foo/bar: {}", e);
             (
                 StatusCode::INTERNAL_SERVER_ERROR,
-                r#"{"error":"internal server error"}"#.to_string(),
+                format!(r#"{{"error":"{}"}}"#, e),
             )
         }
     }
 }
 
-async fn handle_foo_bar(state: &AppState, message: String) -> Result<String, String> {
+async fn handle_foo_bar(state: &AppState, message: String) -> Result<String, AppError> {
     // Verify the access request
     let (request, token, nonce): (RequestPayload, AccessToken<TokenAttributes>, String) =
-        state.av.verify(&message).await?;
+        state.av.verify(&message).await.map_err(|e| AppError::Auth(e.to_string()))?;
 
     // Check if device is revoked
     use redis::AsyncCommands;
@@ -91,23 +133,23 @@ async fn handle_foo_bar(state: &AppState, message: String) -> Result<String, Str
     let is_revoked: bool = conn
         .exists(&token.device)
         .await
-        .map_err(|e| format!("Failed to check revoked devices: {}", e))?;
+        .map_err(|e| AppError::Redis(format!("Failed to check revoked devices: {}", e)))?;
 
     if is_revoked {
-        return Err("device revoked".to_string());
+        return Err(AppError::Permission("device revoked".to_string()));
     }
 
     // Check permissions
     if let Some(user_permissions) = token.attributes.permissions_by_role.get("user") {
         if !user_permissions.contains(&"read".to_string()) {
-            return Err("unauthorized: missing read permission".to_string());
+            return Err(AppError::Permission("unauthorized: missing read permission".to_string()));
         }
     } else {
-        return Err("unauthorized: no user permissions".to_string());
+        return Err(AppError::Permission("unauthorized: no user permissions".to_string()));
     }
 
     // Get server identity
-    let server_identity = state.response_key.identity().await?;
+    let server_identity = state.response_key.identity().await.map_err(AppError::Auth)?;
 
     // Create response
     let mut response: ServerResponse<ResponsePayload> = ServerResponse::new(
@@ -120,11 +162,11 @@ async fn handle_foo_bar(state: &AppState, message: String) -> Result<String, Str
         nonce,
     );
 
-    // Sign the response
-    response.sign(state.response_key.as_ref()).await?;
+    // Sign the response - no conversion needed! Library handles it via Into<BetterAuthError>
+    response.sign(state.response_key.as_ref()).await.map_err(|e| AppError::Signing(e.to_string()))?;
 
-    // Serialize to JSON
-    response.to_json().await
+    // Serialize to JSON - no conversion needed! Library handles it via Into<BetterAuthError>
+    response.to_json().await.map_err(|e| AppError::Serialization(e.to_string()))
 }
 
 #[tokio::main]
