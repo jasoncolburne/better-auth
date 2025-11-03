@@ -96,7 +96,7 @@ impl KeyVerifier {
                 .map_err(|e| format!("Failed to parse HSM record: {}", e))?;
 
             by_prefix.entry(record.payload.prefix.clone())
-                .or_insert_with(Vec::new)
+                .or_default()
                 .push((record, payload_json));
         }
 
@@ -183,7 +183,7 @@ impl KeyVerifier {
             if !tainted {
                 cache.insert(payload.id.clone(), ExpiringEntry {
                     entry: payload.clone(),
-                    expiration: expiration,
+                    expiration,
                 });
             }
 

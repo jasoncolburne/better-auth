@@ -193,6 +193,82 @@ BetterAuthError (base)
 
 ---
 
+## Error Handling at Library Boundaries
+
+**CRITICAL REQUIREMENT**: All implementations MUST preserve error structure (code, message, and context) at the library boundary. Users of Better Auth libraries must be able to:
+
+1. **Programmatically distinguish error types** by inspecting error codes
+2. **Access structured context** for debugging and logging
+3. **Serialize errors to JSON** for transmission or storage
+4. **Pattern match or type-check** errors for specific handling
+
+### Anti-Patterns to Avoid
+
+❌ **Converting errors to plain strings at the library boundary**
+```rust
+// WRONG: Loses all structure
+pub fn create_account(&self) -> Result<String, String>
+
+impl From<BetterAuthError> for String {
+    fn from(err: BetterAuthError) -> String {
+        err.message  // Loses code and context!
+    }
+}
+```
+
+❌ **Throwing generic string errors**
+```typescript
+// WRONG: Cannot be caught specifically
+throw "device validation failed"
+```
+
+❌ **Wrapping structured errors in generic wrappers without preserving original**
+```python
+# WRONG: Loses original error information
+except BetterAuthError as e:
+    raise Exception(str(e))
+```
+
+### Correct Patterns
+
+✅ **Preserve full error structure**
+```rust
+// CORRECT: Returns structured error
+pub fn create_account(&self) -> Result<String, BetterAuthError>
+```
+
+✅ **Use typed exceptions/errors**
+```typescript
+// CORRECT: Can be caught and inspected
+throw new InvalidDeviceError(provided, calculated)
+```
+
+✅ **Enable type-based error handling**
+```go
+// CORRECT: Callers can type-assert to access context
+func CreateAccount() (string, error) {
+    return "", errors.NewInvalidDeviceError(provided, calculated)
+}
+
+// Caller can then:
+if betterErr, ok := err.(*errors.BetterAuthError); ok {
+    log.Printf("Error code: %s, context: %v", betterErr.Code, betterErr.Context)
+}
+```
+
+### Verification Checklist
+
+All implementations should verify:
+
+- [ ] Public API methods return/throw structured error types (not strings)
+- [ ] Error codes are accessible to library users
+- [ ] Error context is accessible to library users
+- [ ] Errors can be serialized to JSON without loss of information
+- [ ] Language-idiomatic error handling patterns work correctly
+- [ ] Integration tests verify error context preservation
+
+---
+
 ## Implementation Guidelines
 
 ### Language-Specific Conventions
@@ -251,34 +327,45 @@ raise InvalidDeviceError(provided_device, calculated_device)
 
 #### Rust
 ```rust
-use thiserror::Error;
+use serde::{Serialize, Deserialize};
+use std::collections::HashMap;
+use std::fmt;
 
-#[derive(Error, Debug)]
-pub enum BetterAuthError {
-    #[error("Message structure is invalid or malformed")]
-    InvalidMessage { field: String },
-
-    #[error("Device hash does not match hash(publicKey || rotationHash)")]
-    InvalidDevice { provided: String, calculated: String },
-
-    // ... etc
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct BetterAuthError {
+    pub code: &'static str,
+    pub message: String,
+    pub context: HashMap<String, String>,
 }
 
-impl BetterAuthError {
-    pub fn code(&self) -> &str {
-        match self {
-            Self::InvalidMessage { .. } => "BA101",
-            Self::InvalidDevice { .. } => "BA103",
-            // ... etc
-        }
+impl fmt::Display for BetterAuthError {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "[{}] {}", self.code, self.message)
     }
 }
 
-// Usage
-return Err(BetterAuthError::InvalidDevice {
-    provided: provided_device,
-    calculated: calculated_device,
-});
+impl std::error::Error for BetterAuthError {}
+
+// Factory functions for each error type
+pub fn invalid_device_error(provided: &str, calculated: &str) -> BetterAuthError {
+    let mut context = HashMap::new();
+    context.insert("provided".to_string(), provided.to_string());
+    context.insert("calculated".to_string(), calculated.to_string());
+
+    BetterAuthError {
+        code: "BA103",
+        message: "Device hash does not match hash(publicKey || rotationHash)".to_string(),
+        context,
+    }
+}
+
+// Public API MUST return Result<T, BetterAuthError> not Result<T, String>
+pub async fn create_account(&self, message: &str) -> Result<String, BetterAuthError> {
+    // ... implementation
+    Err(invalid_device_error(&provided, &calculated))
+}
+
+// DO NOT implement From<BetterAuthError> for String - it loses information!
 ```
 
 #### Go
@@ -430,6 +517,265 @@ sealed class BetterAuthError(
 
 // Usage
 throw BetterAuthError.InvalidDevice(providedDevice, calculatedDevice)
+```
+
+---
+
+## How to Handle Better Auth Errors
+
+This section shows library users how to properly catch and inspect Better Auth errors in each language.
+
+### TypeScript/JavaScript
+
+```typescript
+import { BetterAuthClient, InvalidDeviceError, ExpiredTokenError } from 'better-auth';
+
+const client = new BetterAuthClient(/* ... */);
+
+try {
+  await client.createAccount(recoveryHash);
+} catch (error) {
+  // Check for specific error types
+  if (error instanceof InvalidDeviceError) {
+    console.error('Device validation failed:', error.context);
+    console.error('Provided:', error.context.provided);
+    console.error('Calculated:', error.context.calculated);
+  } else if (error instanceof ExpiredTokenError) {
+    console.error('Token expired at:', error.context.expiresAt);
+    // Trigger re-authentication
+  }
+
+  // Access error code and message
+  console.error(`Error [${error.code}]: ${error.message}`);
+
+  // Serialize for logging
+  console.error(JSON.stringify(error.toJSON()));
+}
+```
+
+### Python
+
+```python
+from better_auth import BetterAuthClient, InvalidDeviceError, ExpiredTokenError
+
+client = BetterAuthClient(...)
+
+try:
+    await client.create_account(recovery_hash)
+except InvalidDeviceError as e:
+    print(f"Device validation failed: {e.context}")
+    print(f"Provided: {e.context['provided']}")
+    print(f"Calculated: {e.context['calculated']}")
+except ExpiredTokenError as e:
+    print(f"Token expired at: {e.context['expires_at']}")
+    # Trigger re-authentication
+except BetterAuthError as e:
+    # Catch all Better Auth errors
+    print(f"Error [{e.error_code}]: {str(e)}")
+    print(f"Context: {e.context}")
+
+    # Serialize for logging
+    print(e.to_dict())
+```
+
+### Rust
+
+```rust
+use better_auth::{BetterAuthClient, BetterAuthError};
+
+let client = BetterAuthClient::new(/* ... */);
+
+match client.create_account(&message).await {
+    Ok(response) => {
+        // Handle success
+    }
+    Err(err) => {
+        // Pattern match on error code
+        match err.code {
+            "BA103" => {
+                // InvalidDevice
+                eprintln!("Device validation failed");
+                if let Some(provided) = err.context.get("provided") {
+                    eprintln!("Provided: {}", provided);
+                }
+                if let Some(calculated) = err.context.get("calculated") {
+                    eprintln!("Calculated: {}", calculated);
+                }
+            }
+            "BA401" => {
+                // ExpiredToken
+                eprintln!("Token expired");
+                // Trigger re-authentication
+            }
+            _ => {
+                eprintln!("Error [{}]: {}", err.code, err.message);
+            }
+        }
+
+        // Serialize for logging
+        if let Ok(json) = serde_json::to_string(&err) {
+            eprintln!("Error JSON: {}", json);
+        }
+    }
+}
+```
+
+### Go
+
+```go
+import (
+    "fmt"
+    "github.com/jasoncolburne/better-auth-go/pkg/client"
+    "github.com/jasoncolburne/better-auth-go/pkg/errors"
+)
+
+c := client.NewBetterAuthClient(/* ... */)
+
+response, err := c.CreateAccount(ctx, message)
+if err != nil {
+    // Type assert to BetterAuthError to access structured fields
+    if betterErr, ok := err.(*errors.BetterAuthError); ok {
+        switch betterErr.Code {
+        case errors.CodeInvalidDevice:
+            fmt.Printf("Device validation failed\n")
+            fmt.Printf("Provided: %v\n", betterErr.Context["provided"])
+            fmt.Printf("Calculated: %v\n", betterErr.Context["calculated"])
+        case errors.CodeExpiredToken:
+            fmt.Printf("Token expired at: %v\n", betterErr.Context["expiresAt"])
+            // Trigger re-authentication
+        default:
+            fmt.Printf("Error [%s]: %s\n", betterErr.Code, betterErr.Message)
+        }
+
+        // Serialize for logging
+        if jsonBytes, err := json.Marshal(betterErr); err == nil {
+            fmt.Printf("Error JSON: %s\n", jsonBytes)
+        }
+    } else {
+        // Handle unexpected error types
+        fmt.Printf("Unexpected error: %v\n", err)
+    }
+}
+```
+
+### Ruby
+
+```ruby
+require 'better_auth'
+
+client = BetterAuth::Client.new(...)
+
+begin
+  client.create_account(recovery_hash)
+rescue BetterAuth::InvalidDeviceError => e
+  puts "Device validation failed: #{e.context}"
+  puts "Provided: #{e.context[:provided]}"
+  puts "Calculated: #{e.context[:calculated]}"
+rescue BetterAuth::ExpiredTokenError => e
+  puts "Token expired at: #{e.context[:expires_at]}"
+  # Trigger re-authentication
+rescue BetterAuth::Error => e
+  # Catch all Better Auth errors
+  puts "Error [#{e.code}]: #{e.message}"
+  puts "Context: #{e.context}"
+
+  # Serialize for logging
+  puts e.to_json
+end
+```
+
+### Swift
+
+```swift
+import BetterAuth
+
+let client = BetterAuthClient(/* ... */)
+
+do {
+    try await client.createAccount(recoveryHash)
+} catch let error as BetterAuthError {
+    switch error.code {
+    case "BA103": // InvalidDevice
+        print("Device validation failed")
+        if let provided = error.context?["provided"] {
+            print("Provided: \(provided)")
+        }
+        if let calculated = error.context?["calculated"] {
+            print("Calculated: \(calculated)")
+        }
+    case "BA401": // ExpiredToken
+        print("Token expired")
+        // Trigger re-authentication
+    default:
+        print("Error [\(error.code)]: \(error.message)")
+    }
+
+    // Serialize for logging
+    if let jsonData = try? JSONEncoder().encode(error),
+       let jsonString = String(data: jsonData, encoding: .utf8) {
+        print("Error JSON: \(jsonString)")
+    }
+} catch {
+    print("Unexpected error: \(error)")
+}
+```
+
+### Dart
+
+```dart
+import 'package:better_auth/better_auth.dart';
+
+final client = BetterAuthClient(/* ... */);
+
+try {
+  await client.createAccount(recoveryHash);
+} on InvalidDeviceError catch (e) {
+  print('Device validation failed: ${e.context}');
+  print('Provided: ${e.context['provided']}');
+  print('Calculated: ${e.context['calculated']}');
+} on ExpiredTokenError catch (e) {
+  print('Token expired at: ${e.context['expiresAt']}');
+  // Trigger re-authentication
+} on BetterAuthError catch (e) {
+  // Catch all Better Auth errors
+  print('Error [${e.code}]: ${e.message}');
+  print('Context: ${e.context}');
+
+  // Serialize for logging
+  print(jsonEncode(e.toJson()));
+}
+```
+
+### Kotlin
+
+```kotlin
+import com.betterauth.BetterAuthClient
+import com.betterauth.BetterAuthError
+
+val client = BetterAuthClient(/* ... */)
+
+try {
+    client.createAccount(recoveryHash)
+} catch (e: BetterAuthError) {
+    when (e) {
+        is BetterAuthError.InvalidDevice -> {
+            println("Device validation failed")
+            println("Provided: ${e.context["provided"]}")
+            println("Calculated: ${e.context["calculated"]}")
+        }
+        is BetterAuthError.ExpiredToken -> {
+            println("Token expired at: ${e.context["expiresAt"]}")
+            // Trigger re-authentication
+        }
+        else -> {
+            println("Error [${e.code}]: ${e.message}")
+            println("Context: ${e.context}")
+        }
+    }
+
+    // Serialize for logging
+    println(e.toJson())
+}
 ```
 
 ---
