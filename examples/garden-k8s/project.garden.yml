@@ -7,6 +7,18 @@ defaultEnvironment: local
 # - Go-based authentication server
 # - Multi-language application servers (TypeScript, Ruby, Rust, Python)
 
+# Exclude files/directories from scanning
+scan:
+  exclude:
+    - .garden/**/*
+    - node_modules/**/*
+    - "**/*.log"
+    - dist/**/*
+    - target/**/*
+    - .venv/**/*
+    - venv/**/*
+    
+
 environments:
   - name: local
     defaultNamespace: ${project.name}-dev

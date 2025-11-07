@@ -1,0 +1,17 @@
+# Build artifacts
+target
+node_modules
+dist
+.venv
+venv
+vendor/bundle
+__pycache__
+*.pyc
+.build
+.dart_tool
+
+# Logs
+*.log
+
+# OS
+.DS_Store
