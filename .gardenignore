@@ -1,0 +1,27 @@
+# Implementation submodules - exclude entirely to speed up scanning
+implementations/better-auth-go
+implementations/better-auth-py
+implementations/better-auth-rb
+implementations/better-auth-rs
+implementations/better-auth-ts
+implementations/better-auth-swift
+implementations/better-auth-dart
+implementations/better-auth-kt
+
+# Build artifacts
+target
+node_modules
+dist
+.venv
+venv
+vendor/bundle
+__pycache__
+*.pyc
+.build
+.dart_tool
+
+# Logs
+*.log
+
+# OS
+.DS_Store
