@@ -27,7 +27,7 @@ tamper-evident)
 _next_ document in the chain)
 
 Without 3, you cannot recover from a compromised key and keep your identity - you need to create
-another. CAs don't have immutability for identifiers 1, or 3.
+another. CAs don't have immutability for identifiers (1), or 3.
 
 ## Rationale
 
