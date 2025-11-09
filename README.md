@@ -15,6 +15,20 @@ Another excellent resource is this
 It contains a functional kubernetes deployment and iOS app. There's a
 [youtube video](https://youtu.be/j-Hevua3FzQ) which helps one understand how it is exercised.
 
+I talk about CAs in the [unscripted] video and should probably clarify that the difference between
+the key chain and a CA root is that the key chain has a persistent identity, it's not just a
+key in a certificate that needs to be tracked and managed. The management is in the data of the
+keychain documents themselves. They have three properties we are interested in:
+
+1. Immutability of data _and_ identifiers (the self-addressing, embedded derivation is
+tamper-evident)
+2. Self-Certification (each document is signed by a key embedded in it)
+3. Forward Commitment (each document makes a blinded commitment to the _next_ key used to sign the
+_next_ document in the chain)
+
+Without 3, you cannot recover from a compromised key and keep your identity - you need to create
+another. CAs don't have immutability for identifiers 1, or 3.
+
 ## Rationale
 
 I wanted to create a re-usable, secure polyglot framework for building ecosystems of software and
@@ -26,7 +40,7 @@ surrounding key management (this is the foundation of a decentralized system). T
 as it exists now, isn't decentralized, but it's built in a similar manner. I found it actually
 started becoming constraining _not_ to have decentralized tooling available as the security
 problems became more complex, and I ended up building a lot of it. The structure I use to secure
-the HSM key chain is essentially a KERI KEL.
+the HSM key chain is essentially a lightweight KERI KEL.
 
 ## Getting Started
 
