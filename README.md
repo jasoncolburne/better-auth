@@ -56,7 +56,7 @@ For the third, forward commitment provides:
 | Secure delayed or conditional reveal                                 | No                       | Yes                          |
 
 Disclaimer: AI made those tables for me. I have an issue with how it says a CA binds the value and
-commitment, because we are talking specifically about a forward commitment, and a CA does not have
+commitment, because we are talking specifically about a forward commitment and a CA does not have
 one. So, it does bind to the current values, but there is no guarantee an adversary doesn't somehow
 rotate into another key they control.
 
