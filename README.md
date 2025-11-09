@@ -18,13 +18,14 @@ It contains a functional kubernetes deployment and iOS app. There's a
 I talk about CAs in the [unscripted] video and should probably clarify that the difference between
 the key chain and a CA root is that the key chain has a persistent identity, it's not just a
 key in a certificate that needs to be tracked and managed. The management is in the data of the
-keychain documents themselves. They have three properties we are interested in:
+keychain documents themselves. They have many we are interested in. To name a few:
 
-1. Self-Addressing Identifiers (deriving ids from data it represents and embedding that identifier
-in that data)
+1. Self-Addressing Identification (deriving ids from data they represent and embedding those
+identifiers in that data)
 2. Self-Certification (each document is signed by a key embedded in it)
 3. Forward Commitment (each document makes a blinded commitment to the _next_ key used to sign the
 _next_ document in the chain)
+4. Chaining (each document refers to the id of the previous document)
 
 For the first, self-addressing identifiers provide many benefits:
 
