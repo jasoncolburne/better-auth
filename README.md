@@ -18,16 +18,40 @@ It contains a functional kubernetes deployment and iOS app. There's a
 I talk about CAs in the [unscripted] video and should probably clarify that the difference between
 the key chain and a CA root is that the key chain has a persistent identity, it's not just a
 key in a certificate that needs to be tracked and managed. The management is in the data of the
-keychain documents themselves. They have three properties we are interested in:
+keychain documents themselves. They have many we are interested in. To name a few:
 
-1. Immutability of data _and_ identifiers (the self-addressing, embedded derivation is
-tamper-evident)
+1. Self-Addressing Identification (deriving ids from data they represent and embedding those
+identifiers in that data)
 2. Self-Certification (each document is signed by a key embedded in it)
 3. Forward Commitment (each document makes a blinded commitment to the _next_ key used to sign the
 _next_ document in the chain)
+4. Chaining (each document refers to the id of the previous document)
 
-Without 3, you cannot recover from a compromised key and keep your identity - you need to create
-another. CAs don't have immutability for identifiers (1), or 3.
+For the first, self-addressing identifiers provide many benefits:
+
+| Attack / Protection Type                             | CA Certificate Protects? | Self-Addressing Identifier Protects? |
+| ---------------------------------------------------- | ------------------------ | ------------------------------------ |
+| Tampering (integrity violation)                      | Yes                      | Yes                                  |
+| Substitution (fake data)                             | Partially                | Yes                                  |
+| Replay/Rebinding (ID assigned to different data)     | No                       | Yes                                  |
+| Ambiguity/Collisions (multiple IDs for similar data) | No                       | Yes                                  |
+| Secure, immutable referencing                        | No                       | Yes                                  |
+| Impersonation of issuer/subject                      | Yes                      | Yes                                  |
+
+For the third, forward commitment provides:
+
+| Property / Attack Protection                                         | CA Certificate Protects? | Forward Commitment Protects? |
+| -------------------------------------------------------------------- | ------------------------ | ---------------------------- |
+| Hiding value until revealed                                          | No                       | Yes                          |
+| Binding value to commitment (unchangeable)                           | Yes                      | Yes                          |
+| Prevention of early exposure of committed value                      | No                       | Yes                          |
+| Proof that value existed at commitment time                          | No                       | Yes                          |
+| Protection against equivocation/replay                               | Partially                | Yes                          |
+| Forward secrecy (past values not compromised by future key exposure) | No                       | Yes                          |
+| Commitment to a future key/public value                              | No                       | Yes                          |
+| Secure delayed or conditional reveal                                 | No                       | Yes                          |
+
+Disclaimer: AI made those tables for me.
 
 ## Rationale
 
