@@ -1,0 +1,20 @@
+{
+  "name": "@better-auth/cloudflare-worker",
+  "private": true,
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "scripts": {
+    "build": "tsup",
+    "dev": "workerd serve worker.config.capnp"
+  },
+  "dependencies": {
+    "@noble/hashes": "^2.0.1",
+    "better-auth-ts": "github:edelauna/better-auth-ts#v0.0.1"
+  },
+  "devDependencies": {
+    "tsup": "^8.5.0",
+    "typescript": "^5.9.2",
+    "workerd": "^1.20251101.0"
+  }
+}
