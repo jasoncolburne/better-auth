@@ -64,9 +64,9 @@ doesn't somehow rotate into another key they control.
 I wanted to create a re-usable, secure polyglot framework for building ecosystems of software and
 this seemed like a logical starting point.
 
-The basic example in the examples directory gives a better idea of what I was actually trying to
+The k8s example in the examples directory gives a better idea of what I was actually trying to
 create. During this process I wanted to see what was necessary to provide secure documentation
-surrounding key management (this is the foundation of a decentralized system). The basic example,
+surrounding key management (this is the foundation of a decentralized system). The k8s example,
 as it exists now, isn't decentralized, but it's built in a similar manner. I found it actually
 started becoming constraining _not_ to have decentralized tooling available as the security
 problems became more complex, and I ended up building a lot of it. The structure I use to secure
