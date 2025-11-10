@@ -19,7 +19,7 @@ BetterAuthBasicExample/
 │   │   ├── Hasher.swift                  # IHasher implementation
 │   │   └── Noncer.swift                  # INoncer implementation
 │   ├── Stores/                        # Storage implementations
-│   │   ├── ClientRotatingKeyStore.swift  # Rotating key storage with forward secrecy
+│   │   ├── ClientRotatingKeyStore.swift  # Rotating key storage with forward commitment
 │   │   ├── ClientValueStore.swift        # Generic keychain storage
 │   │   └── VerificationKeyStore.swift    # Server verification key storage
 │   ├── Network/
@@ -68,7 +68,7 @@ BetterAuthBasicExample/
   - Uses iOS Secure Enclave on real devices
   - Falls back to hardware-backed keychain storage on simulator
 - **Software keys**: `Secp256r1` for recovery keys derived from passphrases
-- `ClientRotatingKeyStore` for key rotation with forward secrecy
+- `ClientRotatingKeyStore` for key rotation with forward commitment
 - `Hasher` using BLAKE3
 - `Noncer` for secure nonce generation
 - `Rfc3339` timestamper (ISO8601 with millisecond precision)

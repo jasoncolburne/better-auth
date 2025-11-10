@@ -4,8 +4,8 @@ This example demonstrates a production-like Better Auth deployment using Garden.
 
 ## Security
 
-The security of this system rests on forward secrecy and hardware-backed keys. By pre-generating
-securely stored keys and committing to them using forward secrecy, we build recovery avenues for
+The security of this system rests on forward commitment and hardware-backed keys. By pre-generating
+securely stored keys and committing to them using forward commitment, we build recovery avenues for
 identifiers associated with such keys.
 
 ### Root (HSM)
@@ -124,7 +124,7 @@ how they detect the taint.
 
 Client key chains are similar to the HSM key chain, but are instead managed by the auth service
 through a storage abstraction (in a postgres db in this example). Management requests are signed
-by the client keys, and forward secrecy/hardware are employed to protect the identifier of the
+by the client keys, and forward commitment/hardware are employed to protect the identifier of the
 client.
 
 When clients receive responses the keys used to create response signatures are verified to be

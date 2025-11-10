@@ -42,7 +42,7 @@ Submodules track specific commits to ensure reproducible builds, while branch tr
 1. **All actions except authentication to acquire an access session are gated by a rotation operation**
 2. **All requests contain a nonce to challenge the server**
 3. **Authentication is a two phase operation that involves the server challenging the client**
-4. **Rotations are protected using forward secrecy**
+4. **Rotations are protected using forward commitment**
 
 ## Protocol Philosophy
 
@@ -76,14 +76,14 @@ There are 3 main protocol groups plus 1 access protocol:
 
 ## Key Protocol Concepts
 
-### Forward Secrecy via Key Rotation
+### Forward Commitment via Key Rotation
 
 Keys are rotated by:
 1. Pre-committing to the next key using a hash (rotationHash)
 2. When rotating, revealing the key that matches the previous hash
 3. Establishing a new rotationHash for the next rotation
 
-This creates a hash chain that provides forward secrecy - compromising the current key doesn't reveal other keys
+This creates a hash chain that provides forward commitment - compromising the current key doesn't reveal other keys
 and rotation permits recovery of the chain.
 
 ### Device Identity
