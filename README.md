@@ -51,7 +51,6 @@ For the third, forward commitment provides:
 | Prevention of early exposure of committed value                      | No                       | Yes                          |
 | Proof that value existed at commitment time                          | No                       | Yes                          |
 | Protection against equivocation/replay                               | Partially                | Yes                          |
-| Forward secrecy (past values not compromised by future key exposure) | No                       | Yes                          |
 | Commitment to a future key/public value                              | No                       | Yes                          |
 | Secure delayed or conditional reveal                                 | No                       | Yes                          |
 
